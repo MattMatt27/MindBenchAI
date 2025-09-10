@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { getEntityProfiles, questions } from '../data/technicalProfiles'
+import { getEntityProfiles, techProfileQuestions } from '../data/technicalProfiles'
 
 function Dot({ on }) {
   return <span className={`dot ${on ? 'on' : 'off'}`} aria-label={on ? 'yes' : 'no'} />
@@ -47,7 +47,7 @@ export default function TechnicalProfile() {
   // Get unique categories based on active tab
   const categories = useMemo(() => {
     const cats = new Set()
-    questions
+    techProfileQuestions
       .filter(q => q.entity_type === (activeTab === 'tools' ? 'tool_configuration' : 'base_model'))
       .forEach(q => cats.add(q.category))
     return ['all', ...Array.from(cats)]
@@ -91,7 +91,7 @@ export default function TechnicalProfile() {
 
   // Get questions to display based on category and active tab
   const displayQuestions = useMemo(() => {
-    return questions
+    return techProfileQuestions
       .filter(q => {
         const entityType = activeTab === 'tools' ? 'tool_configuration' : 'base_model'
         return q.entity_type === entityType && 

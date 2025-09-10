@@ -26,7 +26,7 @@ export const toolConfigurations = [
   { id: 6, tool_id: 6, base_model_id: 2, configuration_name: 'Woebot with Claude 3' }
 ];
 
-export const questions = [
+export const techProfileQuestions = [
   // TOOL CONFIGURATION QUESTIONS
   { id: 1, entity_type: 'tool_configuration', question_key: 'platform_android', 
     question_text: 'Android Support', category: 'Platform', question_type: 'boolean', 
@@ -171,14 +171,14 @@ baseModels.forEach(model => {
   );
 });
 
-export const answers = [...toolConfigAnswers, ...baseModelAnswers];
+export const techProfileAnswers = [...toolConfigAnswers, ...baseModelAnswers];
 
-// Helper function to get profile display data (mimics the SQL view)
-export function getProfileDisplay(entityType = null) {
-  return answers
+// Helper function to get tech profile display data (mimics the SQL view)
+export function getTechProfileDisplay(entityType = null) {
+  return techProfileAnswers
     .filter(a => a.is_approved && (!entityType || a.entity_type === entityType))
     .map(answer => {
-      const question = questions.find(q => q.id === answer.question_id);
+      const question = techProfileQuestions.find(q => q.id === answer.question_id);
       
       if (answer.entity_type === 'tool_configuration') {
         const config = toolConfigurations.find(tc => tc.id === answer.entity_id);
@@ -243,7 +243,7 @@ export function getConfigurationProfiles() {
 // Helper to group answers by entity
 export function getEntityProfiles(entityType) {
   const profiles = {};
-  const displayData = getProfileDisplay(entityType);
+  const displayData = getTechProfileDisplay(entityType);
   
   displayData.forEach(item => {
     if (!profiles[item.entity_id]) {
