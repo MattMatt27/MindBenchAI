@@ -1,0 +1,140 @@
+/* Home Page Styles */
+.home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  background: var(--bg);
+  min-height: calc(100vh - 56px);
+}
+
+.home-header {
+  text-align: center;
+  margin-bottom: 60px;
+}
+
+.home-title {
+  font-size: 48px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 20px 0;
+  letter-spacing: -0.02em;
+}
+
+.home-description {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.home-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-top: 60px;
+}
+
+.home-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.column-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 16px 0;
+  text-align: center;
+  border-bottom: 2px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.section-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.section-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transform: translateY(-2px);
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 12px 0;
+}
+
+.section-description {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 0 0 20px 0;
+}
+
+.section-button {
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: fit-content;
+}
+
+.section-button:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.section-button:disabled {
+  background: var(--muted);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.section-button:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .home-container {
+    padding: 20px 16px;
+  }
+  
+  .home-title {
+    font-size: 36px;
+  }
+  
+  .home-description {
+    font-size: 16px;
+  }
+  
+  .home-content {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    margin-top: 40px;
+  }
+  
+  .column-title {
+    font-size: 28px;
+  }
+  
+  .section-card {
+    padding: 20px;
+  }
+}

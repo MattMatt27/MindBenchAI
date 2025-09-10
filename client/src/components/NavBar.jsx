@@ -1,16 +1,31 @@
 import "../styles/NavBar.css"
-import { NavLink } from "react-router-dom";
 
-export default function NavBar() {
+export default function NavBar({ currentPage, onNavigate }) {
   return (
-    <div className = 'NavBar_container'>
-      <nav>
-        <ul className = 'NavBar_list'>
-          <li><NavLink to = "/">Application library</NavLink></li>
-          <li><NavLink to = "/">Model library</NavLink></li>
-          <li><NavLink to = "/">Request</NavLink></li>
-        </ul>
-      </nav>
-    </div>
+    <nav className="navbar">
+      <div className="navbar-container">
+        <div className="navbar-brand">MindBenchAI</div>
+        <div className="navbar-menu">
+          <button 
+            className={`navbar-item ${currentPage === 'home' ? 'active' : ''}`}
+            onClick={() => onNavigate('home')}
+          >
+            Home
+          </button>
+          <button 
+            className={`navbar-item ${currentPage === 'framework' ? 'active' : ''}`}
+            onClick={() => onNavigate('framework')}
+          >
+            Framework
+          </button>
+          <button 
+            className={`navbar-item ${currentPage === 'community' ? 'active' : ''}`}
+            onClick={() => onNavigate('community')}
+          >
+            Community
+          </button>
+        </div>
+      </div>
+    </nav>
   )
 }
