@@ -1,6 +1,9 @@
-import "../styles/Home.css"
+import { useNavigate } from "react-router-dom";
+import "../styles/Home.css";
 
-export default function Home({ onNavigate }) {
+export default function Home() {
+  const navigate = useNavigate();
+
   return (
     <div className="home-container">
       <div className="home-header">
@@ -24,7 +27,7 @@ export default function Home({ onNavigate }) {
             </p>
             <button 
               className="section-button"
-              onClick={() => onNavigate('technical-profile')}
+              onClick={() => navigate("/technical_profile")}
             >
               Technical Profile
             </button>
@@ -51,8 +54,8 @@ export default function Home({ onNavigate }) {
               Compare performance metrics, accuracy scores, and standardized 
               benchmark results across different AI models and configurations.
             </p>
-            <button className="section-button" disabled>
-              Coming Soon
+            <button className="section-button" onClick = {() => navigate("/leaderboard")}>
+              Leaderboard
             </button>
           </div>
 
@@ -69,5 +72,5 @@ export default function Home({ onNavigate }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
