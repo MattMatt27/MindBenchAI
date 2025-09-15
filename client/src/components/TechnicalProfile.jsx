@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { getEntityProfiles, techProfileQuestions } from '../data/technicalProfiles'
+import "../styles/TechnicalProfile.css"
 
 function Dot({ on }) {
   return <span className={`dot ${on ? 'on' : 'off'}`} aria-label={on ? 'yes' : 'no'} />
