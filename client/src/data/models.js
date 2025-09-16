@@ -20,9 +20,18 @@ export const models_tab = [
   {baseModel: 'Llama', models: ['Llama 3', 'Llama 4'], SIRI_2: 0.243, A_pharm: 0.601, A_mamh: 0.402}
 ]
 
+export const leaderboard_ext = [
+  {snapshot: 'ss1', SIRI_2: 0.622, A_pharm: 0.465, A_mamh: 0.254},
+  {snapshot: 'ss2', SIRI_2: 0.353, A_pharm: 0.327, A_mamh: 0.479},
+  {snapshot: 'ss3', SIRI_2: 0.309, A_pharm: 0.116, A_mamh: 0.472},
+  {snapshot: 'ab1', SIRI_2: 0.309, A_pharm: 0.116, A_mamh: 0.472},
+  {snapshot: 'ab2', SIRI_2: 0.309, A_pharm: 0.116, A_mamh: 0.472},
+  {snapshot: 'ab3', SIRI_2: 0.423, A_pharm: 0.267, A_mamh: 0.602},
+]
+
 export const leaderboard = [
   { model: "Starling",         baseModel: "Starling",  snapshot: ['ss1','ss2','ss3'], SIRI_2: 0.490, A_pharm: 0.294, A_mamh: 0.113 },
-  { model: "Gemini Ultra 1.5", baseModel: "Gemini",    snapshot: ['ss1','ss2','ss3'], SIRI_2: 0.440, A_pharm: 0.614, A_mamh: 0.331 },
+  { model: "Gemini Ultra 1.5", baseModel: "Gemini",    snapshot: ['ab1','ab2','ab3'], SIRI_2: 0.440, A_pharm: 0.614, A_mamh: 0.331 },
   { model: "Vicuna v1.5",      baseModel: "Vicuna",    snapshot: ['ss1','ss2','ss3'], SIRI_2: 0.666, A_pharm: 0.270, A_mamh: 0.144 },
   { model: "Orca 2",           baseModel: "Orca",      snapshot: ['ss1','ss2','ss3'], SIRI_2: 0.328, A_pharm: 0.119, A_mamh: 0.537 },
   { model: "Pythia-12B",       baseModel: "Pythia",    snapshot: ['ss1','ss2','ss3'], SIRI_2: 0.394, A_pharm: 0.294, A_mamh: 0.107 },
@@ -61,3 +70,9 @@ export const leaderboard1 = [
     snapshot: []
   }
 ];
+
+export const stest = [
+  {E: 33, A: 47, C: 45, N: 18, O: 44},
+  {E: 47, A: 33, C: 18, N: 45, O: 44}
+]
+
