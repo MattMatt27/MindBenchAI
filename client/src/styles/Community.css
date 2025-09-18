@@ -1,11 +1,11 @@
-.st-tabs{
+.cm-tabs{
   display:flex;
   gap:8px;
   padding:16px 16px 0 16px;
   background:var(--bg);
   border-bottom:2px solid var(--border);
 }
-.st-tab{
+.cm-tab{
   padding:10px 20px;
   background:transparent;
   border:none;
@@ -18,5 +18,6 @@
   margin-bottom:-2px;
 }
 
-.st-tab:hover{color:var(--text);background:var(--panel-2);}
-.st-tab.active{color:var(--text);border-bottom-color:#3b82f6;}
+.cm-tab:hover{color:var(--text);background:var(--panel-2);}
+.cm-tab.active{color:var(--text);border-bottom-color:#3b82f6;}
+
