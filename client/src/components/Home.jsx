@@ -39,8 +39,11 @@ export default function Home() {
               Analyze how AI models communicate, their conversation patterns, 
               and interpersonal interaction capabilities.
             </p>
-            <button className="section-button" disabled>
-              Coming Soon
+            <button 
+              className="section-button" 
+              onClick = {() => navigate("/standard_test")}
+            >
+              Standardize test
             </button>
           </div>
         </div>

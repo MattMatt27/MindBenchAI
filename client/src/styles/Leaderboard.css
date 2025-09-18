@@ -30,7 +30,7 @@ body{
 
 .lb-island{
   background:var(--panel);
-  border:1px solid var(--border);
+  border:1px solid var(--border-strong);
   border-radius:12px;
   box-shadow:0 1px 2px rgba(0,0,0,.05);
   padding:16px;
@@ -129,18 +129,17 @@ body{
   box-shadow:0 0 0 3px var(--ring);
 }
 
-/* TABLE CARD */
 .table-wrap{
   background:var(--panel);
   border:1px solid var(--border-strong);
   border-radius:12px;
   box-shadow:0 1px 2px rgba(0,0,0,.05);
-  overflow:hidden;                 /* clip to keep rounded corners visible */
+  overflow:hidden;
   max-width:100%;
-  align-self:start;                /* align top with sidebar card */
+  align-self:start;
+  padding:0;
 }
 
-/* TABLE */
 .lb-table{
   width:100%;
   border-collapse:separate;
@@ -152,22 +151,24 @@ body{
 .lb-table thead{
   background:var(--panel-2);
 }
+.lb-table thead tr{
+  background:var(--panel-2) !important;
+}
 
 .lb-table thead th{
-  padding:12px 10px;
-  font-weight:700;
+  padding:10px 8px;
+  font-weight:600;
   font-size:14px;
-  border-bottom:1px solid var(--border);
+  border:none;
   text-align:center;
-  background:var(--panel-2);
+  background:var(--panel-2) !important;
   position:sticky;
   top:0;
   z-index:3;
-  backdrop-filter:blur(2px);
   background-clip:padding-box;
+  border-bottom:1px solid var(--border);
 }
 
-/* restore rounded top corners for sticky header */
 .lb-table thead th:first-child{
   border-top-left-radius:12px;
 }
@@ -175,7 +176,6 @@ body{
   border-top-right-radius:12px;
 }
 
-/* optional: rounded bottom corners on last row to match card */
 .lb-table tbody tr:last-child td:first-child{
   border-bottom-left-radius:12px;
 }
@@ -184,8 +184,8 @@ body{
 }
 
 .lb-table tbody td{
-  padding:12px 10px;
-  border-top:1px solid var(--border);
+  padding:10px 8px;
+  border-top:1px solid #e5e7eb;
   text-align:center;
 }
 
@@ -200,7 +200,6 @@ body{
   text-align:center;
 }
 
-/* pill in Scale column */
 a.lb-link{
   color:var(--link);
   text-decoration:none;
@@ -235,10 +234,9 @@ a.lb-link:hover{text-decoration:underline;}
   padding:10px 12px;
   font-size:14px;
   border:1px solid var(--border-strong);
-  border-radius:8px;          
   background:#fff;
   border-radius:9999px;
-  margin-bottom: 12px;
+  margin-bottom:12px;
 }
 .lb-select:focus{
   outline:0;
@@ -260,15 +258,14 @@ a.lb-link:hover{text-decoration:underline;}
   text-align: center;
   border-radius: 50%;
   font-weight: 700;
-  background: #000;       
+  background: #000;
   color: #fff;
   text-decoration: none;
   font-size: 12px;
   transition: background 0.2s, color 0.2s;
 }
-
 .lb-info:hover {
-  background: #333;       
+  background: #333;
   color: #fff;
 }
 
@@ -279,7 +276,6 @@ a.lb-link:hover{text-decoration:underline;}
   background: var(--bg);
   border-bottom: 2px solid var(--border);
 }
-
 .lb-tab {
   padding: 10px 20px;
   background: transparent;
@@ -290,27 +286,23 @@ a.lb-link:hover{text-decoration:underline;}
   color: var(--muted);
   cursor: pointer;
   transition: all 0.2s;
-  margin-bottom: -2px; 
+  margin-bottom: -2px;
 }
-
 .lb-tab:hover {
   color: var(--text);
   background: var(--panel-2);
 }
-
 .lb-tab.active {
   color: var(--text);
-  border-bottom-color: #3b82f6; 
+  border-bottom-color: #3b82f6;
   background: transparent;
 }
-
 .lb-tab:focus-visible {
   outline: 0;
   box-shadow: 0 0 0 3px var(--ring);
   border-radius: 6px;
 }
 
-/* Expander caret */
 .lb-expander {
   appearance: none;
   border: 0;
@@ -369,36 +361,17 @@ a.lb-link:hover{text-decoration:underline;}
 .lb-badge:hover { background: rgba(37,99,235,.18); }
 
 .lb-table th:first-child,
-.lb-table td:first-child { text-align: left; width: 40px; min-width: 40px; }
+.lb-table td:first-child { text-align: left; min-width: 180px; }
 
+.table-wrap.table-scroll { overflow: auto; }
 
-.table-wrap.table-scroll {
-  overflow: auto;
-}
-
-.lb-table.cmp-table {
-  table-layout: fixed;
-  white-space: normal;
-}
-
+.lb-table.cmp-table { table-layout: fixed; white-space: normal; }
 .lb-table.cmp-table th.keep-col,
-.lb-table.cmp-table td.keep-col {
-  width: 60px;
-  min-width: 60px;
-  text-align: center;
-}
-
+.lb-table.cmp-table td.keep-col { width: 60px; min-width: 60px; text-align: center; }
 .lb-table.cmp-table th.snap-col,
-.lb-table.cmp-table td.snap-col {
-  min-width: 180px;
-  text-align: left;
-}
-
+.lb-table.cmp-table td.snap-col { min-width: 180px; text-align: left; }
 .lb-table.cmp-table th:first-child,
-.lb-table.cmp-table td:first-child {
-  width: auto;
-  min-width: 0;
-}
+.lb-table.cmp-table td:first-child { width: auto; min-width: 0; }
 
 .lb-layout.full {
   display: block;
@@ -406,8 +379,4 @@ a.lb-link:hover{text-decoration:underline;}
   background: var(--bg);
 }
 
-.lb-island.full {
-  width: 100%;
-  box-sizing: border-box;
-}
-
+.lb-island.full { width: 100%; box-sizing: border-box; }

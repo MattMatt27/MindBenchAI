@@ -5,6 +5,7 @@ import TechnicalProfile from "./components/TechnicalProfile";
 import Framework from "./components/Framework"
 import Community from "./components/Community";
 import Leaderboard from "./components/Leaderboard";
+import StandardizeTest from "./components/StandardizeTest"
 import "./styles/main.css";
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/technical_profile" element={<TechnicalProfile />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/standard_test" element = {<StandardizeTest />}/>
         <Route path = "/framework" element={<Framework />} />
         <Route path = "/community" element ={<Community />} />
       </Routes>

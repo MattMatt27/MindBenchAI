@@ -1,16 +1,3 @@
-export const models = [
-  { id:1, name:'ChatGPT',    desc: 'by OpenAI',       android:0, IOS:1, web:1, free:1, monthly:'$100/month',  annual:'$90/month', version:'GPT 5.0' },
-  { id:2, name:'Perplexity', desc: 'by PerplexityAI', android:1, IOS:1, web:1, free:1, monthly:'$80/month',  annual:'$70/month',     version:'3.7.3v2' },
-  { id:3, name:'Claude',     desc: 'by Anthropic',    android:0, IOS:0, web:1, free:1, monthly:'$75/month',  annual:'$70/month',     version:'2.1' },
-  { id:4, name:'Gemini',     desc: 'by Google',          android:1, IOS:1, web:1, free:1, monthly:'$115/month',  annual:'$100/month',     version:'v2.3' }
-]
-
-export const snapshot = [
-  { snapshot: "chatgpt-4o-2025-05-07",     model: "chatgpt-4o",         baseModel: "chatgpt",    SIRI_2: 0.490, A_pharm: 0.294, A_mamh: 0.113 },
-  { snapshot: "chatgpt-4o-2025-03-23",     model: "chatgpt-4o",         baseModel: "chatgpt",    SIRI_2: 0.490, A_pharm: 0.294, A_mamh: 0.113 },
-  { snapshot: "claude-sonnet-4-20250514",  model: "claude-sonnet-4",    baseModel: "claude",     SIRI_2: 0.666, A_pharm: 0.270, A_mamh: 0.144 },
-  { snapshot: "claude-sonnet-4-20250121",  model: "claude-sonnet-4",    baseModel: "claude",     SIRI_2: 0.666, A_pharm: 0.270, A_mamh: 0.144 },
-]
 
 export const models_tab = [
   {baseModel: 'Chatgpt', models: ['Chatgpt-4', 'Chatgpt-5'], SIRI_2: 0.490, A_pharm: 0.294, A_mamh: 0.113},
@@ -52,27 +39,9 @@ export const leaderboard = [
   { model: "Zephyr 7B",        baseModel: "Zephyr",    snapshot: ['ss1','ss2','ss3'], SIRI_2: 0.231, A_pharm: 0.347, A_mamh: 0.629 }
 ]
 
-export const leaderboard1 = [
-  {
-    model: "Model A",
-    baseModel: "Base 1",
-    SIRI_2: 0.9123,
-    A_pharm: 0.8012,
-    A_mamh: 0.7333,
-    snapshot: ["2025-06", "2025-07"]
-  },
-  {
-    model: "Model B",
-    baseModel: "Base 2",
-    SIRI_2: 0.8777,
-    A_pharm: 0.8123,
-    A_mamh: 0.7011,
-    snapshot: []
-  }
-];
-
 export const stest = [
-  {E: 33, A: 47, C: 45, N: 18, O: 44},
-  {E: 47, A: 33, C: 18, N: 45, O: 44}
+  {snapshot: 'ss1', model: 'Chat-gpt-4o', baseModel: 'ChatGPT', E: 33, A: 47, C: 45, N: 18, O: 44},
+  {snapshot: 'ss2', model: 'Chat-gpt-5o', baseModel: 'ChatGPT', E: 47, A: 33, C: 18, N: 45, O: 44},
+  {snapshot: 'ss3', model: 'Claude-sonnet-4', baseModel: 'Claude', E: 17, A: 23, C: 28, N: 15, O: 24}
 ]
 
