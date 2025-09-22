@@ -7,83 +7,196 @@ import {
   getFilteredRowModel,
   flexRender,
 } from "@tanstack/react-table";
-import { leaderboard as leaderboardData, leaderboard_ext } from "../data/models";
-
-const numberRange = (row, columnId, [min, max]) => {
-  const v = row.getValue(columnId);
-  if (typeof v !== "number" || Number.isNaN(v)) return true;
-  const minNum = min === "" || min === undefined ? undefined : Number(min);
-  const maxNum = max === "" || max === undefined ? undefined : Number(max);
-  if (minNum !== undefined && !Number.isNaN(minNum) && v < minNum) return false;
-  if (maxNum !== undefined && !Number.isNaN(maxNum) && v > maxNum) return false;
-  return true;
-};
+import { 
+  getLatestVersions, 
+  modelVersions, 
+  filterVersions,
+  systemPrompts,
+  messagePrompts,
+  modelFamilies 
+} from "../data/leaderboardData";
 
 export default function Leaderboard() {
   const [activeTab, setActiveTab] = React.useState("models");
   const [sorting, setSorting] = React.useState([]);
   const [columnFilters, setColumnFilters] = React.useState([]);
   const [globalFilter, setGlobalFilter] = React.useState("");
-  const [baseModelFilter, setBaseModelFilter] = React.useState("");
-  const [expanded, setExpanded] = React.useState(() => new Set());
+  const [expandedModels, setExpandedModels] = React.useState(() => new Set());
+  const [selectedVersions, setSelectedVersions] = React.useState(() => new Set());
+  
+  // Filter states for parameters
+  const [temperatureFilter, setTemperatureFilter] = React.useState("");
+  const [topPFilter, setTopPFilter] = React.useState("");
+  const [systemPromptFilter, setSystemPromptFilter] = React.useState("");
+  const [messagePromptFilter, setMessagePromptFilter] = React.useState("");
+  const [modelFamilyFilter, setModelFamilyFilter] = React.useState([]);
 
-  const [selectedSnapshots, setSelectedSnapshots] = React.useState(() => new Set());
-
-  const toggleSnapshot = (snapshotId) => {
-    setSelectedSnapshots((prev) => {
+  const toggleVersion = (versionId) => {
+    setSelectedVersions((prev) => {
       const next = new Set(prev);
-      next.has(snapshotId) ? next.delete(snapshotId) : next.add(snapshotId);
+      next.has(versionId) ? next.delete(versionId) : next.add(versionId);
       return next;
     });
   };
 
-  const clearAllSelected = () => setSelectedSnapshots(new Set());
+  const clearAllSelected = () => setSelectedVersions(new Set());
 
-  const data = React.useMemo(() => leaderboardData, []);
-  const baseModels = React.useMemo(
-    () => Array.from(new Set(data.map((r) => r.baseModel))).sort(),
-    [data]
-  );
-  const displayData = React.useMemo(
-    () =>
-      baseModelFilter
-        ? data.filter((r) => String(r.baseModel) === String(baseModelFilter))
-        : data,
-    [data, baseModelFilter]
-  );
+  // Get sorted main rows data
+  const sortedMainRows = React.useMemo(() => {
+    const filters = {
+      temperature: temperatureFilter ? parseFloat(temperatureFilter) : undefined,
+      top_p: topPFilter ? parseFloat(topPFilter) : undefined,
+      system_prompt_id: systemPromptFilter || undefined,
+      message_prompt_id: messagePromptFilter || undefined,
+      modelFamilies: modelFamilyFilter.length > 0 ? modelFamilyFilter : undefined,
+    };
+    
+    let filtered = filterVersions(modelVersions, filters);
+    
+    // Apply model family filter
+    if (filters.modelFamilies) {
+      filtered = filtered.filter(v => filters.modelFamilies.includes(v.modelFamily));
+    }
+    
+    // Build main rows only
+    const modelMap = {};
+    
+    // Group by model
+    filtered.forEach(v => {
+      const key = `${v.modelFamily}-${v.model}`;
+      if (!modelMap[key]) {
+        modelMap[key] = {
+          latest: null,
+          versions: []
+        };
+      }
+      
+      if (!modelMap[key].latest || v.version > modelMap[key].latest.version) {
+        modelMap[key].latest = v;
+      }
+      modelMap[key].versions.push(v);
+    });
+    
+    // Create main rows only
+    const mainRows = Object.entries(modelMap).map(([key, data]) => {
+      const latest = data.latest;
+      const mainRowId = `main-${key}`;
+      
+      return {
+        id: mainRowId,
+        isMainRow: true,
+        modelFamily: latest.modelFamily,
+        model: latest.model,
+        version: 'Latest',
+        actualVersion: latest.version,
+        SIRI_2: latest.SIRI_2,
+        A_pharm: latest.A_pharm,
+        A_mamh: latest.A_mamh,
+        hasVersions: data.versions.length > 1,
+        versions: data.versions
+      };
+    });
+    
+    // Apply sorting to main rows only
+    if (sorting.length > 0) {
+      const { id: sortColumn, desc } = sorting[0];
+      mainRows.sort((a, b) => {
+        const aVal = a[sortColumn];
+        const bVal = b[sortColumn];
+        
+        if (typeof aVal === "number" && typeof bVal === "number") {
+          return desc ? bVal - aVal : aVal - bVal;
+        }
+        
+        const aStr = String(aVal || "").toLowerCase();
+        const bStr = String(bVal || "").toLowerCase();
+        return desc ? bStr.localeCompare(aStr) : aStr.localeCompare(bStr);
+      });
+    }
+    
+    return mainRows;
+  }, [temperatureFilter, topPFilter, systemPromptFilter, messagePromptFilter, modelFamilyFilter, sorting]);
 
-  React.useEffect(() => {
-    setExpanded(new Set());
-  }, [baseModelFilter, globalFilter]);
+  // Build final flat data structure maintaining hierarchy
+  const data = React.useMemo(() => {
+    const rows = [];
+    
+    sortedMainRows.forEach(mainRow => {
+      // Add main row
+      rows.push(mainRow);
+      
+      // Add version rows if expanded
+      if (expandedModels.has(mainRow.id) && mainRow.hasVersions) {
+        mainRow.versions
+          .filter(v => v.version !== mainRow.actualVersion)
+          .sort((a, b) => b.version.localeCompare(a.version))
+          .forEach(v => {
+            rows.push({
+              id: v.id,
+              isMainRow: false,
+              parentId: mainRow.id,
+              modelFamily: v.modelFamily,
+              model: v.model,
+              version: v.version,
+              SIRI_2: v.SIRI_2,
+              A_pharm: v.A_pharm,
+              A_mamh: v.A_mamh,
+              temperature: v.temperature,
+              top_p: v.top_p,
+              system_prompt_id: v.system_prompt_id,
+              message_prompt_id: v.message_prompt_id
+            });
+          });
+      }
+    });
+    
+    return rows;
+  }, [sortedMainRows, expandedModels]);
 
-  const toggleRow = (id) =>
-    setExpanded((prev) => {
+  const toggleRow = (id) => {
+    setExpandedModels((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+  };
 
   const columns = React.useMemo(
     () => [
       {
         id: "expander",
         header: () => "",
-        size: 40,
+        size: 30,
         enableSorting: false,
         enableColumnFilter: false,
         cell: ({ row }) => {
-          const id = row.original.model;
-          const isOpen = expanded.has(id);
-          const panelId = `detail-${id.replace(/\s+/g, "_")}`;
+          if (!row.original.isMainRow) {
+            // Version row - show checkbox
+            const isSelected = selectedVersions.has(row.original.id);
+            return (
+              <div className="lb-checkbox-cell">
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => toggleVersion(row.original.id)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            );
+          }
+          
+          // Main row - show expander if has versions
+          if (!row.original.hasVersions) return null;
+          
+          const isOpen = expandedModels.has(row.original.id);
           return (
             <button
               className={`lb-expander ${isOpen ? "open" : ""}`}
               aria-label={isOpen ? "Collapse row" : "Expand row"}
               aria-expanded={isOpen}
-              aria-controls={panelId}
               onClick={(e) => {
                 e.stopPropagation();
-                toggleRow(id);
+                toggleRow(row.original.id);
               }}
               type="button"
             >
@@ -92,116 +205,94 @@ export default function Leaderboard() {
           );
         },
       },
-      { accessorKey: "model", header: () => "Model", cell: (info) => info.getValue() },
-      { accessorKey: "baseModel", header: () => "Base Model", cell: (info) => info.getValue() },
+      { 
+        accessorKey: "modelFamily", 
+        header: () => "Model Family", 
+        cell: (info) => info.getValue()
+      },
+      { 
+        accessorKey: "model", 
+        header: () => "Model", 
+        cell: (info) => info.getValue()
+      },
+      { 
+        accessorKey: "version", 
+        header: () => "Version", 
+        cell: (info) => info.getValue(),
+        size: 100
+      },
       {
         accessorKey: "SIRI_2",
         header: () => (
           <div className="lb-col-header">
-            SIRI_2
-            <a
-              href="/docs/siri2"
-              className="lb-info"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Learn more about SIRI_2"
-            >
-              !
-            </a>
+            SIRI-2
+            <span className="lb-info" title="RMSE - lower is better">ℹ</span>
           </div>
         ),
         cell: ({ getValue }) => {
           const v = getValue();
           return typeof v === "number" ? v.toFixed(3) : v;
         },
-        filterFn: numberRange,
       },
       {
         accessorKey: "A_pharm",
         header: () => (
           <div className="lb-col-header">
-            A_pharm
-            <a
-              href="/docs/a_pharm"
-              className="lb-info"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Learn more about A_pharm"
-            >
-              !
-            </a>
+            A-Pharm
+            <span className="lb-info" title="RMSE - lower is better">ℹ</span>
           </div>
         ),
         cell: ({ getValue }) => {
           const v = getValue();
           return typeof v === "number" ? v.toFixed(3) : v;
         },
-        filterFn: numberRange,
       },
       {
         accessorKey: "A_mamh",
         header: () => (
           <div className="lb-col-header">
-            A_mamh
-            <a
-              href="/docs/a_mamh"
-              className="lb-info"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Learn more about A_mamh"
-            >
-              !
-            </a>
+            A-MaMH
+            <span className="lb-info" title="RMSE - lower is better">ℹ</span>
           </div>
         ),
         cell: ({ getValue }) => {
           const v = getValue();
           return typeof v === "number" ? v.toFixed(3) : v;
         },
-        filterFn: numberRange,
       },
     ],
-    [expanded]
+    [expandedModels, selectedVersions]
   );
 
   const table = useReactTable({
-    data: displayData,
+    data,
     columns,
     state: { sorting, columnFilters, globalFilter },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    enableSorting: true,
+    manualSorting: true,
     globalFilterFn: (row, _colId, filterValue) => {
       if (!filterValue) return true;
       const q = String(filterValue).toLowerCase();
+      const family = String(row.original.modelFamily || "").toLowerCase();
       const model = String(row.original.model || "").toLowerCase();
-      const base = String(row.original.baseModel || "").toLowerCase();
-      const snaps = Array.isArray(row.original.snapshot)
-        ? row.original.snapshot.map((s) => String(s).toLowerCase())
-        : [];
-      return model.includes(q) || base.includes(q) || snaps.some((s) => s.includes(q));
+      const version = String(row.original.version || "").toLowerCase();
+      return family.includes(q) || model.includes(q) || version.includes(q);
     },
   });
 
-  const getRange = (colId) => table.getColumn(colId)?.getFilterValue() ?? ["", ""];
-  const setRange = (colId, idx, val) => {
-    const curr = table.getColumn(colId)?.getFilterValue() ?? ["", ""];
-    const next = [...curr];
-    next[idx] = val;
-    table.getColumn(colId)?.setFilterValue(next);
-  };
-
-  // Build comparison rows from selected snapshot ids
+  // Build comparison rows from selected version ids
   const comparisonRows = React.useMemo(
-    () => leaderboard_ext.filter((s) => selectedSnapshots.has(s.snapshot)),
-    [selectedSnapshots]
+    () => modelVersions.filter((v) => selectedVersions.has(v.id)),
+    [selectedVersions]
   );
 
   return (
-    <div>
+    <div className="lb-container">
       <div className="lb-tabs">
         <button
           className={`lb-tab ${activeTab === "models" ? "active" : ""}`}
@@ -211,281 +302,251 @@ export default function Leaderboard() {
           Models
         </button>
         <button
-          className={`lb-tab ${activeTab === "snapshots" ? "active" : ""}`}
-          onClick={() => setActiveTab("snapshots")}
+          className={`lb-tab ${activeTab === "versions" ? "active" : ""}`}
+          onClick={() => setActiveTab("versions")}
           type="button"
-          aria-label={`Open Comparison tab with ${selectedSnapshots.size} selected`}
+          aria-label={`Open Comparison tab with ${selectedVersions.size} selected`}
         >
-          Comparison{selectedSnapshots.size ? ` (${selectedSnapshots.size})` : ""}
+          Comparison{selectedVersions.size ? ` (${selectedVersions.size})` : ""}
         </button>
       </div>
 
       {activeTab === "models" && (
         <div className="lb-layout">
-          <aside className="lb-island lb-sidebar">
+          <aside className="lb-sidebar">
             <div className="lb-search">
               <input
                 className="lb-search-input"
                 value={globalFilter ?? ""}
                 onChange={(e) => setGlobalFilter(e.target.value)}
-                placeholder="Search model, base model, or snapshot"
+                placeholder="Search..."
               />
             </div>
 
-            <div className="lb-filter-group">
-              <label className="lb-filter-heading" htmlFor="baseModelFilter">
-                Filter by Base Model
-              </label>
-              <select
-                id="baseModelFilter"
-                className="lb-select"
-                value={baseModelFilter}
-                onChange={(e) => setBaseModelFilter(e.target.value)}
-              >
-                <option value="">All</option>
-                {baseModels.map((bm) => (
-                  <option key={bm} value={bm}>
-                    {bm}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="lb-filter-group">
-              <div className="lb-filter-heading">SIRI_2</div>
-              <div className="lb-range">
-                <input
-                  type="number"
-                  placeholder="Min"
-                  step="0.001"
-                  value={getRange("SIRI_2")[0]}
-                  onChange={(e) => setRange("SIRI_2", 0, e.target.value)}
-                />
-                <input
-                  type="number"
-                  placeholder="Max"
-                  step="0.001"
-                  value={getRange("SIRI_2")[1]}
-                  onChange={(e) => setRange("SIRI_2", 1, e.target.value)}
-                />
+            <div className="lb-filter-section">
+              <div className="lb-filter-group">
+                <label className="lb-filter-heading" htmlFor="modelFamilyFilter">
+                  Model Family
+                </label>
+                <div className="lb-multiselect">
+                  {Object.keys(modelFamilies).map(family => (
+                    <label key={family} className="lb-checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={modelFamilyFilter.includes(family)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setModelFamilyFilter(prev => [...prev, family]);
+                          } else {
+                            setModelFamilyFilter(prev => prev.filter(f => f !== family));
+                          }
+                        }}
+                      />
+                      {family}
+                    </label>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div className="lb-filter-group">
-              <div className="lb-filter-heading">A_pharm</div>
-              <div className="lb-range">
-                <input
-                  type="number"
-                  placeholder="Min"
-                  step="0.001"
-                  value={getRange("A_pharm")[0]}
-                  onChange={(e) => setRange("A_pharm", 0, e.target.value)}
-                />
-                <input
-                  type="number"
-                  placeholder="Max"
-                  step="0.001"
-                  value={getRange("A_pharm")[1]}
-                  onChange={(e) => setRange("A_pharm", 1, e.target.value)}
-                />
+              <h3 className="lb-filter-title">Experiment Parameters</h3>
+              
+              <div className="lb-filter-group">
+                <label className="lb-filter-heading" htmlFor="temperatureFilter">
+                  Temperature
+                </label>
+                <select
+                  id="temperatureFilter"
+                  className="lb-select"
+                  value={temperatureFilter}
+                  onChange={(e) => setTemperatureFilter(e.target.value)}
+                >
+                  <option value="">All</option>
+                  <option value="0.3">0.3</option>
+                  <option value="0.5">0.5</option>
+                  <option value="0.7">0.7</option>
+                  <option value="1.0">1.0</option>
+                </select>
               </div>
-            </div>
 
-            <div className="lb-filter-group">
-              <div className="lb-filter-heading">A_mamh</div>
-              <div className="lb-range">
-                <input
-                  type="number"
-                  placeholder="Min"
-                  step="0.001"
-                  value={getRange("A_mamh")[0]}
-                  onChange={(e) => setRange("A_mamh", 0, e.target.value)}
-                />
-                <input
-                  type="number"
-                  placeholder="Max"
-                  step="0.001"
-                  value={getRange("A_mamh")[1]}
-                  onChange={(e) => setRange("A_mamh", 1, e.target.value)}
-                />
+              <div className="lb-filter-group">
+                <label className="lb-filter-heading" htmlFor="topPFilter">
+                  Top P
+                </label>
+                <select
+                  id="topPFilter"
+                  className="lb-select"
+                  value={topPFilter}
+                  onChange={(e) => setTopPFilter(e.target.value)}
+                >
+                  <option value="">All</option>
+                  <option value="0.9">0.9</option>
+                  <option value="0.95">0.95</option>
+                  <option value="1.0">1.0</option>
+                </select>
+              </div>
+
+              <div className="lb-filter-group">
+                <label className="lb-filter-heading" htmlFor="systemPromptFilter">
+                  System Prompt
+                </label>
+                <select
+                  id="systemPromptFilter"
+                  className="lb-select"
+                  value={systemPromptFilter}
+                  onChange={(e) => setSystemPromptFilter(e.target.value)}
+                >
+                  <option value="">All</option>
+                  {systemPrompts.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                {systemPromptFilter && (
+                  <div className="lb-prompt-text">
+                    {systemPrompts.find(p => p.id === systemPromptFilter)?.content}
+                  </div>
+                )}
+              </div>
+
+              <div className="lb-filter-group">
+                <label className="lb-filter-heading" htmlFor="messagePromptFilter">
+                  Message Prompt
+                </label>
+                <select
+                  id="messagePromptFilter"
+                  className="lb-select"
+                  value={messagePromptFilter}
+                  onChange={(e) => setMessagePromptFilter(e.target.value)}
+                >
+                  <option value="">All</option>
+                  {messagePrompts.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+                {messagePromptFilter && (
+                  <div className="lb-prompt-text">
+                    {messagePrompts.find(p => p.id === messagePromptFilter)?.content}
+                  </div>
+                )}
               </div>
             </div>
           </aside>
 
-          <div className="lb-island table-wrap">
-            <table className="lb-table">
-              <thead>
-                {table.getHeaderGroups().map((hg) => (
-                  <tr key={hg.id}>
-                    {hg.headers.map((header) => {
-                      const canSort = header.column.getCanSort();
-                      const sortDir = header.column.getIsSorted();
-                      return (
-                        <th
-                          key={header.id}
-                          className={canSort ? "sortable" : undefined}
-                          onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                          style={header.column.id === "expander" ? { width: 40 } : undefined}
-                        >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
-                          {canSort && sortDir && (
-                            <span className="sort-indicator">
-                              {sortDir === "asc" ? "▲" : "▼"}
-                            </span>
-                          )}
-                        </th>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </thead>
+          <div className="lb-main-content">
+            <div className="lb-table-container">
+              <table className="lb-table">
+                <thead>
+                  {table.getHeaderGroups().map((hg) => (
+                    <tr key={hg.id}>
+                      {hg.headers.map((header) => {
+                        const canSort = header.column.getCanSort();
+                        const sortDir = header.column.getIsSorted();
+                        return (
+                          <th
+                            key={header.id}
+                            className={canSort ? "sortable" : undefined}
+                            onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                            style={header.column.id === "expander" ? { width: 40 } : undefined}
+                          >
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                            {canSort && sortDir && (
+                              <span className="sort-indicator">
+                                {sortDir === "asc" ? "▲" : "▼"}
+                              </span>
+                            )}
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </thead>
 
-              <tbody>
-                {table.getRowModel().rows.map((row) => {
-                  const id = row.original.model;
-                  const isOpen = expanded.has(id);
-                  const colSpan = table.getAllLeafColumns().length;
-                  const panelId = `detail-${id.replace(/\s+/g, "_")}`;
-
-                  // Filter leaderboard_ext to snapshots relevant to this model (if any listed)
-                  const relevantSnapshots = Array.isArray(row.original.snapshot)
-                    ? leaderboard_ext.filter((ext) =>
-                        row.original.snapshot.includes(ext.snapshot)
-                      )
-                    : leaderboard_ext;
-
-                  return (
-                    <React.Fragment key={id}>
-                      <tr>
+                <tbody>
+                  {table.getRowModel().rows.map((row) => {
+                    const isMainRow = row.original.isMainRow;
+                    const isVersionRow = !isMainRow;
+                    const isSelected = isVersionRow && selectedVersions.has(row.original.id);
+                    
+                    return (
+                      <tr 
+                        key={row.id}
+                        className={`
+                          ${isMainRow ? 'lb-main-row' : 'lb-version-row'}
+                          ${isSelected ? 'selected' : ''}
+                        `}
+                        onClick={isVersionRow ? () => toggleVersion(row.original.id) : undefined}
+                      >
                         {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>
+                          <td key={cell.id}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </td>
                         ))}
                       </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
 
-                      {isOpen && (
-                        <tr className="lb-detail-row">
-                          <td id={panelId} colSpan={colSpan}>
-                            <div className="lb-detail">
-                              <div className="lb-detail-title">Available snapshots</div>
-                              
-                              <table className="lb-subtable">
-                                <thead>
-                                  <tr>
-                                    <th style={{ width: 36, textAlign: "center" }} aria-label="Select column">Select</th>
-                                    <th>Snapshot</th>
-                                    <th>SIRI_2</th>
-                                    <th>A_pharm</th>
-                                    <th>A_mamh</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {relevantSnapshots.length ? (
-                                    relevantSnapshots.map((s) => {
-                                      const checked = selectedSnapshots.has(s.snapshot);
-                                      const checkboxId = `chk-${s.snapshot.replace(/\s+/g, "_")}`;
-                                      return (
-                                        <tr key={s.snapshot}>
-                                          <td style={{ textAlign: "center" }}>
-                                            <input
-                                              id={checkboxId}
-                                              type="checkbox"
-                                              checked={checked}
-                                              onChange={() => toggleSnapshot(s.snapshot)}
-                                              aria-label={`Select ${s.snapshot} for comparison`}
-                                            />
-                                          </td>
-                                          <td>
-                                            <label htmlFor={checkboxId} style={{ cursor: "pointer" }}>
-                                              {s.snapshot}
-                                            </label>
-                                          </td>
-                                          <td>{typeof s.SIRI_2 === "number" ? s.SIRI_2.toFixed(3) : s.SIRI_2}</td>
-                                          <td>{typeof s.A_pharm === "number" ? s.A_pharm.toFixed(3) : s.A_pharm}</td>
-                                          <td>{typeof s.A_mamh === "number" ? s.A_mamh.toFixed(3) : s.A_mamh}</td>
-                                        </tr>
-                                      );
-                                    })
-                                  ) : (
-                                    <tr>
-                                      <td colSpan={5} style={{ textAlign: "center" }}>
-                                        —
-                                      </td>
-                                    </tr>
-                                  )}
-                                </tbody>
-                              </table>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-
-            {table.getRowModel().rows.length === 0 && (
-              <div className="lb-empty">No results match the current filters.</div>
-            )}
+              {table.getRowModel().rows.length === 0 && (
+                <div className="lb-empty">No results match the current filters.</div>
+              )}
+            </div>
           </div>
         </div>
       )}
 
-    {activeTab === "snapshots" && (
-      <div className="lb-layout full">
-        <div className="lb-island table-wrap table-scroll full">
-          <div className="lb-detail-title" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>Comparison</span>
-            {selectedSnapshots.size > 0 && (
-              <button className="lb-button" onClick={clearAllSelected} type="button">
-                Clear all
-              </button>
+      {activeTab === "versions" && (
+        <div className="lb-layout">
+          <div className="lb-comparison-content">
+            <div className="lb-comparison-header">
+              <h2>Version Comparison</h2>
+              {selectedVersions.size > 0 && (
+                <button className="lb-button" onClick={clearAllSelected} type="button">
+                  Clear all
+                </button>
+              )}
+            </div>
+
+            {comparisonRows.length ? (
+              <div className="lb-table-container">
+                <table className="lb-table">
+                  <thead>
+                    <tr>
+                      <th style={{width: 50}}>Keep</th>
+                      <th>Model Family</th>
+                      <th>Model</th>
+                      <th>Version</th>
+                      <th>SIRI-2</th>
+                      <th>A-Pharm</th>
+                      <th>A-MaMH</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparisonRows.map((v) => (
+                      <tr key={v.id}>
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked
+                            onChange={() => toggleVersion(v.id)}
+                          />
+                        </td>
+                        <td>{v.modelFamily}</td>
+                        <td>{v.model}</td>
+                        <td>{v.version}</td>
+                        <td>{typeof v.SIRI_2 === "number" ? v.SIRI_2.toFixed(3) : v.SIRI_2}</td>
+                        <td>{typeof v.A_pharm === "number" ? v.A_pharm.toFixed(3) : v.A_pharm}</td>
+                        <td>{typeof v.A_mamh === "number" ? v.A_mamh.toFixed(3) : v.A_mamh}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="lb-empty">No versions selected. Select versions from the Models tab to compare.</div>
             )}
           </div>
-
-          {comparisonRows.length ? (
-            <table className="lb-table cmp-table">
-              <thead>
-                <tr>
-                  <th className="keep-col">Keep</th>
-                  <th className="snap-col">Snapshot</th>
-                  <th>SIRI_2</th>
-                  <th>A_pharm</th>
-                  <th>A_mamh</th>
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonRows.map((s) => {
-                  const checkboxId = `cmp-${s.snapshot.replace(/\s+/g, "_")}`;
-                  return (
-                    <tr key={`cmp-${s.snapshot}`}>
-                      <td className="keep-col">
-                        <input
-                          id={checkboxId}
-                          type="checkbox"
-                          checked
-                          onChange={() => toggleSnapshot(s.snapshot)}
-                        />
-                      </td>
-                      <td className="snap-col">
-                        <label htmlFor={checkboxId} style={{ cursor: "pointer" }}>
-                          {s.snapshot}
-                        </label>
-                      </td>
-                      <td>{typeof s.SIRI_2 === "number" ? s.SIRI_2.toFixed(3) : s.SIRI_2}</td>
-                      <td>{typeof s.A_pharm === "number" ? s.A_pharm.toFixed(3) : s.A_pharm}</td>
-                      <td>{typeof s.A_mamh === "number" ? s.A_mamh.toFixed(3) : s.A_mamh}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          ) : (
-            <div className="lb-empty">No models selected yet. Select to compare from the Models tab.</div>
-          )}
         </div>
-      </div>
-    )}
+      )}
     </div>
   );
 }
