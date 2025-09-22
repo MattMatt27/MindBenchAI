@@ -1,6 +1,7 @@
 // StandardizeTest.jsx
 import "../styles/StandardizeTest.css";
 import React from "react";
+import { createPortal } from "react-dom";
 import {
   Radar,
   RadarChart,
@@ -16,44 +17,66 @@ const toRadarRows = (row) => TRAITS.map((t) => ({ trait: t, value: row?.[t] ?? 0
 
 export default function StandardizeTest() {
   const [activeTab, setActiveTab] = React.useState("models");
-  const [globalFilter, setGlobalFilter] = React.useState("");
-  const [baseModelFilter, setBaseModelFilter] = React.useState("");
-  const [picked, setPicked] = React.useState(null);
   const [displayModel, setDisplayModel] = React.useState(null);
+  const [baseModelFilter, setBaseModelFilter] = React.useState("");
+  const [bmMenuOpen, setBmMenuOpen] = React.useState(false);
+  const [bmMenuPos, setBmMenuPos] = React.useState({ left: 0, top: 0 });
+  const bmBtnRef = React.useRef(null);
+  const bmMenuRef = React.useRef(null);
 
+  const allRows = React.useMemo(() => (Array.isArray(stest) ? [...stest] : []), []);
   const baseModels = React.useMemo(
-    () => Array.from(new Set((stest || []).map((r) => r.baseModel))).sort(),
-    []
+    () => Array.from(new Set(allRows.map((r) => r.baseModel).filter(Boolean))).sort(),
+    [allRows]
   );
 
   const rows = React.useMemo(() => {
-    let out = Array.isArray(stest) ? [...stest] : [];
+    let out = [...allRows];
     if (baseModelFilter) out = out.filter((r) => r.baseModel === baseModelFilter);
-    if (globalFilter) {
-      const q = globalFilter.toLowerCase();
-      out = out.filter(
-        (r) =>
-          String(r.model).toLowerCase().includes(q) ||
-          String(r.baseModel).toLowerCase().includes(q) ||
-          String(r.snapshot).toLowerCase().includes(q)
-      );
-    }
     return out;
-  }, [globalFilter, baseModelFilter]);
-
-  React.useEffect(() => {
-    const stillVisible = picked && rows.some((r) => r.model === picked);
-    if (!stillVisible) setPicked(null);
-    const chartVisible = displayModel && rows.some((r) => r.model === displayModel);
-    if (!chartVisible) setDisplayModel(null);
-  }, [rows, picked, displayModel]);
+  }, [allRows, baseModelFilter]);
 
   const chartRow = React.useMemo(
     () => rows.find((r) => r.model === displayModel) || null,
     [rows, displayModel]
   );
 
-  const toggleRow = (model) => setPicked((prev) => (prev === model ? null : model));
+  React.useEffect(() => {
+    if (displayModel && !rows.some((r) => r.model === displayModel)) {
+      setDisplayModel(null);
+    }
+  }, [rows, displayModel]);
+
+  React.useEffect(() => {
+    const onDocClick = (e) => {
+      if (!bmMenuOpen) return;
+      const withinBtn = bmBtnRef.current && bmBtnRef.current.contains(e.target);
+      const withinMenu = bmMenuRef.current && bmMenuRef.current.contains(e.target);
+      if (!withinBtn && !withinMenu) setBmMenuOpen(false);
+    };
+    const onKey = (e) => e.key === "Escape" && setBmMenuOpen(false);
+    const onScroll = () => setBmMenuOpen(false);
+    document.addEventListener("click", onDocClick);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      document.removeEventListener("click", onDocClick);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [bmMenuOpen]);
+
+  const handleRowActivate = (model) => setDisplayModel(model);
+
+  const openBmMenu = () => {
+    const el = bmBtnRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setBmMenuPos({ left: r.left + r.width / 2, top: r.bottom });
+    setBmMenuOpen((v) => !v);
+  };
 
   return (
     <div>
@@ -75,44 +98,25 @@ export default function StandardizeTest() {
       </div>
 
       {activeTab === "models" && (
-        <div className="st-layout">
-          <aside className="st-panel st-sidebar">
-            <div className="st-search">
-              <input
-                className="st-search-input"
-                value={globalFilter}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                placeholder="Search model, base model, or snapshot"
-              />
-            </div>
-
-            <div className="st-filter-group">
-              <label className="st-filter-heading" htmlFor="baseModelFilter">
-                Filter by Base Model
-              </label>
-              <select
-                id="baseModelFilter"
-                className="st-select"
-                value={baseModelFilter}
-                onChange={(e) => setBaseModelFilter(e.target.value)}
-              >
-                <option value="">All</option>
-                {baseModels.map((bm) => (
-                  <option key={bm} value={bm}>
-                    {bm}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </aside>
-
+        <div className="st-layout st-layout-no-sidebar">
           <div className="ui-table-wrap st-table">
             <table className="ui-table">
               <thead>
                 <tr>
-                  <th className="st-check-col">Keep</th>
                   <th>Model</th>
-                  <th>Base Model</th>
+                  <th className={`st-th-menu ${bmMenuOpen ? "open" : ""}`}>
+                    <button
+                      ref={bmBtnRef}
+                      type="button"
+                      className="st-th-trigger"
+                      onClick={openBmMenu}
+                      aria-haspopup="menu"
+                      aria-expanded={bmMenuOpen}
+                    >
+                      Base Model
+                      <span className="st-th-caret" aria-hidden="true">▾</span>
+                    </button>
+                  </th>
                   <th>Openness (O)</th>
                   <th>Conscientiousness (C)</th>
                   <th>Extraversion (E)</th>
@@ -122,18 +126,22 @@ export default function StandardizeTest() {
               </thead>
               <tbody>
                 {rows.map((r) => {
-                  const isOn = picked === r.model;
+                  const isSelected = r.model === displayModel;
                   return (
-                    <tr key={r.snapshot || r.model}>
-                      <td className="st-check-col">
-                        <input
-                          type="checkbox"
-                          className="st-row-check"
-                          checked={isOn}
-                          onChange={() => toggleRow(r.model)}
-                          aria-label={`Select ${r.model}`}
-                        />
-                      </td>
+                    <tr
+                      key={r.snapshot || r.model}
+                      className={`st-row ${isSelected ? "selected" : ""}`}
+                      onClick={() => handleRowActivate(r.model)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleRowActivate(r.model);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Show chart for ${r.model}`}
+                    >
                       <td>{r.model ?? "—"}</td>
                       <td>{r.baseModel ?? "—"}</td>
                       <td>{r.O ?? "—"}</td>
@@ -146,7 +154,7 @@ export default function StandardizeTest() {
                 })}
                 {!rows.length && (
                   <tr>
-                    <td colSpan={8} style={{ textAlign: "center", height: 64 }}>
+                    <td colSpan={7} style={{ textAlign: "center", height: 64 }}>
                       No data
                     </td>
                   </tr>
@@ -157,24 +165,22 @@ export default function StandardizeTest() {
 
           <aside className="st-panel st-right">
             <div className="st-actions">
-              <button
-                className="st-btn st-btn-primary"
-                type="button"
-                onClick={() => setDisplayModel(picked)}
-                disabled={!picked}
-              >
-                Show chart
-              </button>
+              {baseModelFilter && (
+                <button
+                  className="st-btn st-btn-ghost"
+                  onClick={() => setBaseModelFilter("")}
+                  type="button"
+                >
+                  Clear base model filter ({baseModelFilter})
+                </button>
+              )}
               <button
                 className="st-btn st-btn-ghost"
                 type="button"
-                onClick={() => {
-                  setPicked(null);
-                  setDisplayModel(null);
-                }}
-                disabled={!picked && !displayModel}
+                onClick={() => setDisplayModel(null)}
+                disabled={!displayModel}
               >
-                Clear all
+                Clear selection
               </button>
             </div>
 
@@ -223,6 +229,45 @@ export default function StandardizeTest() {
               ))}
             </div>
           </aside>
+
+          {bmMenuOpen &&
+            createPortal(
+              <div
+                ref={bmMenuRef}
+                className="st-hmenu st-hmenu-fixed"
+                style={{ left: bmMenuPos.left, top: bmMenuPos.top }}
+                role="menu"
+              >
+                <div className="st-hmenu-header">
+                  {baseModelFilter ? `Filtering: ${baseModelFilter}` : "All base models"}
+                </div>
+                <button
+                  className="st-hmenu-item"
+                  onClick={() => {
+                    setBaseModelFilter("");
+                    setBmMenuOpen(false);
+                  }}
+                  role="menuitem"
+                >
+                  All base models
+                </button>
+                <div className="st-hmenu-sep" />
+                {baseModels.map((bm) => (
+                  <button
+                    key={bm}
+                    className={`st-hmenu-item ${bm === baseModelFilter ? "active" : ""}`}
+                    onClick={() => {
+                      setBaseModelFilter(bm);
+                      setBmMenuOpen(false);
+                    }}
+                    role="menuitem"
+                  >
+                    {bm}
+                  </button>
+                ))}
+              </div>,
+              document.body
+            )}
         </div>
       )}
 
