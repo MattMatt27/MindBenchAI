@@ -10,12 +10,9 @@ npm run dev
 ```
 
 ## TODO
-- Added styling
-- Models detail page
-- Nav bar
-- Vertical filter on the left
-- Admin login/logout
-- Admin features: edit, add, remove data
+- redo styling for leaderboard page to match with the rest
+- click whole row on leaderboard page not just at the front
+- info button for header
 
 ## Project Structure
 ```bash

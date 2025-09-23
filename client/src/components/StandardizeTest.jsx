@@ -1,4 +1,4 @@
-// StandardizeTest.jsx
+// src/components/StandardizeTest.jsx
 import "../styles/StandardizeTest.css";
 import React from "react";
 import { createPortal } from "react-dom";
@@ -10,10 +10,9 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer
 } from "recharts";
-import { stest, getLatestStestVersions, getStestModelFamilies, filterStestVersions } from "../data/models";
+import { stest, getStestModelFamilies } from "../data/models";
 
 const TRAITS = ["O", "C", "E", "A", "N"];
-const toRadarRows = (row) => TRAITS.map((t) => ({ trait: t, value: row?.[t] ?? 0 }));
 
 export default function StandardizeTest() {
   const [activeTab, setActiveTab] = React.useState("models");
@@ -30,14 +29,10 @@ export default function StandardizeTest() {
   const modelFamilies = React.useMemo(() => getStestModelFamilies(), []);
 
   const selectRow = (rowData) => {
-    // For version rows, just toggle their checkbox selection
     if (!rowData.isMainRow) {
       toggleVersion(rowData.id);
-      // Don't set selectedRow for version rows since we're using checkbox selection
       return;
     }
-
-    // For main rows, toggle the selection
     if (selectedRow && selectedRow.id === rowData.id) {
       setSelectedRow(null);
     } else {
@@ -58,44 +53,31 @@ export default function StandardizeTest() {
     setSelectedVersions(new Set());
   };
 
-
-  // Build sorted main rows data
   const sortedMainRows = React.useMemo(() => {
     let filtered = [...allRows];
     if (modelFamilyFilter.length > 0) {
       filtered = filtered.filter((r) => modelFamilyFilter.includes(r.modelFamily));
     }
-
-    // Build main rows only
     const modelMap = {};
-
-    // Group by model
-    filtered.forEach(v => {
+    filtered.forEach((v) => {
       const key = `${v.modelFamily}-${v.model}`;
       if (!modelMap[key]) {
-        modelMap[key] = {
-          latest: null,
-          versions: []
-        };
+        modelMap[key] = { latest: null, versions: [] };
       }
-
       if (!modelMap[key].latest || v.version > modelMap[key].latest.version) {
         modelMap[key].latest = v;
       }
       modelMap[key].versions.push(v);
     });
-
-    // Create main rows only
     const mainRows = Object.entries(modelMap).map(([key, data]) => {
       const latest = data.latest;
       const mainRowId = `main-${key}`;
-
       return {
         id: mainRowId,
         isMainRow: true,
         modelFamily: latest.modelFamily,
         model: latest.model,
-        version: 'Latest',
+        version: "Latest",
         actualVersion: latest.version,
         O: latest.O,
         C: latest.C,
@@ -106,31 +88,21 @@ export default function StandardizeTest() {
         versions: data.versions
       };
     });
-
     return mainRows;
   }, [allRows, modelFamilyFilter]);
 
-  // Build final flat data structure maintaining hierarchy
   const rows = React.useMemo(() => {
     const data = [];
-
-    sortedMainRows.forEach(mainRow => {
-      // Add main row
+    sortedMainRows.forEach((mainRow) => {
       data.push(mainRow);
-
-      // Add version rows if expanded OR if any versions are selected
       if (mainRow.hasVersions) {
         const versions = mainRow.versions
-          .filter(v => v.version !== mainRow.actualVersion)
+          .filter((v) => v.version !== mainRow.actualVersion)
           .sort((a, b) => b.version.localeCompare(a.version));
-
         const isExpanded = expandedModels.has(mainRow.id);
-
-        versions.forEach(v => {
+        versions.forEach((v, idx) => {
           const versionId = `${v.modelFamily}-${v.model}-${v.version}`;
           const isSelected = selectedVersions.has(versionId);
-
-          // Show version if dropdown is expanded OR if this version is selected
           if (isExpanded || isSelected) {
             data.push({
               id: versionId,
@@ -143,49 +115,37 @@ export default function StandardizeTest() {
               C: v.C,
               E: v.E,
               A: v.A,
-              N: v.N
+              N: v.N,
+              vFirst: idx === 0,
+              vLast: idx === versions.length - 1
             });
           }
         });
       }
     });
-
     return data;
   }, [sortedMainRows, expandedModels, selectedVersions]);
 
-  // Get all selected version rows for multi-chart display
   const chartRows = React.useMemo(() => {
-    const selectedVersionRows = rows.filter(r =>
-      !r.isMainRow && selectedVersions.has(r.id)
-    );
-
-    // If we have selected versions, show them; otherwise show the selected main/single row
-    if (selectedVersionRows.length > 0) {
-      return selectedVersionRows;
-    } else if (selectedRow) {
-      return [selectedRow];
-    }
+    const selectedVersionRows = rows.filter((r) => !r.isMainRow && selectedVersions.has(r.id));
+    if (selectedVersionRows.length > 0) return selectedVersionRows;
+    if (selectedRow) return [selectedRow];
     return [];
   }, [rows, selectedVersions, selectedRow]);
 
-  // Generate distinct colors for each line
-  const chartColors = ['#64748b', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#f97316', '#06b6d4', '#84cc16'];
+  const chartColors = ["#64748b", "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#f97316", "#06b6d4", "#84cc16"];
 
-  // Convert rows to radar data with colors
   const radarData = React.useMemo(() => {
     if (chartRows.length === 0) return [];
-
-    // Get all trait values for each selected version
     const allData = [];
-    TRAITS.forEach(trait => {
-      const dataPoint = { trait };
+    ["O", "C", "E", "A", "N"].forEach((trait) => {
+      const d = { trait };
       chartRows.forEach((row) => {
         const key = `${row.model}-${row.version}`;
-        dataPoint[key] = row[trait] ?? 0;
+        d[key] = row[trait] ?? 0;
       });
-      allData.push(dataPoint);
+      allData.push(d);
     });
-
     return allData;
   }, [chartRows]);
 
@@ -215,7 +175,6 @@ export default function StandardizeTest() {
       window.removeEventListener("resize", onScroll);
     };
   }, [mfMenuOpen]);
-
 
   const toggleRow = (id) => {
     setExpandedModels((prev) => {
@@ -287,21 +246,17 @@ export default function StandardizeTest() {
                   const isMainRow = r.isMainRow;
                   const isVersionRow = !isMainRow;
                   const isVersionSelected = isVersionRow && selectedVersions.has(r.id);
-
+                  const isOpen = !isVersionRow && expandedModels.has(r.id);
                   return (
                     <tr
                       key={r.id}
-                      className={`st-row ${
-                        isVersionRow && (isSelected || isVersionSelected) ? "selected" : ""
-                      } ${isVersionRow ? "st-row-version" : ""}`}
+                      className={`st-row ${isVersionRow ? "st-row-version" : "st-row-main"} ${isOpen ? "open" : ""} ${isVersionRow && (isSelected || isVersionSelected) ? "selected" : ""} ${r.vFirst ? "st-vfirst" : ""} ${r.vLast ? "st-vlast" : ""}`}
                       onClick={() => {
                         if (isMainRow) {
-                          // Main rows toggle expansion instead of selection
                           if (r.hasVersions) {
                             toggleRow(r.id);
                           }
                         } else {
-                          // Version rows still select for chart display
                           selectRow(r);
                         }
                       }}
@@ -319,9 +274,13 @@ export default function StandardizeTest() {
                       }}
                       role="button"
                       tabIndex={0}
-                      aria-label={isMainRow ?
-                        (r.hasVersions ? `${expandedModels.has(r.id) ? "Collapse" : "Expand"} versions for ${r.model}` : r.model)
-                        : `Show chart for ${r.model} ${r.version || ""}`}
+                      aria-label={
+                        isMainRow
+                          ? r.hasVersions
+                            ? `${expandedModels.has(r.id) ? "Collapse" : "Expand"} versions for ${r.model}`
+                            : r.model
+                          : `Show chart for ${r.model} ${r.version || ""}`
+                      }
                     >
                       <td>
                         {isVersionRow ? (
@@ -347,9 +306,7 @@ export default function StandardizeTest() {
                           </button>
                         ) : null}
                       </td>
-                      <td>
-                        {r.modelFamily ?? "—"}
-                      </td>
+                      <td>{r.modelFamily ?? "—"}</td>
                       <td>{r.model ?? "—"}</td>
                       <td>{r.version ?? "—"}</td>
                       <td>{r.O ?? "—"}</td>
@@ -362,9 +319,7 @@ export default function StandardizeTest() {
                 })}
                 {!rows.length && (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: "center", height: 64 }}>
-                      No data
-                    </td>
+                    <td colSpan={9} style={{ textAlign: "center", height: 64 }}>No data</td>
                   </tr>
                 )}
               </tbody>
@@ -393,9 +348,9 @@ export default function StandardizeTest() {
             </div>
 
             <div className="st-chart-title">
-              {chartRows.length > 0 ?
-                chartRows.length === 1 ?
-                  `${chartRows[0].model} ${chartRows[0].version !== 'Latest' ? chartRows[0].version : '(Latest)'}`
+              {chartRows.length > 0
+                ? chartRows.length === 1
+                  ? `${chartRows[0].model} ${chartRows[0].version !== "Latest" ? chartRows[0].version : "(Latest)"}`
                   : `${chartRows.length} Models Selected`
                 : "No model selected"}
             </div>
@@ -404,14 +359,7 @@ export default function StandardizeTest() {
               {chartRows.length > 0 ? (
                 <div className="st-chart">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart
-                      cx="50%"
-                      cy="50%"
-                      outerRadius="75%"
-                      data={radarData}
-                      startAngle={90}
-                      endAngle={-270}
-                    >
+                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData} startAngle={90} endAngle={-270}>
                       <PolarGrid gridType="polygon" />
                       <PolarAngleAxis dataKey="trait" />
                       <PolarRadiusAxis domain={[0, 50]} />
@@ -443,10 +391,7 @@ export default function StandardizeTest() {
                   const key = `${row.model}-${row.version}`;
                   return (
                     <div key={key} className="st-legend-item">
-                      <div
-                        className="st-legend-color"
-                        style={{ backgroundColor: chartColors[index % chartColors.length] }}
-                      ></div>
+                      <div className="st-legend-color" style={{ backgroundColor: chartColors[index % chartColors.length] }}></div>
                       <span className="st-legend-text">{key}</span>
                     </div>
                   );
@@ -463,9 +408,7 @@ export default function StandardizeTest() {
                 style={{ left: mfMenuPos.left, top: mfMenuPos.top }}
                 role="menu"
               >
-                <div className="st-hmenu-header">
-                  {modelFamilyFilter.length > 0 ? `Selected: ${modelFamilyFilter.length}` : "Select families"}
-                </div>
+                <div className="st-hmenu-header">{modelFamilyFilter.length > 0 ? `Selected: ${modelFamilyFilter.length}` : "Select families"}</div>
                 <button
                   className="st-hmenu-item"
                   onClick={() => {
@@ -481,11 +424,7 @@ export default function StandardizeTest() {
                 </button>
                 <div className="st-hmenu-sep" />
                 {modelFamilies.map((mf) => (
-                  <label
-                    key={mf}
-                    className={`st-hmenu-item st-hmenu-checkbox ${modelFamilyFilter.includes(mf) ? "active" : ""}`}
-                    role="menuitem"
-                  >
+                  <label key={mf} className={`st-hmenu-item st-hmenu-checkbox ${modelFamilyFilter.includes(mf) ? "active" : ""}`} role="menuitem">
                     <input
                       type="checkbox"
                       checked={modelFamilyFilter.includes(mf)}
@@ -493,7 +432,7 @@ export default function StandardizeTest() {
                         if (e.target.checked) {
                           setModelFamilyFilter([...modelFamilyFilter, mf]);
                         } else {
-                          setModelFamilyFilter(modelFamilyFilter.filter(f => f !== mf));
+                          setModelFamilyFilter(modelFamilyFilter.filter((f) => f !== mf));
                         }
                       }}
                     />

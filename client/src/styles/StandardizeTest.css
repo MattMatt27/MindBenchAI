@@ -1,3 +1,4 @@
+/* src/styles/StandardizeTest.css */
 :root {
   --bg: #e5e7eb;
   --panel: #ffffff;
@@ -23,6 +24,7 @@ body {
   background: var(--bg);
   border-bottom: 2px solid var(--border);
 }
+
 .st-tab {
   padding: 10px 20px;
   background: transparent;
@@ -35,13 +37,15 @@ body {
   transition: all 0.2s;
   margin-bottom: -2px;
 }
+
 .st-tab:hover {
   color: var(--text);
   background: var(--panel-2);
 }
+
 .st-tab.active {
   color: var(--text);
-  border-bottom-color: var(--border-strong);
+  border-bottom-color: #3b82f6;
 }
 
 .st-layout {
@@ -52,6 +56,7 @@ body {
   background: var(--bg);
   align-items: start;
 }
+
 .st-layout.st-layout-no-sidebar {
   grid-template-columns: 1fr 360px;
   align-items: start;
@@ -66,7 +71,7 @@ body {
 
 .st-panel.st-right {
   position: sticky;
-  top: 80px; /* Adjust for nav bar height */
+  top: 80px;
 }
 
 .ui-table-wrap {
@@ -91,9 +96,11 @@ body {
   background: var(--panel);
   border: none !important;
 }
+
 .ui-table thead {
   background: var(--panel-2);
 }
+
 .ui-table thead th {
   padding: 12px 10px;
   font-weight: 700;
@@ -107,6 +114,7 @@ body {
   background-clip: padding-box;
   border-bottom: 1px solid var(--border);
 }
+
 .ui-table tbody td {
   padding: 12px 10px;
   font-size: 14px;
@@ -133,12 +141,15 @@ body {
 .ui-table thead th:first-child {
   border-top-left-radius: 12px;
 }
+
 .ui-table thead th:last-child {
   border-top-right-radius: 12px;
 }
+
 .ui-table tbody tr:last-child td:first-child {
   border-bottom-left-radius: 12px;
 }
+
 .ui-table tbody tr:last-child td:last-child {
   border-bottom-right-radius: 12px;
 }
@@ -147,16 +158,35 @@ body {
   cursor: pointer;
   transition: background-color 0.15s, box-shadow 0.15s;
 }
+
 .st-row:hover {
   background: var(--panel-2);
 }
+
 .st-row.selected {
   background: #e0f2fe;
 }
 
+.st-row-main {
+  background: #ffffff;
+  font-weight: 600;
+}
+
+.st-row-main:hover {
+  background: var(--panel-2);
+}
+
+.st-row-main.open {
+  position: relative;
+  box-shadow: inset 0 -2px 0 #c7d2fe;
+}
+
+.st-row-main.open td {
+  background: #ffffff;
+}
+
 .st-row-version {
   background: #f8fafc;
-  border-left: 3px solid #e5e7eb;
 }
 
 .st-row-version:hover {
@@ -171,11 +201,29 @@ body {
   background: #dbeafe;
 }
 
+.ui-table tbody tr.st-row-version td:nth-child(2),
+.ui-table tbody tr.st-row-version td:nth-child(3) {
+  padding-left: 16px;
+}
+
+.ui-table tbody tr.st-row-version td:nth-child(4) {
+  color: #4b5563;
+}
+
+.ui-table tbody tr.st-row-version.st-vfirst td {
+  border-top: 2px solid var(--border-strong);
+}
+
+.ui-table tbody tr.st-row-version.st-vlast td {
+  border-bottom: 2px solid var(--border-strong);
+}
+
 .st-actions {
   display: flex;
   gap: 8px;
   margin-bottom: 8px;
 }
+
 .st-btn {
   border: 1px solid var(--border-strong);
   border-radius: 10px;
@@ -184,10 +232,12 @@ body {
   background: var(--panel);
   cursor: pointer;
 }
+
 .st-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
 .st-btn-ghost {
   background: var(--panel);
   color: var(--text);
@@ -209,10 +259,12 @@ body {
   align-items: center;
   justify-content: center;
 }
+
 .st-chart {
   height: 100%;
   width: 100%;
 }
+
 .st-empty {
   color: var(--muted);
   font-size: 14px;
@@ -224,16 +276,19 @@ body {
   gap: 8px;
   margin-top: 8px;
 }
+
 .st-trait {
   border: 1px solid var(--border-strong);
   border-radius: 12px;
   padding: 8px 10px;
   text-align: center;
 }
+
 .st-trait-key {
   font-size: 12px;
   color: var(--muted);
 }
+
 .st-trait-val {
   font-weight: 700;
 }
@@ -252,6 +307,7 @@ body {
   position: relative;
   padding: 0 !important;
 }
+
 .st-th-trigger {
   display: inline-flex;
   align-items: center;
@@ -263,15 +319,18 @@ body {
   font-size: 14px;
   cursor: pointer;
 }
+
 .st-th-trigger:hover {
   background: var(--panel);
   border-radius: 8px;
 }
+
 .st-th-caret {
   font-size: 12px;
   opacity: 0.75;
   transition: transform 0.15s ease;
 }
+
 .st-th-menu.open .st-th-caret {
   transform: rotate(180deg);
 }
@@ -288,9 +347,11 @@ body {
   padding: 6px;
   z-index: 1000;
 }
+
 .st-hmenu-fixed {
   position: fixed;
 }
+
 .st-hmenu-header {
   font-size: 12px;
   color: var(--muted);
@@ -298,11 +359,13 @@ body {
   text-align: center;
   font-weight: 600;
 }
+
 .st-hmenu-sep {
   height: 1px;
   background: var(--border-strong);
   margin: 6px 0;
 }
+
 .st-hmenu-item {
   display: block;
   width: 100%;
@@ -314,9 +377,11 @@ body {
   font-size: 14px;
   cursor: pointer;
 }
+
 .st-hmenu-item:hover {
   background: var(--panel-2);
 }
+
 .st-hmenu-item.active {
   background: #e0f2fe;
 }
@@ -337,14 +402,19 @@ body {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 4px;
+  padding: 4px 6px;
   color: var(--muted);
   font-size: 12px;
   transition: transform 0.2s;
+  border-radius: 6px;
 }
 
 .st-expander.open {
   transform: rotate(90deg);
+}
+
+.st-expander:hover {
+  background: var(--panel-2);
 }
 
 .st-checkbox-cell {
