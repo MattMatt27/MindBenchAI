@@ -41,7 +41,7 @@ body {
 }
 .st-tab.active {
   color: var(--text);
-  border-bottom-color: #3b82f6;
+  border-bottom-color: var(--border-strong);
 }
 
 .st-layout {
@@ -54,6 +54,7 @@ body {
 }
 .st-layout.st-layout-no-sidebar {
   grid-template-columns: 1fr 360px;
+  align-items: start;
 }
 
 .st-panel {
@@ -61,6 +62,11 @@ body {
   border: 1px solid var(--border-strong);
   border-radius: 12px;
   padding: 16px;
+}
+
+.st-panel.st-right {
+  position: sticky;
+  top: 80px; /* Adjust for nav bar height */
 }
 
 .ui-table-wrap {
@@ -93,7 +99,7 @@ body {
   font-weight: 700;
   font-size: 14px;
   line-height: 1.4;
-  text-align: center;
+  text-align: left;
   background: var(--panel-2);
   position: sticky;
   top: 0;
@@ -105,14 +111,23 @@ body {
   padding: 12px 10px;
   font-size: 14px;
   line-height: 1.4;
-  text-align: center;
+  text-align: left;
   border-top: 1px solid #e5e7eb;
 }
 
 .ui-table th:first-child,
 .ui-table td:first-child {
+  text-align: center;
+  width: 30px;
+  min-width: 30px;
+  max-width: 30px;
+}
+
+.ui-table th:nth-child(2),
+.ui-table td:nth-child(2) {
   text-align: left;
-  min-width: 220px;
+  min-width: 80px;
+  max-width: 100px;
 }
 
 .ui-table thead th:first-child {
@@ -136,9 +151,24 @@ body {
   background: var(--panel-2);
 }
 .st-row.selected {
+  background: #e0f2fe;
+}
+
+.st-row-version {
+  background: #f8fafc;
+  border-left: 3px solid #e5e7eb;
+}
+
+.st-row-version:hover {
+  background: #f1f5f9;
+}
+
+.st-row-version.selected {
+  background: #e0f2fe;
+}
+
+.st-row-version.selected:hover {
   background: #dbeafe;
-  box-shadow: inset 0 0 0 2px #3b82f6;
-  font-weight: 600;
 }
 
 .st-actions {
@@ -260,7 +290,6 @@ body {
 }
 .st-hmenu-fixed {
   position: fixed;
-  transform: translateX(-50%);
 }
 .st-hmenu-header {
   font-size: 12px;
@@ -289,6 +318,66 @@ body {
   background: var(--panel-2);
 }
 .st-hmenu-item.active {
-  background: #dbeafe;
-  box-shadow: inset 0 0 0 2px #3b82f6;
+  background: #e0f2fe;
+}
+
+.st-hmenu-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.st-hmenu-checkbox input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.st-expander {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.st-expander.open {
+  transform: rotate(90deg);
+}
+
+.st-checkbox-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.st-checkbox-cell input[type="checkbox"] {
+  cursor: pointer;
+}
+
+.st-legend {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.st-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.st-legend-color {
+  width: 16px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.st-legend-text {
+  color: var(--text);
 }

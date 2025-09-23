@@ -10,52 +10,200 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer
 } from "recharts";
-import { stest } from "../data/models";
+import { stest, getLatestStestVersions, getStestModelFamilies, filterStestVersions } from "../data/models";
 
 const TRAITS = ["O", "C", "E", "A", "N"];
 const toRadarRows = (row) => TRAITS.map((t) => ({ trait: t, value: row?.[t] ?? 0 }));
 
 export default function StandardizeTest() {
   const [activeTab, setActiveTab] = React.useState("models");
-  const [displayModel, setDisplayModel] = React.useState(null);
-  const [baseModelFilter, setBaseModelFilter] = React.useState("");
-  const [bmMenuOpen, setBmMenuOpen] = React.useState(false);
-  const [bmMenuPos, setBmMenuPos] = React.useState({ left: 0, top: 0 });
-  const bmBtnRef = React.useRef(null);
-  const bmMenuRef = React.useRef(null);
+  const [expandedModels, setExpandedModels] = React.useState(() => new Set());
+  const [selectedRow, setSelectedRow] = React.useState(null);
+  const [selectedVersions, setSelectedVersions] = React.useState(() => new Set());
+  const [modelFamilyFilter, setModelFamilyFilter] = React.useState([]);
+  const [mfMenuOpen, setMfMenuOpen] = React.useState(false);
+  const [mfMenuPos, setMfMenuPos] = React.useState({ left: 0, top: 0 });
+  const mfBtnRef = React.useRef(null);
+  const mfMenuRef = React.useRef(null);
 
   const allRows = React.useMemo(() => (Array.isArray(stest) ? [...stest] : []), []);
-  const baseModels = React.useMemo(
-    () => Array.from(new Set(allRows.map((r) => r.baseModel).filter(Boolean))).sort(),
-    [allRows]
-  );
+  const modelFamilies = React.useMemo(() => getStestModelFamilies(), []);
 
+  const selectRow = (rowData) => {
+    // For version rows, just toggle their checkbox selection
+    if (!rowData.isMainRow) {
+      toggleVersion(rowData.id);
+      // Don't set selectedRow for version rows since we're using checkbox selection
+      return;
+    }
+
+    // For main rows, toggle the selection
+    if (selectedRow && selectedRow.id === rowData.id) {
+      setSelectedRow(null);
+    } else {
+      setSelectedRow(rowData);
+    }
+  };
+
+  const toggleVersion = (versionId) => {
+    setSelectedVersions((prev) => {
+      const next = new Set(prev);
+      next.has(versionId) ? next.delete(versionId) : next.add(versionId);
+      return next;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedRow(null);
+    setSelectedVersions(new Set());
+  };
+
+
+  // Build sorted main rows data
+  const sortedMainRows = React.useMemo(() => {
+    let filtered = [...allRows];
+    if (modelFamilyFilter.length > 0) {
+      filtered = filtered.filter((r) => modelFamilyFilter.includes(r.modelFamily));
+    }
+
+    // Build main rows only
+    const modelMap = {};
+
+    // Group by model
+    filtered.forEach(v => {
+      const key = `${v.modelFamily}-${v.model}`;
+      if (!modelMap[key]) {
+        modelMap[key] = {
+          latest: null,
+          versions: []
+        };
+      }
+
+      if (!modelMap[key].latest || v.version > modelMap[key].latest.version) {
+        modelMap[key].latest = v;
+      }
+      modelMap[key].versions.push(v);
+    });
+
+    // Create main rows only
+    const mainRows = Object.entries(modelMap).map(([key, data]) => {
+      const latest = data.latest;
+      const mainRowId = `main-${key}`;
+
+      return {
+        id: mainRowId,
+        isMainRow: true,
+        modelFamily: latest.modelFamily,
+        model: latest.model,
+        version: 'Latest',
+        actualVersion: latest.version,
+        O: latest.O,
+        C: latest.C,
+        E: latest.E,
+        A: latest.A,
+        N: latest.N,
+        hasVersions: data.versions.length > 1,
+        versions: data.versions
+      };
+    });
+
+    return mainRows;
+  }, [allRows, modelFamilyFilter]);
+
+  // Build final flat data structure maintaining hierarchy
   const rows = React.useMemo(() => {
-    let out = [...allRows];
-    if (baseModelFilter) out = out.filter((r) => r.baseModel === baseModelFilter);
-    return out;
-  }, [allRows, baseModelFilter]);
+    const data = [];
 
-  const chartRow = React.useMemo(
-    () => rows.find((r) => r.model === displayModel) || null,
-    [rows, displayModel]
-  );
+    sortedMainRows.forEach(mainRow => {
+      // Add main row
+      data.push(mainRow);
+
+      // Add version rows if expanded OR if any versions are selected
+      if (mainRow.hasVersions) {
+        const versions = mainRow.versions
+          .filter(v => v.version !== mainRow.actualVersion)
+          .sort((a, b) => b.version.localeCompare(a.version));
+
+        const isExpanded = expandedModels.has(mainRow.id);
+
+        versions.forEach(v => {
+          const versionId = `${v.modelFamily}-${v.model}-${v.version}`;
+          const isSelected = selectedVersions.has(versionId);
+
+          // Show version if dropdown is expanded OR if this version is selected
+          if (isExpanded || isSelected) {
+            data.push({
+              id: versionId,
+              isMainRow: false,
+              parentId: mainRow.id,
+              modelFamily: v.modelFamily,
+              model: v.model,
+              version: v.version,
+              O: v.O,
+              C: v.C,
+              E: v.E,
+              A: v.A,
+              N: v.N
+            });
+          }
+        });
+      }
+    });
+
+    return data;
+  }, [sortedMainRows, expandedModels, selectedVersions]);
+
+  // Get all selected version rows for multi-chart display
+  const chartRows = React.useMemo(() => {
+    const selectedVersionRows = rows.filter(r =>
+      !r.isMainRow && selectedVersions.has(r.id)
+    );
+
+    // If we have selected versions, show them; otherwise show the selected main/single row
+    if (selectedVersionRows.length > 0) {
+      return selectedVersionRows;
+    } else if (selectedRow) {
+      return [selectedRow];
+    }
+    return [];
+  }, [rows, selectedVersions, selectedRow]);
+
+  // Generate distinct colors for each line
+  const chartColors = ['#64748b', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#f97316', '#06b6d4', '#84cc16'];
+
+  // Convert rows to radar data with colors
+  const radarData = React.useMemo(() => {
+    if (chartRows.length === 0) return [];
+
+    // Get all trait values for each selected version
+    const allData = [];
+    TRAITS.forEach(trait => {
+      const dataPoint = { trait };
+      chartRows.forEach((row) => {
+        const key = `${row.model}-${row.version}`;
+        dataPoint[key] = row[trait] ?? 0;
+      });
+      allData.push(dataPoint);
+    });
+
+    return allData;
+  }, [chartRows]);
 
   React.useEffect(() => {
-    if (displayModel && !rows.some((r) => r.model === displayModel)) {
-      setDisplayModel(null);
+    if (selectedRow && !rows.some((r) => r.id === selectedRow.id)) {
+      clearSelection();
     }
-  }, [rows, displayModel]);
+  }, [rows, selectedRow]);
 
   React.useEffect(() => {
     const onDocClick = (e) => {
-      if (!bmMenuOpen) return;
-      const withinBtn = bmBtnRef.current && bmBtnRef.current.contains(e.target);
-      const withinMenu = bmMenuRef.current && bmMenuRef.current.contains(e.target);
-      if (!withinBtn && !withinMenu) setBmMenuOpen(false);
+      if (!mfMenuOpen) return;
+      const withinBtn = mfBtnRef.current && mfBtnRef.current.contains(e.target);
+      const withinMenu = mfMenuRef.current && mfMenuRef.current.contains(e.target);
+      if (!withinBtn && !withinMenu) setMfMenuOpen(false);
     };
-    const onKey = (e) => e.key === "Escape" && setBmMenuOpen(false);
-    const onScroll = () => setBmMenuOpen(false);
+    const onKey = (e) => e.key === "Escape" && setMfMenuOpen(false);
+    const onScroll = () => setMfMenuOpen(false);
     document.addEventListener("click", onDocClick);
     document.addEventListener("keydown", onKey);
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -66,16 +214,23 @@ export default function StandardizeTest() {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
-  }, [bmMenuOpen]);
+  }, [mfMenuOpen]);
 
-  const handleRowActivate = (model) => setDisplayModel(model);
 
-  const openBmMenu = () => {
-    const el = bmBtnRef.current;
+  const toggleRow = (id) => {
+    setExpandedModels((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const openMfMenu = () => {
+    const el = mfBtnRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
-    setBmMenuPos({ left: r.left + r.width / 2, top: r.bottom });
-    setBmMenuOpen((v) => !v);
+    setMfMenuPos({ left: r.left, top: r.bottom });
+    setMfMenuOpen((v) => !v);
   };
 
   return (
@@ -103,20 +258,22 @@ export default function StandardizeTest() {
             <table className="ui-table">
               <thead>
                 <tr>
-                  <th>Model</th>
-                  <th className={`st-th-menu ${bmMenuOpen ? "open" : ""}`}>
+                  <th style={{ width: 30 }}></th>
+                  <th className={`st-th-menu ${mfMenuOpen ? "open" : ""}`}>
                     <button
-                      ref={bmBtnRef}
+                      ref={mfBtnRef}
                       type="button"
                       className="st-th-trigger"
-                      onClick={openBmMenu}
+                      onClick={openMfMenu}
                       aria-haspopup="menu"
-                      aria-expanded={bmMenuOpen}
+                      aria-expanded={mfMenuOpen}
                     >
-                      Base Model
+                      Family
                       <span className="st-th-caret" aria-hidden="true">▾</span>
                     </button>
                   </th>
+                  <th>Model</th>
+                  <th>Version</th>
                   <th>Openness (O)</th>
                   <th>Conscientiousness (C)</th>
                   <th>Extraversion (E)</th>
@@ -126,24 +283,75 @@ export default function StandardizeTest() {
               </thead>
               <tbody>
                 {rows.map((r) => {
-                  const isSelected = r.model === displayModel;
+                  const isSelected = selectedRow && selectedRow.id === r.id;
+                  const isMainRow = r.isMainRow;
+                  const isVersionRow = !isMainRow;
+                  const isVersionSelected = isVersionRow && selectedVersions.has(r.id);
+
                   return (
                     <tr
-                      key={r.snapshot || r.model}
-                      className={`st-row ${isSelected ? "selected" : ""}`}
-                      onClick={() => handleRowActivate(r.model)}
+                      key={r.id}
+                      className={`st-row ${
+                        isVersionRow && (isSelected || isVersionSelected) ? "selected" : ""
+                      } ${isVersionRow ? "st-row-version" : ""}`}
+                      onClick={() => {
+                        if (isMainRow) {
+                          // Main rows toggle expansion instead of selection
+                          if (r.hasVersions) {
+                            toggleRow(r.id);
+                          }
+                        } else {
+                          // Version rows still select for chart display
+                          selectRow(r);
+                        }
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          handleRowActivate(r.model);
+                          if (isMainRow) {
+                            if (r.hasVersions) {
+                              toggleRow(r.id);
+                            }
+                          } else {
+                            selectRow(r);
+                          }
                         }
                       }}
                       role="button"
                       tabIndex={0}
-                      aria-label={`Show chart for ${r.model}`}
+                      aria-label={isMainRow ?
+                        (r.hasVersions ? `${expandedModels.has(r.id) ? "Collapse" : "Expand"} versions for ${r.model}` : r.model)
+                        : `Show chart for ${r.model} ${r.version || ""}`}
                     >
+                      <td>
+                        {isVersionRow ? (
+                          <div className="st-checkbox-cell">
+                            <input
+                              type="checkbox"
+                              checked={isVersionSelected}
+                              onChange={() => toggleVersion(r.id)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        ) : r.hasVersions ? (
+                          <button
+                            className={`st-expander ${expandedModels.has(r.id) ? "open" : ""}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleRow(r.id);
+                            }}
+                            aria-label={`${expandedModels.has(r.id) ? "Collapse" : "Expand"} versions for ${r.model}`}
+                            type="button"
+                          >
+                            ▸
+                          </button>
+                        ) : null}
+                      </td>
+                      <td>
+                        {r.modelFamily ?? "—"}
+                      </td>
                       <td>{r.model ?? "—"}</td>
-                      <td>{r.baseModel ?? "—"}</td>
+                      <td>{r.version ?? "—"}</td>
                       <td>{r.O ?? "—"}</td>
                       <td>{r.C ?? "—"}</td>
                       <td>{r.E ?? "—"}</td>
@@ -154,7 +362,7 @@ export default function StandardizeTest() {
                 })}
                 {!rows.length && (
                   <tr>
-                    <td colSpan={7} style={{ textAlign: "center", height: 64 }}>
+                    <td colSpan={9} style={{ textAlign: "center", height: 64 }}>
                       No data
                     </td>
                   </tr>
@@ -165,51 +373,62 @@ export default function StandardizeTest() {
 
           <aside className="st-panel st-right">
             <div className="st-actions">
-              {baseModelFilter && (
+              {modelFamilyFilter.length > 0 && (
                 <button
                   className="st-btn st-btn-ghost"
-                  onClick={() => setBaseModelFilter("")}
+                  onClick={() => setModelFamilyFilter([])}
                   type="button"
                 >
-                  Clear base model filter ({baseModelFilter})
+                  Clear filter ({modelFamilyFilter.length})
                 </button>
               )}
               <button
                 className="st-btn st-btn-ghost"
                 type="button"
-                onClick={() => setDisplayModel(null)}
-                disabled={!displayModel}
+                onClick={clearSelection}
+                disabled={!selectedRow && selectedVersions.size === 0}
               >
                 Clear selection
               </button>
             </div>
 
             <div className="st-chart-title">
-              {displayModel ? displayModel : "No model selected"}
+              {chartRows.length > 0 ?
+                chartRows.length === 1 ?
+                  `${chartRows[0].model} ${chartRows[0].version !== 'Latest' ? chartRows[0].version : '(Latest)'}`
+                  : `${chartRows.length} Models Selected`
+                : "No model selected"}
             </div>
 
             <div className="st-chart-card">
-              {chartRow ? (
+              {chartRows.length > 0 ? (
                 <div className="st-chart">
                   <ResponsiveContainer width="100%" height="100%">
                     <RadarChart
                       cx="50%"
                       cy="50%"
-                      outerRadius="85%"
-                      data={toRadarRows(chartRow)}
+                      outerRadius="75%"
+                      data={radarData}
                       startAngle={90}
                       endAngle={-270}
                     >
                       <PolarGrid gridType="polygon" />
                       <PolarAngleAxis dataKey="trait" />
-                      <PolarRadiusAxis domain={[0, 100]} />
-                      <Radar
-                        name="Personality"
-                        dataKey="value"
-                        stroke="#64748b"
-                        fill="#64748b"
-                        fillOpacity={0.35}
-                      />
+                      <PolarRadiusAxis domain={[0, 50]} />
+                      {chartRows.map((row, index) => {
+                        const key = `${row.model}-${row.version}`;
+                        return (
+                          <Radar
+                            key={key}
+                            name={key}
+                            dataKey={key}
+                            stroke={chartColors[index % chartColors.length]}
+                            fill={chartColors[index % chartColors.length]}
+                            fillOpacity={0.1}
+                            strokeWidth={2}
+                          />
+                        );
+                      })}
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
@@ -218,52 +437,68 @@ export default function StandardizeTest() {
               )}
             </div>
 
-            <div className="st-traits">
-              {TRAITS.map((t) => (
-                <div key={t} className="st-trait">
-                  <div className="st-trait-key">{t}</div>
-                  <div className="st-trait-val">
-                    {chartRow?.[t] != null ? Math.round(chartRow[t]) : "—"}
-                  </div>
-                </div>
-              ))}
-            </div>
+            {chartRows.length > 0 && (
+              <div className="st-legend">
+                {chartRows.map((row, index) => {
+                  const key = `${row.model}-${row.version}`;
+                  return (
+                    <div key={key} className="st-legend-item">
+                      <div
+                        className="st-legend-color"
+                        style={{ backgroundColor: chartColors[index % chartColors.length] }}
+                      ></div>
+                      <span className="st-legend-text">{key}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </aside>
 
-          {bmMenuOpen &&
+          {mfMenuOpen &&
             createPortal(
               <div
-                ref={bmMenuRef}
+                ref={mfMenuRef}
                 className="st-hmenu st-hmenu-fixed"
-                style={{ left: bmMenuPos.left, top: bmMenuPos.top }}
+                style={{ left: mfMenuPos.left, top: mfMenuPos.top }}
                 role="menu"
               >
                 <div className="st-hmenu-header">
-                  {baseModelFilter ? `Filtering: ${baseModelFilter}` : "All base models"}
+                  {modelFamilyFilter.length > 0 ? `Selected: ${modelFamilyFilter.length}` : "Select families"}
                 </div>
                 <button
                   className="st-hmenu-item"
                   onClick={() => {
-                    setBaseModelFilter("");
-                    setBmMenuOpen(false);
+                    if (modelFamilyFilter.length === modelFamilies.length) {
+                      setModelFamilyFilter([]);
+                    } else {
+                      setModelFamilyFilter([...modelFamilies]);
+                    }
                   }}
                   role="menuitem"
                 >
-                  All base models
+                  {modelFamilyFilter.length === modelFamilies.length ? "Deselect all" : "Select all"}
                 </button>
                 <div className="st-hmenu-sep" />
-                {baseModels.map((bm) => (
-                  <button
-                    key={bm}
-                    className={`st-hmenu-item ${bm === baseModelFilter ? "active" : ""}`}
-                    onClick={() => {
-                      setBaseModelFilter(bm);
-                      setBmMenuOpen(false);
-                    }}
+                {modelFamilies.map((mf) => (
+                  <label
+                    key={mf}
+                    className={`st-hmenu-item st-hmenu-checkbox ${modelFamilyFilter.includes(mf) ? "active" : ""}`}
                     role="menuitem"
                   >
-                    {bm}
-                  </button>
+                    <input
+                      type="checkbox"
+                      checked={modelFamilyFilter.includes(mf)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setModelFamilyFilter([...modelFamilyFilter, mf]);
+                        } else {
+                          setModelFamilyFilter(modelFamilyFilter.filter(f => f !== mf));
+                        }
+                      }}
+                    />
+                    <span>{mf}</span>
+                  </label>
                 ))}
               </div>,
               document.body
