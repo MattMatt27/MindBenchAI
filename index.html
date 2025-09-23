@@ -5,6 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MindBench AI - Coming Soon</title>
     <style>
+        :root {
+            --bg: #e5e7eb;
+            --panel: #ffffff;
+            --panel-2: #f3f4f6;
+            --text: #111827;
+            --muted: #6b7280;
+            --border: #e5e7eb;
+            --border-strong: #d1d5db;
+            --ring: #2563eb33;
+            --primary: #3b82f6;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -17,104 +29,105 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--bg);
+            color: var(--text);
             padding: 20px;
+            position: relative;
         }
 
         .container {
             text-align: center;
-            max-width: 600px;
-            animation: fadeIn 1s ease-in-out;
+            max-width: 800px;
+            background: var(--panel);
+            padding: 60px 40px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.6s ease-in-out;
         }
 
         h1 {
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            margin-bottom: 1rem;
+            font-size: 48px;
             font-weight: 700;
-            letter-spacing: -1px;
+            color: var(--text);
+            margin-bottom: 20px;
+            letter-spacing: -0.02em;
         }
 
         .subtitle {
-            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            font-size: 20px;
+            color: var(--muted);
             margin-bottom: 2rem;
-            opacity: 0.95;
-            font-weight: 300;
+            font-weight: 400;
         }
 
         .coming-soon {
-            font-size: clamp(1rem, 2.5vw, 1.2rem);
-            padding: 15px 30px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(10px);
-            border-radius: 50px;
             display: inline-block;
+            font-size: 14px;
+            padding: 12px 24px;
+            background: var(--panel-2);
+            border: 1px solid var(--border-strong);
+            border-radius: 8px;
             margin-bottom: 3rem;
-            border: 1px solid rgba(255, 255, 255, 0.3);
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             font-weight: 600;
+            color: var(--primary);
         }
 
         .description {
-            font-size: clamp(1rem, 2vw, 1.1rem);
+            font-size: 18px;
             line-height: 1.8;
-            opacity: 0.9;
-            margin-bottom: 3rem;
+            color: var(--muted);
+            margin-bottom: 2rem;
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        .notify-section {
-            margin-top: 2rem;
+        .features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-top: 3rem;
+            text-align: left;
         }
 
-        .notify-text {
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            opacity: 0.85;
+        .feature-card {
+            padding: 20px;
+            background: var(--panel-2);
+            border-radius: 8px;
+            border: 1px solid var(--border);
         }
 
-        .email-form {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        .email-input {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 25px;
-            font-size: 1rem;
-            min-width: 250px;
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-        }
-
-        .email-input::placeholder {
-            color: #666;
-        }
-
-        .notify-btn {
-            padding: 12px 30px;
-            background: white;
-            color: #667eea;
-            border: none;
-            border-radius: 25px;
-            font-size: 1rem;
+        .feature-title {
+            font-size: 16px;
             font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            color: var(--text);
+            margin-bottom: 8px;
         }
 
-        .notify-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        .feature-desc {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        .logo-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            opacity: 0.8;
+        }
+
+        .logo-container img {
+            height: 60px;
+            width: auto;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(20px);
+                transform: translateY(10px);
             }
             to {
                 opacity: 1;
@@ -122,9 +135,23 @@
             }
         }
 
-        @media (max-width: 480px) {
-            .email-input {
-                min-width: 100%;
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 20px;
+            }
+
+            h1 {
+                font-size: 36px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+
+            .logo-container {
+                position: static;
+                margin-top: 3rem;
+                text-align: center;
             }
         }
     </style>
@@ -132,36 +159,39 @@
 <body>
     <div class="container">
         <h1>MindBench AI</h1>
-        <p class="subtitle">AI-Powered Psychological Assessment Platform</p>
+        <p class="subtitle">LLM Assessment Platform for Mental Health Expertise</p>
 
         <div class="coming-soon">Coming Soon</div>
 
         <p class="description">
-            We're building an innovative platform that combines artificial intelligence
-            with psychological assessments to provide deeper insights into human cognition
-            and personality. Get ready to explore the frontiers of mind and machine.
+            MindBench AI is an actionable platform designed to provide easily accessible and interpretable information
+            about LLMs and LLM-based tools in mental health contexts. Developed in partnership with NAMI and building on
+            a decade of experience from MINDapps.org, we offer transparent, real-time evaluation data to help patients,
+            clinicians, developers, and regulators make informed decisions about AI use in mental healthcare.
         </p>
 
-        <div class="notify-section">
-            <p class="notify-text">Be the first to know when we launch</p>
-            <form class="email-form" onsubmit="handleSubmit(event)">
-                <input
-                    type="email"
-                    class="email-input"
-                    placeholder="Enter your email"
-                    required
-                >
-                <button type="submit" class="notify-btn">Notify Me</button>
-            </form>
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-title">Profile Evaluation</div>
+                <div class="feature-desc">
+                    Systematic assessment of technical properties, privacy policies, data retention practices,
+                    conversation memory management, and security certifications that impact user safety and trust
+                    in mental health applications.
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-title">Performance Benchmarking</div>
+                <div class="feature-desc">
+                    Standardized evaluation of LLM clinical reasoning skills, therapeutic response generation,
+                    and mental health task performance using domain-specific benchmarks and expert-rated assessments.
+                </div>
+            </div>
         </div>
     </div>
 
-    <script>
-        function handleSubmit(e) {
-            e.preventDefault();
-            alert('Thank you for your interest! We\'ll notify you when we launch.');
-            e.target.reset();
-        }
-    </script>
+    <div class="logo-container">
+        <img src="https://www.bidmc.org/-/media/images/beth-israel-org/logos/new-logos/bidmc_hms_stacked-lockup.svg"
+             alt="BIDMC HMS Logo">
+    </div>
 </body>
 </html>
