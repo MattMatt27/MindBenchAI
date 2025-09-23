@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindBench AI - Coming Soon</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 600px;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            margin-bottom: 1rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: clamp(1.2rem, 3vw, 1.5rem);
+            margin-bottom: 2rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .coming-soon {
+            font-size: clamp(1rem, 2.5vw, 1.2rem);
+            padding: 15px 30px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 50px;
+            display: inline-block;
+            margin-bottom: 3rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .description {
+            font-size: clamp(1rem, 2vw, 1.1rem);
+            line-height: 1.8;
+            opacity: 0.9;
+            margin-bottom: 3rem;
+        }
+
+        .notify-section {
+            margin-top: 2rem;
+        }
+
+        .notify-text {
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            opacity: 0.85;
+        }
+
+        .email-form {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .email-input {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            min-width: 250px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        .email-input::placeholder {
+            color: #666;
+        }
+
+        .notify-btn {
+            padding: 12px 30px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .notify-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .email-input {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>MindBench AI</h1>
+        <p class="subtitle">AI-Powered Psychological Assessment Platform</p>
+
+        <div class="coming-soon">Coming Soon</div>
+
+        <p class="description">
+            We're building an innovative platform that combines artificial intelligence
+            with psychological assessments to provide deeper insights into human cognition
+            and personality. Get ready to explore the frontiers of mind and machine.
+        </p>
+
+        <div class="notify-section">
+            <p class="notify-text">Be the first to know when we launch</p>
+            <form class="email-form" onsubmit="handleSubmit(event)">
+                <input
+                    type="email"
+                    class="email-input"
+                    placeholder="Enter your email"
+                    required
+                >
+                <button type="submit" class="notify-btn">Notify Me</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function handleSubmit(e) {
+            e.preventDefault();
+            alert('Thank you for your interest! We\'ll notify you when we launch.');
+            e.target.reset();
+        }
+    </script>
+</body>
+</html>

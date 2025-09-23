@@ -1,0 +1,14 @@
+{
+  "name": "mindbench-ai-coming-soon",
+  "version": "1.0.0",
+  "description": "Coming soon page for MindBench AI",
+  "scripts": {
+    "start": "npx serve -s . -l $PORT"
+  },
+  "dependencies": {
+    "serve": "^14.2.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,21 @@
+# Ignore the React client application
+client/
+
+# Ignore the backend server
+server/
+
+# Ignore documentation
+docs/
+
+# Ignore git files
+.git/
+.gitignore
+
+# Ignore OS files
+.DS_Store
+Thumbs.db
+
+# Ignore the README
+README.md
+
+# Only deploy the coming soon page and its dependencies
