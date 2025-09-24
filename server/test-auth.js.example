@@ -1,0 +1,161 @@
+#!/usr/bin/env node
+
+/**
+ * Quick test script for the authentication API
+ * Run with: node test-auth.js
+ */
+
+const API_URL = 'http://localhost:5000/api';
+
+// Store tokens for subsequent requests
+let accessToken = '';
+let refreshToken = '';
+
+// Colors for console output
+const colors = {
+  reset: '\x1b[0m',
+  green: '\x1b[32m',
+  red: '\x1b[31m',
+  yellow: '\x1b[33m',
+  blue: '\x1b[34m',
+};
+
+async function makeRequest(method, endpoint, data = null, token = null) {
+  const options = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+
+  if (token) {
+    options.headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  if (data) {
+    options.body = JSON.stringify(data);
+  }
+
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, options);
+    const json = await response.json();
+    return { status: response.status, data: json };
+  } catch (error) {
+    return { status: 0, error: error.message };
+  }
+}
+
+async function testAuth() {
+  console.log(`${colors.blue}🧪 Testing MindBench.ai Authentication API${colors.reset}\n`);
+
+  // Test 1: Login as admin
+  console.log(`${colors.yellow}Test 1: Login as admin${colors.reset}`);
+  const loginResult = await makeRequest('POST', '/auth/login', {
+    email: 'admin@mindbench.ai',
+    password: 'TestPassword123!',
+  });
+
+  if (loginResult.data.success) {
+    console.log(`${colors.green}✓ Login successful${colors.reset}`);
+    console.log(`  User: ${loginResult.data.data.user.email} (${loginResult.data.data.user.role})`);
+    accessToken = loginResult.data.data.accessToken;
+    refreshToken = loginResult.data.data.refreshToken;
+    console.log(`  Access Token: ${accessToken.substring(0, 50)}...`);
+  } else {
+    console.log(`${colors.red}✗ Login failed: ${loginResult.data.error}${colors.reset}`);
+    return;
+  }
+
+  // Test 2: Get current user
+  console.log(`\n${colors.yellow}Test 2: Get current user${colors.reset}`);
+  const meResult = await makeRequest('GET', '/auth/me', null, accessToken);
+
+  if (meResult.data.success) {
+    console.log(`${colors.green}✓ Got user data${colors.reset}`);
+    console.log(`  Username: ${meResult.data.data.user.username}`);
+    console.log(`  Role: ${meResult.data.data.user.role}`);
+    console.log(`  Verified: ${meResult.data.data.user.isVerified}`);
+  } else {
+    console.log(`${colors.red}✗ Failed to get user: ${meResult.data.error}${colors.reset}`);
+  }
+
+  // Test 3: Refresh token
+  console.log(`\n${colors.yellow}Test 3: Refresh access token${colors.reset}`);
+  const refreshResult = await makeRequest('POST', '/auth/refresh', {
+    refreshToken: refreshToken,
+  });
+
+  if (refreshResult.data.success) {
+    console.log(`${colors.green}✓ Token refreshed${colors.reset}`);
+    const newAccessToken = refreshResult.data.data.accessToken;
+    const newRefreshToken = refreshResult.data.data.refreshToken;
+    console.log(`  New Access Token: ${newAccessToken.substring(0, 50)}...`);
+    console.log(`  Tokens rotated successfully`);
+    accessToken = newAccessToken;
+    refreshToken = newRefreshToken;
+  } else {
+    console.log(`${colors.red}✗ Failed to refresh: ${refreshResult.data.error}${colors.reset}`);
+  }
+
+  // Test 4: Try invalid login
+  console.log(`\n${colors.yellow}Test 4: Test invalid credentials${colors.reset}`);
+  const invalidResult = await makeRequest('POST', '/auth/login', {
+    email: 'admin@mindbench.ai',
+    password: 'WrongPassword',
+  });
+
+  if (!invalidResult.data.success) {
+    console.log(`${colors.green}✓ Invalid login correctly rejected${colors.reset}`);
+    console.log(`  Error: ${invalidResult.data.error}`);
+  } else {
+    console.log(`${colors.red}✗ Invalid login was accepted!${colors.reset}`);
+  }
+
+  // Test 5: Register new user
+  console.log(`\n${colors.yellow}Test 5: Register new user${colors.reset}`);
+  const timestamp = Date.now();
+  const registerResult = await makeRequest('POST', '/auth/register', {
+    email: `testuser${timestamp}@example.com`,
+    username: `testuser${timestamp}`,
+    password: 'SecurePass123!',
+    firstName: 'Test',
+    lastName: 'User',
+  });
+
+  if (registerResult.data.success) {
+    console.log(`${colors.green}✓ Registration successful${colors.reset}`);
+    console.log(`  New user: ${registerResult.data.data.user.email}`);
+    console.log(`  Verification needed: Email sent (check console logs)`);
+  } else {
+    console.log(`${colors.red}✗ Registration failed: ${registerResult.data.error}${colors.reset}`);
+  }
+
+  // Test 6: Logout
+  console.log(`\n${colors.yellow}Test 6: Logout${colors.reset}`);
+  const logoutResult = await makeRequest('POST', '/auth/logout', {
+    refreshToken: refreshToken,
+  }, accessToken);
+
+  if (logoutResult.data.success) {
+    console.log(`${colors.green}✓ Logout successful${colors.reset}`);
+    console.log(`  Message: ${logoutResult.data.message}`);
+  } else {
+    console.log(`${colors.red}✗ Logout failed: ${logoutResult.data.error}${colors.reset}`);
+  }
+
+  // Test 7: Try to access protected route after logout
+  console.log(`\n${colors.yellow}Test 7: Access after logout${colors.reset}`);
+  const afterLogoutResult = await makeRequest('GET', '/auth/me', null, accessToken);
+
+  if (!afterLogoutResult.data.success) {
+    console.log(`${colors.green}✓ Access correctly denied after logout${colors.reset}`);
+    console.log(`  Error: ${afterLogoutResult.data.error}`);
+  } else {
+    console.log(`${colors.red}✗ Still have access after logout!${colors.reset}`);
+  }
+
+  console.log(`\n${colors.blue}✅ All authentication tests completed!${colors.reset}\n`);
+}
+
+// Run tests
+testAuth().catch(console.error);

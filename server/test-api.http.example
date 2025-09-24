@@ -1,0 +1,73 @@
+### MindBench.ai API Tests
+### You can use this file with REST Client VS Code extension or similar tools
+
+@baseUrl = http://localhost:5000/api
+@accessToken = YOUR_ACCESS_TOKEN_HERE
+@refreshToken = YOUR_REFRESH_TOKEN_HERE
+
+### Health Check
+GET http://localhost:5000/health
+
+### Register New User
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "username": "newuser",
+  "password": "SecurePass123!",
+  "firstName": "New",
+  "lastName": "User"
+}
+
+### Login - Admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@mindbench.ai",
+  "password": "TestPassword123!"
+}
+
+### Login - Researcher
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "researcher@mindbench.ai",
+  "password": "TestPassword123!"
+}
+
+### Login - Regular User
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@mindbench.ai",
+  "password": "TestPassword123!"
+}
+
+### Get Current User (requires authentication)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{accessToken}}
+
+### Refresh Access Token
+POST {{baseUrl}}/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Logout Current Session
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Logout All Sessions
+POST {{baseUrl}}/auth/logout-all
+Authorization: Bearer {{accessToken}}

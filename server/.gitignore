@@ -1,5 +1,42 @@
 node_modules
-# Keep environment variables out of version control
-.env
 
+# Environment variables - SECURITY CRITICAL
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Prisma generated files
 /generated/prisma
+
+# Security keys and certificates
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Test files with sensitive data
+test-auth.js
+test-api.http
+*.test.env
+
+# Backup files
+*.bak
+*.backup
+
+# Runtime files
+*.pid
+*.seed
+*.pid.lock
