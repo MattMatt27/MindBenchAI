@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// MindBench.ai Prisma Schema
 
 generator client {
   provider = "prisma-client-js"
@@ -10,18 +6,783 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model Models {
-  id      Int    @id @default(autoincrement())
-  name    String
-  android Int
-  ios     Int
-  web     Int
-  free    Int
-  monthly String
-  annual  String
-  best    String
+// ==================== ENUMS ====================
+enum EntityType {
+  MODEL_VERSION     @map("model_version")
+  TOOL_CONFIGURATION @map("tool_configuration")
+}
+
+enum QuestionType {
+  BOOLEAN @map("boolean")
+  NUMBER  @map("number")
+  TEXT    @map("text")
+  LIST    @map("list")
+}
+
+enum ReviewStatus {
+  NOT_STARTED @map("not_started")
+  IN_PROGRESS @map("in_progress")
+  SUBMITTED   @map("submitted")
+  APPROVED    @map("approved")
+  REJECTED    @map("rejected")
+}
+
+enum UserRole {
+  USER       @map("user")
+  RESEARCHER @map("researcher")
+  ADMIN      @map("admin")
+}
+
+// ==================== CORE ENTITIES ====================
+model Model {
+  id                String         @id @default(uuid())
+  name              String         @unique
+  modelFamily       String         @map("model_family")
+  developer         String
+  baseApiEndpoint   String?        @map("base_api_endpoint")
+  description       String?
+  createdAt         DateTime       @default(now()) @map("created_at")
+  createdBy         String?        @map("created_by")
+  updatedAt         DateTime?      @updatedAt @map("updated_at")
+  updatedBy         String?        @map("updated_by")
+
+  // Relations
+  versions          ModelVersion[]
+  createdByUser     User?          @relation("ModelCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser     User?          @relation("ModelUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([modelFamily])
+  @@index([developer])
+  @@index([name])
+  @@map("models")
+}
+
+model ModelVersion {
+  id               String    @id @default(uuid())
+  modelId          String    @map("model_id")
+  version          String
+  apiModelName     String    @map("api_model_name")
+  releaseDate      DateTime? @map("release_date") @db.Date
+  deprecationDate  DateTime? @map("deprecation_date") @db.Date
+  isLatest         Boolean   @default(false) @map("is_latest")
+  isAvailable      Boolean   @default(true) @map("is_available")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  createdBy        String?   @map("created_by")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+  updatedBy        String?   @map("updated_by")
+
+  // Relations
+  model                         Model                    @relation(fields: [modelId], references: [id])
+  createdByUser                 User?                    @relation("ModelVersionCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser                 User?                    @relation("ModelVersionUpdatedBy", fields: [updatedBy], references: [id])
+  toolConfigurations            ToolConfiguration[]
+  techProfileAnswers            TechProfileAnswer[]      @relation("TechProfileAnswerModelVersion")
+  responseProfileAnswers        ResponseProfileAnswer[]  @relation("ResponseProfileAnswerModelVersion")
+  benchmarkResults              BenchmarkResult[]
+
+  @@unique([modelId, version])
+  @@index([modelId])
+  @@index([version])
+  @@index([apiModelName])
+  @@index([isLatest])
+  @@index([isAvailable])
+  @@map("model_versions")
+}
+
+model Tool {
+  id             String    @id @default(uuid())
+  name           String    @unique
+  version        String?
+  developer      String?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  createdBy      String?   @map("created_by")
+  updatedAt      DateTime? @updatedAt @map("updated_at")
+  updatedBy      String?   @map("updated_by")
+
+  // Relations
+  createdByUser    User?               @relation("ToolCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser    User?               @relation("ToolUpdatedBy", fields: [updatedBy], references: [id])
+  configurations   ToolConfiguration[]
+
+  @@index([developer])
+  @@map("tools")
+}
+
+model ToolConfiguration {
+  id                    String    @id @default(uuid())
+  toolId                String    @map("tool_id")
+  modelVersionId        String    @map("model_version_id")
+  configurationName     String    @map("configuration_name")
+  configurationSettings Json?     @map("configuration_settings")
+  isActive              Boolean   @default(true) @map("is_active")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  createdBy             String?   @map("created_by")
+  updatedAt             DateTime? @updatedAt @map("updated_at")
+  updatedBy             String?   @map("updated_by")
+
+  // Relations
+  tool                        Tool                     @relation(fields: [toolId], references: [id])
+  modelVersion                ModelVersion             @relation(fields: [modelVersionId], references: [id])
+  createdByUser               User?                    @relation("ToolConfigCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser               User?                    @relation("ToolConfigUpdatedBy", fields: [updatedBy], references: [id])
+  techProfileAnswers          TechProfileAnswer[]      @relation("TechProfileAnswerToolConfiguration")
+  responseProfileAnswers      ResponseProfileAnswer[]  @relation("ResponseProfileAnswerToolConfiguration")
+  benchmarkResults            BenchmarkResult[]
+
+  @@unique([toolId, modelVersionId])
+  @@index([modelVersionId])
+  @@index([isActive])
+  @@map("tool_configurations")
+}
+
+// ==================== USER MANAGEMENT ====================
+model User {
+  id                   String    @id @default(uuid())
+  email                String    @unique
+  username             String    @unique
+  passwordHash         String    @map("password_hash")
+  role                 UserRole  @default(USER)
+  firstName            String?   @map("first_name")
+  lastName             String?   @map("last_name")
+  expertiseLevel       String?   @map("expertise_level")
+  expertiseAreas       Json?     @map("expertise_areas")
+  isActive             Boolean   @default(true) @map("is_active")
+  isVerified           Boolean   @default(false) @map("is_verified")
+  emailVerifiedAt      DateTime? @map("email_verified_at")
+  lastLoginAt          DateTime? @map("last_login_at")
+  failedLoginAttempts  Int       @default(0) @map("failed_login_attempts")
+  lockedUntil          DateTime? @map("locked_until")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime? @updatedAt @map("updated_at")
+
+  // Relations - Models
+  modelsCreated            Model[]                    @relation("ModelCreatedBy")
+  modelsUpdated            Model[]                    @relation("ModelUpdatedBy")
+  modelVersionsCreated     ModelVersion[]             @relation("ModelVersionCreatedBy")
+  modelVersionsUpdated     ModelVersion[]             @relation("ModelVersionUpdatedBy")
+
+  // Relations - Tools
+  toolsCreated             Tool[]                     @relation("ToolCreatedBy")
+  toolsUpdated             Tool[]                     @relation("ToolUpdatedBy")
+  toolConfigsCreated       ToolConfiguration[]        @relation("ToolConfigCreatedBy")
+  toolConfigsUpdated       ToolConfiguration[]        @relation("ToolConfigUpdatedBy")
+
+  // Relations - Reviews
+  reviewAssignments        ProfileReviewAssignment[]  @relation("ReviewerAssignments")
+  assignedReviews          ProfileReviewAssignment[]  @relation("AssignedReviews")
+  techProfileAnswers       TechProfileAnswer[]        @relation("TechProfileReviewer")
+  techProfileApprovals     TechProfileAnswer[]        @relation("TechProfileApprover")
+  techProfileCreated       TechProfileAnswer[]        @relation("TechProfileCreatedBy")
+  responseProfileAnswers   ResponseProfileAnswer[]    @relation("ResponseProfileReviewer")
+  responseProfileApprovals ResponseProfileAnswer[]    @relation("ResponseProfileApprover")
+  responseProfileCreated   ResponseProfileAnswer[]    @relation("ResponseProfileCreatedBy")
+
+  // Relations - Questions
+  techQuestionsCreated     TechProfileQuestion[]      @relation("TechQuestionCreatedBy")
+  techQuestionsUpdated     TechProfileQuestion[]      @relation("TechQuestionUpdatedBy")
+  responseQuestionsCreated ResponseProfileQuestion[]  @relation("ResponseQuestionCreatedBy")
+  responseQuestionsUpdated ResponseProfileQuestion[]  @relation("ResponseQuestionUpdatedBy")
+
+  // Relations - Benchmarking
+  benchmarkScalesCreated   BenchmarkScale[]           @relation("BenchmarkScaleCreatedBy")
+  benchmarkScalesUpdated   BenchmarkScale[]           @relation("BenchmarkScaleUpdatedBy")
+  questionSubmissions      BenchmarkQuestionSubmission[]
+  questionsCreated         BenchmarkQuestion[]        @relation("BenchmarkQuestionCreatedBy")
+  questionsUpdated         BenchmarkQuestion[]        @relation("BenchmarkQuestionUpdatedBy")
+  questionRatings          BenchmarkRating[]
+  experiments              BenchmarkExperiment[]
+  experimentsUpdated       BenchmarkExperiment[]      @relation("ExperimentUpdatedBy")
+  promptsCreated           BenchmarkPrompt[]          @relation("BenchmarkPromptCreatedBy")
+  promptsUpdated           BenchmarkPrompt[]          @relation("BenchmarkPromptUpdatedBy")
+  tagsCreated              BenchmarkTag[]             @relation("BenchmarkTagCreatedBy")
+  tagsUpdated              BenchmarkTag[]             @relation("BenchmarkTagUpdatedBy")
+
+  // Relations - Community
+  updatesCreated           Update[]                   @relation("UpdateCreatedBy")
+  updatesUpdated           Update[]                   @relation("UpdateUpdatedBy")
+  updateReactions          UpdateReaction[]
+  suggestionsCreated       Suggestion[]               @relation("SuggestionCreatedBy")
+  suggestionsUpdated       Suggestion[]               @relation("SuggestionUpdatedBy")
+  suggestionVotes          SuggestionVote[]
+  teamMemberProfile        TeamMember?                @relation("TeamMemberUser")
+  teamMembersCreated       TeamMember[]               @relation("TeamMemberCreatedBy")
+  teamMembersUpdated       TeamMember[]               @relation("TeamMemberUpdatedBy")
+
+  // Relations - Authentication
+  sessions                 UserSession[]
+  emailVerifications       EmailVerificationToken[]
+  passwordResets           PasswordResetToken[]
+  permissions              UserPermission[]           @relation("UserPermissions")
+  permissionsGranted       UserPermission[]           @relation("PermissionGranter")
+  questionReviews          BenchmarkQuestionSubmission[] @relation("QuestionReviewer")
+
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+// ==================== AUTHENTICATION TABLES ====================
+model UserSession {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  refreshTokenHash String    @map("refresh_token_hash")
+  expiresAt        DateTime  @map("expires_at")
+  ipAddress        String?   @map("ip_address") @db.Inet
+  userAgent        String?   @map("user_agent")
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([isActive])
+  @@map("user_sessions")
+}
+
+model EmailVerificationToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  token     String    @unique
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model UserPermission {
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  permission String
+  grantedBy  String?   @map("granted_by")
+  grantedAt  DateTime  @default(now()) @map("granted_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  // Relations
+  user    User  @relation("UserPermissions", fields: [userId], references: [id], onDelete: Cascade)
+  granter User? @relation("PermissionGranter", fields: [grantedBy], references: [id])
+
+  @@unique([userId, permission])
+  @@index([userId])
+  @@index([permission])
+  @@map("user_permissions")
+}
+
+// ==================== REVIEW SYSTEM ====================
+model ProfileReviewAssignment {
+  id          String       @id @default(uuid())
+  reviewerId  String       @map("reviewer_id")
+  entityType  EntityType   @map("entity_type")
+  entityId    String       @map("entity_id")
+  assignedAt  DateTime     @default(now()) @map("assigned_at")
+  assignedBy  String?      @map("assigned_by")
+  dueDate     DateTime?    @map("due_date")
+  status      ReviewStatus @default(NOT_STARTED)
+  completedAt DateTime?    @map("completed_at")
+  notes       String?
+
+  // Relations
+  reviewer           User                     @relation("ReviewerAssignments", fields: [reviewerId], references: [id])
+  assigner           User?                    @relation("AssignedReviews", fields: [assignedBy], references: [id])
+  techProfileAnswers TechProfileAnswer[]
+  responseAnswers    ResponseProfileAnswer[]
+
+  @@unique([reviewerId, entityType, entityId])
+  @@index([reviewerId, status])
+  @@index([status])
+  @@map("profile_review_assignments")
+}
+
+// ==================== TECHNICAL PROFILE ====================
+model TechProfileQuestion {
+  id            String        @id @default(uuid())
+  entityType    EntityType    @map("entity_type")
+  questionKey   String        @map("question_key")
+  questionText  String        @map("question_text")
+  category      String
+  questionType  QuestionType  @map("question_type")
+  displayOrder  Int           @map("display_order")
+  isActive      Boolean       @default(true) @map("is_active")
+  isDisplayed   Boolean       @default(true) @map("is_displayed")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  createdBy     String?       @map("created_by")
+  updatedAt     DateTime?     @updatedAt @map("updated_at")
+  updatedBy     String?       @map("updated_by")
+
+  // Relations
+  createdByUser User?                  @relation("TechQuestionCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                  @relation("TechQuestionUpdatedBy", fields: [updatedBy], references: [id])
+  answers       TechProfileAnswer[]
+
+  @@unique([entityType, questionKey])
+  @@index([entityType, isActive])
+  @@index([isDisplayed, displayOrder])
+  @@map("tech_profile_questions")
+}
+
+model TechProfileAnswer {
+  id                   String    @id @default(uuid())
+  entityType           EntityType @map("entity_type")
+  entityId             String    @map("entity_id")
+  questionId           String    @map("question_id")
+  booleanValue         Boolean?  @map("boolean_value")
+  numericValue         Decimal?  @map("numeric_value")
+  textValue            String?   @map("text_value")
+  listValue            String?   @map("list_value")
+  notes                String?
+  reviewerId           String    @map("reviewer_id")
+  reviewAssignmentId   String?   @map("review_assignment_id")
+  isApproved           Boolean   @default(false) @map("is_approved")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  createdBy            String?   @map("created_by")
+  approvedAt           DateTime? @map("approved_at")
+  approvedBy           String?   @map("approved_by")
+
+  // Relations
+  question          TechProfileQuestion      @relation(fields: [questionId], references: [id])
+  reviewer          User                     @relation("TechProfileReviewer", fields: [reviewerId], references: [id])
+  approver          User?                    @relation("TechProfileApprover", fields: [approvedBy], references: [id])
+  createdByUser     User?                    @relation("TechProfileCreatedBy", fields: [createdBy], references: [id])
+  reviewAssignment  ProfileReviewAssignment? @relation(fields: [reviewAssignmentId], references: [id])
+  modelVersion      ModelVersion?            @relation("TechProfileAnswerModelVersion", fields: [entityId], references: [id], map: "tech_profile_answers_model_version_fkey")
+  toolConfiguration ToolConfiguration?       @relation("TechProfileAnswerToolConfiguration", fields: [entityId], references: [id], map: "tech_profile_answers_tool_configuration_fkey")
+
+  @@index([entityId, questionId, isApproved, createdAt])
+  @@index([reviewAssignmentId])
+  @@index([isApproved, createdAt])
+  @@map("tech_profile_answers")
+}
+
+// ==================== CONVERSATION DYNAMICS ====================
+model ResponseProfileTest {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  testType    String    @map("test_type")
+  version     Int       @default(1)
+  isValidated Boolean   @default(false) @map("is_validated")
+  isPublic    Boolean   @default(false) @map("is_public")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
+
+  // Relations
+  questions ResponseProfileQuestion[]
+
+  @@map("response_profile_test")
+}
+
+model ResponseProfileQuestion {
+  id           String        @id @default(uuid())
+  testId       String?       @map("test_id")
+  questionType QuestionType  @map("question_type")
+  questionKey  String        @map("question_key")
+  questionText String        @map("question_text")
+  category     String
+  displayOrder Int           @map("display_order")
+  isActive     Boolean       @default(true) @map("is_active")
+  isDisplayed  Boolean       @default(true) @map("is_displayed")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  createdBy    String?       @map("created_by")
+  updatedAt    DateTime?     @updatedAt @map("updated_at")
+  updatedBy    String?       @map("updated_by")
+
+  // Relations
+  test          ResponseProfileTest?    @relation(fields: [testId], references: [id])
+  createdByUser User?                   @relation("ResponseQuestionCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                   @relation("ResponseQuestionUpdatedBy", fields: [updatedBy], references: [id])
+  answers       ResponseProfileAnswer[]
+
+  @@unique([questionText, questionKey])
+  @@map("response_profile_questions")
+}
+
+model ResponseProfileAnswer {
+  id                   String    @id @default(uuid())
+  questionId           String    @map("question_id")
+  entityType           EntityType @map("entity_type")
+  entityId             String    @map("entity_id")
+  booleanValue         Boolean?  @map("boolean_value")
+  numericValue         Decimal?  @map("numeric_value")
+  textValue            String?   @map("text_value")
+  listValue            String?   @map("list_value")
+  notes                String?
+  reviewerId           String    @map("reviewer_id")
+  reviewAssignmentId   String?   @map("review_assignment_id")
+  isApproved           Boolean   @default(false) @map("is_approved")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  createdBy            String?   @map("created_by")
+  approvedAt           DateTime? @map("approved_at")
+  approvedBy           String?   @map("approved_by")
+
+  // Relations
+  question          ResponseProfileQuestion  @relation(fields: [questionId], references: [id])
+  reviewer          User                     @relation("ResponseProfileReviewer", fields: [reviewerId], references: [id])
+  approver          User?                    @relation("ResponseProfileApprover", fields: [approvedBy], references: [id])
+  createdByUser     User?                    @relation("ResponseProfileCreatedBy", fields: [createdBy], references: [id])
+  reviewAssignment  ProfileReviewAssignment? @relation(fields: [reviewAssignmentId], references: [id])
+  modelVersion      ModelVersion?            @relation("ResponseProfileAnswerModelVersion", fields: [entityId], references: [id], map: "response_profile_answers_model_version_fkey")
+  toolConfiguration ToolConfiguration?       @relation("ResponseProfileAnswerToolConfiguration", fields: [entityId], references: [id], map: "response_profile_answers_tool_configuration_fkey")
+
+  @@index([questionId, isApproved, createdAt])
+  @@index([reviewAssignmentId])
+  @@index([isApproved, createdAt])
+  @@map("response_profile_answers")
+}
+
+// ==================== BENCHMARKING SYSTEM ====================
+model BenchmarkScale {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  scaleType   String    @map("scale_type")
+  version     Int       @default(1)
+  isValidated Boolean   @default(false) @map("is_validated")
+  isPublic    Boolean   @default(false) @map("is_public")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
+
+  // Relations
+  createdByUser User?                 @relation("BenchmarkScaleCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                 @relation("BenchmarkScaleUpdatedBy", fields: [updatedBy], references: [id])
+  questions     BenchmarkQuestion[]
+  experiments   BenchmarkExperiment[]
+
+  @@map("benchmark_scales")
+}
+
+model BenchmarkQuestionSubmission {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  promptValue      String    @map("prompt_value")
+  response1Value   String    @map("response_1_value")
+  response2Value   String    @map("response_2_value")
+  rating1          Float     @map("rating_1")
+  rating2          Float     @map("rating_2")
+  instructionPrompt String?   @map("instruction_prompt")
+  notes            String?
+  metadata         Json?
+  status           String    @default("pending")
+  reviewedBy       String?   @map("reviewed_by")
+  reviewedAt       DateTime? @map("reviewed_at")
+  rejectionReason  String?   @map("rejection_reason")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user     User  @relation(fields: [userId], references: [id])
+  reviewer User? @relation("QuestionReviewer", fields: [reviewedBy], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("benchmark_question_submissions")
+}
+
+model BenchmarkQuestion {
+  id               String    @id @default(uuid())
+  scaleId          String?   @map("scale_id")
+  position         Int?
+  promptId         String    @map("prompt_id")
+  promptValue      String    @map("prompt_value")
+  responseId       String    @map("response_id")
+  responseValue    String    @map("response_value")
+  isValidated      Boolean   @default(false) @map("is_validated")
+  isUserSubmitted  Boolean   @default(false) @map("is_user_submitted")
+  metadata         Json?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  createdBy        String?   @map("created_by")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+  updatedBy        String?   @map("updated_by")
+
+  // Relations
+  scale         BenchmarkScale?     @relation(fields: [scaleId], references: [id])
+  createdByUser User?               @relation("BenchmarkQuestionCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?               @relation("BenchmarkQuestionUpdatedBy", fields: [updatedBy], references: [id])
+  ratings       BenchmarkRating[]
+  results       BenchmarkResult[]
+  tags          BenchmarkTagQuestionLink[]
+
+  @@index([scaleId])
+  @@map("benchmark_questions")
+}
+
+model BenchmarkRating {
+  id         String    @id @default(uuid())
+  questionId String    @map("question_id")
+  userId     String    @map("user_id")
+  rating     Float
+  confidence Float?
+  reasoning  String?
+  metadata   Json?
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  question BenchmarkQuestion @relation(fields: [questionId], references: [id])
+  user     User              @relation(fields: [userId], references: [id])
+
+  @@index([questionId])
+  @@index([userId])
+  @@map("benchmark_ratings")
+}
+
+model BenchmarkTag {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
+
+  // Relations
+  createdByUser User?                        @relation("BenchmarkTagCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                        @relation("BenchmarkTagUpdatedBy", fields: [updatedBy], references: [id])
+  questions     BenchmarkTagQuestionLink[]
+
+  @@map("benchmark_tags")
+}
+
+model BenchmarkTagQuestionLink {
+  id         String @id @default(uuid())
+  questionId String @map("question_id")
+  tagId      String @map("tag_id")
+
+  // Relations
+  question BenchmarkQuestion @relation(fields: [questionId], references: [id])
+  tag      BenchmarkTag      @relation(fields: [tagId], references: [id])
+
+  @@map("benchmark_tag_question_link")
+}
+
+model BenchmarkExperiment {
+  id            String    @id @default(uuid())
+  userId        String    @map("user_id")
+  scaleId       String?   @map("scale_id")
+  name          String
+  description   String?
+  entityType    EntityType @map("entity_type")
+  entityIds     Json      @map("entity_ids")
+  config        Json
+  status        String    @default("pending")
+  taskId        String?   @map("task_id")
+  estimatedCost Float?    @map("estimated_cost")
+  actualCost    Float?    @map("actual_cost")
+  progress      Int       @default(0)
+  startedAt     DateTime? @map("started_at")
+  completedAt   DateTime? @map("completed_at")
+  errorMessage  String?   @map("error_message")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+  updatedBy     String?   @map("updated_by")
+
+  // Relations
+  user          User            @relation(fields: [userId], references: [id])
+  scale         BenchmarkScale? @relation(fields: [scaleId], references: [id])
+  updatedByUser User?           @relation("ExperimentUpdatedBy", fields: [updatedBy], references: [id])
+  results       BenchmarkResult[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("benchmark_experiments")
+}
+
+model BenchmarkPrompt {
+  id         String    @id @default(uuid())
+  name       String?
+  promptType String    @map("prompt_type")
+  content    String
+  createdAt  DateTime  @default(now()) @map("created_at")
+  createdBy  String?   @map("created_by")
+  updatedAt  DateTime? @updatedAt @map("updated_at")
+  updatedBy  String?   @map("updated_by")
+
+  // Relations
+  createdByUser       User?             @relation("BenchmarkPromptCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser       User?             @relation("BenchmarkPromptUpdatedBy", fields: [updatedBy], references: [id])
+  systemPromptResults BenchmarkResult[] @relation("SystemPromptResults")
+  messagePromptResults BenchmarkResult[] @relation("MessagePromptResults")
+
+  @@map("benchmark_prompts")
+}
+
+model BenchmarkResult {
+  id                   String    @id @default(uuid())
+  experimentId         String?   @map("experiment_id")
+  repeatNumber         Int?      @map("repeat_number")
+  modelVersionId       String?   @map("model_version_id")
+  toolConfigurationId  String?   @map("tool_configuration_id")
+  questionId           String?   @map("question_id")
+  config               Json?
+  temperature          Float?
+  topP                 Float?    @map("top_p")
+  maxTokens            Int?      @map("max_tokens")
+  systemPromptId       String?   @map("system_prompt_id")
+  messagePromptId      String?   @map("message_prompt_id")
+  score                Int?
+  reasoning            String?
+  rawResponse          String?   @map("raw_response")
+  responseTimeMs       Int?      @map("response_time_ms")
+  tokenUsage           Json?     @map("token_usage")
+  status               String    @default("pending")
+  errorType            String?   @map("error_type")
+  errorMessage         String?   @map("error_message")
+  apiCost              Float?    @map("api_cost")
+  createdAt            DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  experiment        BenchmarkExperiment? @relation(fields: [experimentId], references: [id])
+  modelVersion      ModelVersion?        @relation(fields: [modelVersionId], references: [id])
+  toolConfiguration ToolConfiguration?   @relation(fields: [toolConfigurationId], references: [id])
+  question          BenchmarkQuestion?   @relation(fields: [questionId], references: [id])
+  systemPrompt      BenchmarkPrompt?     @relation("SystemPromptResults", fields: [systemPromptId], references: [id])
+  messagePrompt     BenchmarkPrompt?     @relation("MessagePromptResults", fields: [messagePromptId], references: [id])
+
+  @@index([experimentId])
+  @@index([modelVersionId])
+  @@index([toolConfigurationId])
+  @@index([questionId])
+  @@map("benchmark_results")
+}
+
+// ==================== COMMUNITY FEATURES ====================
+model Update {
+  id          String    @id @default(uuid())
+  date        DateTime  @db.Date
+  title       String
+  tag         String
+  note        String?
+  imageUrl    String?   @map("image_url")
+  isPublished Boolean   @default(true) @map("is_published")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
+
+  // Relations
+  createdByUser User?             @relation("UpdateCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?             @relation("UpdateUpdatedBy", fields: [updatedBy], references: [id])
+  reactions     UpdateReaction[]
+
+  @@index([date])
+  @@index([tag])
+  @@index([isPublished])
+  @@map("updates")
+}
+
+model UpdateReaction {
+  id        String   @id @default(uuid())
+  updateId  String   @map("update_id")
+  userId    String   @map("user_id")
+  emojiType String   @map("emoji_type")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  update Update @relation(fields: [updateId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([updateId, userId, emojiType])
+  @@index([updateId])
+  @@index([userId])
+  @@map("update_reactions")
+}
+
+model Suggestion {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  status      String    @default("open_vote")
+  voteCount   Int       @default(0) @map("vote_count")
+  isVisible   Boolean   @default(true) @map("is_visible")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
+
+  // Relations
+  createdByUser User?             @relation("SuggestionCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?             @relation("SuggestionUpdatedBy", fields: [updatedBy], references: [id])
+  votes         SuggestionVote[]
+
+  @@index([status])
+  @@index([voteCount])
+  @@index([isVisible])
+  @@index([createdAt])
+  @@map("suggestions")
+}
+
+model SuggestionVote {
+  id           String    @id @default(uuid())
+  suggestionId String    @map("suggestion_id")
+  userId       String    @map("user_id")
+  voteValue    Int       @map("vote_value")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime? @updatedAt @map("updated_at")
+
+  // Relations
+  suggestion Suggestion @relation(fields: [suggestionId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+
+  @@unique([suggestionId, userId])
+  @@index([suggestionId])
+  @@index([userId])
+  @@map("suggestion_votes")
+}
+
+model TeamMember {
+  id           String    @id @default(uuid())
+  userId       String    @unique @map("user_id")
+  displayName  String    @map("display_name")
+  role         String
+  bio          String?
+  avatarUrl    String?   @map("avatar_url")
+  displayOrder Int?      @map("display_order")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  createdBy    String?   @map("created_by")
+  updatedAt    DateTime? @updatedAt @map("updated_at")
+  updatedBy    String?   @map("updated_by")
+
+  // Relations
+  user          User  @relation("TeamMemberUser", fields: [userId], references: [id])
+  createdByUser User? @relation("TeamMemberCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User? @relation("TeamMemberUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([isActive])
+  @@index([displayOrder])
+  @@map("team_members")
 }
