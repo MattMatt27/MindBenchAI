@@ -17,56 +17,20 @@
   background: var(--lb-bg);
 }
 
-.lb-tabs {
-  display: flex;
-  gap: 8px;
-  padding: 16px 16px 0 16px;
-  background: var(--bg);
-  border-bottom: 2px solid var(--border);
-}
-
-.lb-tab {
-  padding: 10px 20px;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: -2px;
-}
-
-.lb-tab:hover {
-  color: var(--text);
-  background: var(--panel-2);
-}
-
-.lb-tab.active {
-  color: var(--text);
-  border-bottom-color: #3b82f6;
-}
-
-.lb-tab.active::after {
-  content: "";
-  position: absolute;
-  bottom: -10px;
-  left: 0;
-  width: 72px;
-  height: 3px;
-  background: var(--lb-primary);
-  border-radius: 999px;
-}
-
-/* Layout (grid w/ sticky sidebar) */
 .lb-layout {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 260px minmax(0, 1fr);
   gap: 16px;
   padding: 16px;
   background: var(--lb-bg);
   align-items: start;
+}
+
+.lb-layout.no-sidebar {
+  grid-template-columns: 1fr;
+}
+.lb-layout.no-sidebar .lb-sidebar {
+  display: none;
 }
 
 .lb-sidebar {
@@ -87,7 +51,6 @@
   overflow: hidden;
 }
 
-/* Search (pill island w/ icon) */
 .lb-search {
   margin-bottom: 0;
 }
@@ -120,7 +83,6 @@
   min-width: 0;
 }
 
-/* Filters */
 .lb-filter-section {
   margin-top: 16px;
 }
@@ -190,7 +152,6 @@
   accent-color: var(--lb-primary);
 }
 
-/* Prompt text */
 .lb-prompt-text {
   margin-top: 6px;
   padding: 8px;
@@ -202,7 +163,6 @@
   font-style: italic;
 }
 
-/* Table container (card look + max height) */
 .lb-table-container {
   background: var(--lb-panel);
   border: 1px solid var(--lb-border);
@@ -286,13 +246,11 @@
   background: #dbeafe;
 }
 
-/* Indentation for sub-rows */
 .lb-indent {
   display: inline-block;
   width: 24px;
 }
 
-/* Expander */
 .lb-expander {
   background: none;
   border: none;
@@ -307,7 +265,6 @@
   transform: rotate(90deg);
 }
 
-/* Checkbox cell */
 .lb-checkbox-cell {
   display: flex;
   align-items: center;
@@ -319,7 +276,6 @@
   cursor: pointer;
 }
 
-/* Column header with info */
 .lb-col-header {
   display: inline-flex;
   align-items: center;
@@ -351,14 +307,14 @@
 /* Comparison view */
 .lb-comparison-content {
   flex: 1;
-  padding: 16px;
+  padding: 20px;
 }
 
 .lb-comparison-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 .lb-comparison-header h2 {
@@ -388,7 +344,6 @@
   box-shadow: 0 0 0 3px var(--lb-ring);
 }
 
-/* Responsive */
 @media (max-width: 1024px) {
   .lb-sidebar {
     width: 220px;
@@ -429,7 +384,7 @@
   }
   .lb-search-input,
   .lb-select {
-    font-size: 16px; /* prevent iOS zoom */
+    font-size: 16px; 
   }
 }
 
@@ -458,7 +413,7 @@
   .lb-table td {
     padding: 6px 8px;
   }
-  /* Hide less critical columns on very small screens */
+ 
   .lb-table th:nth-child(2),
   .lb-table td:nth-child(2) {
     display: none;
@@ -537,4 +492,3 @@
   margin-bottom: 4px;
   color: var(--lb-text);
 }
-

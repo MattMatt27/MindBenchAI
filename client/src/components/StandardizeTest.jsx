@@ -194,16 +194,16 @@ export default function StandardizeTest() {
 
   return (
     <div>
-      <div className="st-tabs">
+      <div className="g-tabs">
         <button
-          className={`st-tab ${activeTab === "models" ? "active" : ""}`}
+          className={`g-tab-bttn ${activeTab === "models" ? "active" : ""}`}
           onClick={() => setActiveTab("models")}
           type="button"
         >
           Big 5 Test
         </button>
         <button
-          className={`st-tab ${activeTab === "snapshots" ? "active" : ""}`}
+          className={`g-tab-bttn ${activeTab === "snapshots" ? "active" : ""}`}
           onClick={() => setActiveTab("snapshots")}
           type="button"
         >

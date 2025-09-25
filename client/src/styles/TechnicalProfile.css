@@ -89,39 +89,6 @@ thead tr:nth-child(2) th { text-align: center; }
   --ring:#2563eb33;
 }
 
-/* Page Tabs */
-.page-tabs {
-  display: flex;
-  gap: 8px;
-  padding: 16px 16px 0 16px;
-  background: var(--bg);
-  border-bottom: 2px solid var(--border);
-}
-
-.page-tab {
-  padding: 10px 20px;
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  font-size: 15px;
-  font-weight: 500;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.2s;
-  margin-bottom: -2px;
-}
-
-.page-tab:hover {
-  color: var(--text);
-  background: var(--panel-2);
-}
-
-.page-tab.active {
-  color: var(--text);
-  border-bottom-color: #3b82f6;
-  background: transparent;
-}
-
 .layout{
   display:grid;
   grid-template-columns:260px 1fr;

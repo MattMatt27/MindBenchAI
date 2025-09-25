@@ -68,8 +68,7 @@ export default function Leaderboard() {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [expandedModels, setExpandedModels] = React.useState(() => new Set());
   const [selectedVersions, setSelectedVersions] = React.useState(() => new Set());
-  
-  // Filter states for parameters
+
   const [temperatureFilter, setTemperatureFilter] = React.useState("");
   const [topPFilter, setTopPFilter] = React.useState("");
   const [systemPromptFilter, setSystemPromptFilter] = React.useState("");
@@ -102,8 +101,7 @@ export default function Leaderboard() {
     if (filters.modelFamilies) {
       filtered = filtered.filter(v => filters.modelFamilies.includes(v.modelFamily));
     }
-    
-    // Build main rows only
+
     const modelMap = {};
     
     // Group by model
@@ -162,15 +160,12 @@ export default function Leaderboard() {
     return mainRows;
   }, [temperatureFilter, topPFilter, systemPromptFilter, messagePromptFilter, modelFamilyFilter, sorting]);
 
-  // Build final flat data structure maintaining hierarchy
   const data = React.useMemo(() => {
     const rows = [];
     
     sortedMainRows.forEach(mainRow => {
-      // Add main row
       rows.push(mainRow);
       
-      // Add version rows if expanded
       if (expandedModels.has(mainRow.id) && mainRow.hasVersions) {
         mainRow.versions
           .filter(v => v.version !== mainRow.actualVersion)
@@ -229,8 +224,7 @@ export default function Leaderboard() {
               </div>
             );
           }
-          
-          // Main row - show expander if has versions
+ 
           if (!row.original.hasVersions) return null;
           
           const isOpen = expandedModels.has(row.original.id);
@@ -347,16 +341,16 @@ export default function Leaderboard() {
 
   return (
     <div className="lb-container">
-      <div className="lb-tabs">
+      <div className="g-tabs">
         <button
-          className={`lb-tab ${activeTab === "models" ? "active" : ""}`}
+          className={`g-tab-bttn ${activeTab === "models" ? "active" : ""}`}
           onClick={() => setActiveTab("models")}
           type="button"
         >
           Models
         </button>
         <button
-          className={`lb-tab ${activeTab === "versions" ? "active" : ""}`}
+          className={`g-tab-bttn ${activeTab === "versions" ? "active" : ""}`}
           onClick={() => setActiveTab("versions")}
           type="button"
           aria-label={`Open Comparison tab with ${selectedVersions.size} selected`}
@@ -551,7 +545,8 @@ export default function Leaderboard() {
       )}
 
       {activeTab === "versions" && (
-        <div className="lb-layout">
+        /* NOTE: apply the 'no-sidebar' variant so the comparison table spans full width */
+        <div className="lb-layout no-sidebar">
           <div className="lb-comparison-content">
             <div className="lb-comparison-header">
               <h2>Version Comparison</h2>
