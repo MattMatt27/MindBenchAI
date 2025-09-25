@@ -34,7 +34,6 @@ enum ReviewStatus {
 enum UserRole {
   USER       @map("user")
   RESEARCHER @map("researcher")
-  ADMIN      @map("admin")
 }
 
 // ==================== CORE ENTITIES ====================

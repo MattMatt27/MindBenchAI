@@ -140,9 +140,6 @@ export default function Login() {
         <div className="demo-credentials">
           <h3>Demo Accounts</h3>
           <div className="demo-account">
-            <strong>Admin:</strong> admin@mindbench.ai / TestPassword123!
-          </div>
-          <div className="demo-account">
             <strong>Researcher:</strong> researcher@mindbench.ai / TestPassword123!
           </div>
           <div className="demo-account">

@@ -9,25 +9,6 @@ async function main() {
   // Create test users with hashed passwords
   const password = await bcrypt.hash('TestPassword123!', 12);
 
-  // Admin user
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@mindbench.ai' },
-    update: {},
-    create: {
-      email: 'admin@mindbench.ai',
-      username: 'admin',
-      passwordHash: password,
-      role: 'ADMIN',
-      firstName: 'Admin',
-      lastName: 'User',
-      isActive: true,
-      isVerified: true,
-      emailVerifiedAt: new Date(),
-    },
-  });
-
-  console.log('Created admin user:', adminUser.email);
-
   // Researcher user
   const researcherUser = await prisma.user.upsert({
     where: { email: 'researcher@mindbench.ai' },
@@ -96,7 +77,7 @@ async function main() {
       developer: 'OpenAI',
       baseApiEndpoint: 'https://api.openai.com/v1',
       description: 'OpenAI GPT-4 Optimized',
-      createdBy: adminUser.id,
+      createdBy: researcherUser.id,
     },
   });
 
@@ -108,7 +89,7 @@ async function main() {
       releaseDate: new Date('2024-09-15'),
       isLatest: true,
       isAvailable: true,
-      createdBy: adminUser.id,
+      createdBy: researcherUser.id,
     },
   });
 
@@ -121,7 +102,7 @@ async function main() {
       developer: 'Anthropic',
       baseApiEndpoint: 'https://api.anthropic.com/v1',
       description: 'Anthropic Claude Opus 4.1',
-      createdBy: adminUser.id,
+      createdBy: researcherUser.id,
     },
   });
 
@@ -133,7 +114,7 @@ async function main() {
       releaseDate: new Date('2024-09-01'),
       isLatest: true,
       isAvailable: true,
-      createdBy: adminUser.id,
+      createdBy: researcherUser.id,
     },
   });
 
@@ -145,7 +126,7 @@ async function main() {
       tag: 'new features',
       note: 'Welcome to MindBench.ai! Our platform for benchmarking AI models is now live.',
       isPublished: true,
-      createdBy: adminUser.id,
+      createdBy: researcherUser.id,
     },
   });
 
@@ -156,7 +137,7 @@ async function main() {
       tag: 'updates',
       note: 'New models have been added to our benchmarking suite.',
       isPublished: true,
-      createdBy: adminUser.id,
+      createdBy: researcherUser.id,
     },
   });
 

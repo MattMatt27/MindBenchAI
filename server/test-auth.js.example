@@ -48,10 +48,10 @@ async function makeRequest(method, endpoint, data = null, token = null) {
 async function testAuth() {
   console.log(`${colors.blue}🧪 Testing MindBench.ai Authentication API${colors.reset}\n`);
 
-  // Test 1: Login as admin
-  console.log(`${colors.yellow}Test 1: Login as admin${colors.reset}`);
+  // Test 1: Login as researcher
+  console.log(`${colors.yellow}Test 1: Login as researcher${colors.reset}`);
   const loginResult = await makeRequest('POST', '/auth/login', {
-    email: 'admin@mindbench.ai',
+    email: 'researcher@mindbench.ai',
     password: 'TestPassword123!',
   });
 
@@ -100,7 +100,7 @@ async function testAuth() {
   // Test 4: Try invalid login
   console.log(`\n${colors.yellow}Test 4: Test invalid credentials${colors.reset}`);
   const invalidResult = await makeRequest('POST', '/auth/login', {
-    email: 'admin@mindbench.ai',
+    email: 'researcher@mindbench.ai',
     password: 'WrongPassword',
   });
 

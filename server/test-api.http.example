@@ -20,15 +20,6 @@ Content-Type: application/json
   "lastName": "User"
 }
 
-### Login - Admin
-POST {{baseUrl}}/auth/login
-Content-Type: application/json
-
-{
-  "email": "admin@mindbench.ai",
-  "password": "TestPassword123!"
-}
-
 ### Login - Researcher
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
