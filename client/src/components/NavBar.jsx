@@ -12,8 +12,8 @@ export default function NavBar() {
           <NavLink to="/" className={itemClass} end>
             Home
           </NavLink>
-          <NavLink to="/framework" className={itemClass}>
-            Framework
+          <NavLink to="/resources" className={itemClass}>
+            Resources
           </NavLink>
           <NavLink to="/community" className={itemClass}>
             Community
