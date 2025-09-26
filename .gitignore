@@ -52,4 +52,5 @@ test-api.http
 *.sw?
 
 # Docs
-docs/*
+docs/ignore/*
+CLAUDE.md
