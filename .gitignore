@@ -12,6 +12,34 @@ dist
 dist-ssr
 *.local
 
+# Environment variables - SECURITY CRITICAL
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Security keys and certificates
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+id_rsa
+id_dsa
+id_ed25519
+id_ecdsa
+
+# Test files with sensitive data
+test-auth.js
+test-api.http
+*.test.env
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

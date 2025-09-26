@@ -55,3 +55,113 @@
   background: #333333;
   border-bottom-color: #3b82f6;
 }
+
+/* Authentication Section */
+.navbar-auth {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.navbar-loading {
+  color: #d1d5db;
+  font-size: 0.875rem;
+}
+
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.user-name {
+  color: white;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.user-role {
+  color: #9ca3af;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.logout-button {
+  background: #374151;
+  color: white;
+  border: 1px solid #4b5563;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logout-button:hover {
+  background: #4b5563;
+  border-color: #6b7280;
+}
+
+.navbar-guest {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.login-link {
+  color: #d1d5db;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.login-link:hover {
+  color: white;
+  background: #374151;
+}
+
+.register-link {
+  background: #2563eb;
+  color: white;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.register-link:hover {
+  background: #1d4ed8;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navbar-container {
+    padding: 0 1rem;
+  }
+
+  .user-info {
+    display: none;
+  }
+
+  .navbar-guest {
+    gap: 0.25rem;
+  }
+
+  .login-link,
+  .register-link {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
