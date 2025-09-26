@@ -239,24 +239,7 @@ The Technical Profile page displays model versions and tool configurations in a 
 
 ---
 
-## 🔧 Database Schema Enhancements for Dynamic Filtering
-
-### **Enhanced Question Schema**
-To support dynamic filtering, we need to add filtering metadata to the questions table:
-
-```sql
--- Add columns to tech_profile_questions table
-ALTER TABLE tech_profile_questions
-ADD COLUMN is_filterable boolean DEFAULT false,
-ADD COLUMN filter_type varchar(20), -- 'checkbox', 'multi_select', 'range', 'search'
-ADD COLUMN filter_config jsonb; -- Additional filter configuration
-
--- Example filter_config for different question types:
--- Boolean: {"show_counts": true, "labels": {"true": "Yes", "false": "No"}}
--- List: {"multi_select": true, "separator": ","}
--- Number: {"show_as_range": true, "step": 1, "show_distribution": true}
--- Text: {"searchable": true, "show_unique_values": true}
-```
+## 🔧 Dynamic Filter Implementation
 
 ### **Dynamic Filter Query Examples**
 ```sql
