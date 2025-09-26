@@ -16,6 +16,51 @@ import {
   modelFamilies 
 } from "../data/leaderboardData";
 
+function InfoBubble({ title, content }) {
+  const [open, setOpen] = React.useState(false);
+  const wrapRef = React.useRef(null);
+
+  React.useEffect(() => {
+    function handleDocClick(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("click", handleDocClick);
+    return () => document.removeEventListener("click", handleDocClick);
+  }, []);
+
+  return (
+    <span className="lb-info-wrap" ref={wrapRef}>
+      <span
+        className="lb-info"
+        role="button"
+        tabIndex={0}
+        aria-label={`${title} details`}
+        aria-expanded={open}
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen((v) => !v);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setOpen((v) => !v);
+          }
+        }}
+      >
+        !
+      </span>
+      {open && (
+        <div role="dialog" aria-label={title} className="lb-popover">
+          <div className="lb-popover-title">{title}</div>
+          <div className="lb-popover-body">{content}</div>
+        </div>
+      )}
+    </span>
+  );
+}
+
 export default function Leaderboard() {
   const [activeTab, setActiveTab] = React.useState("models");
   const [sorting, setSorting] = React.useState([]);
@@ -23,8 +68,7 @@ export default function Leaderboard() {
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [expandedModels, setExpandedModels] = React.useState(() => new Set());
   const [selectedVersions, setSelectedVersions] = React.useState(() => new Set());
-  
-  // Filter states for parameters
+
   const [temperatureFilter, setTemperatureFilter] = React.useState("");
   const [topPFilter, setTopPFilter] = React.useState("");
   const [systemPromptFilter, setSystemPromptFilter] = React.useState("");
@@ -57,8 +101,7 @@ export default function Leaderboard() {
     if (filters.modelFamilies) {
       filtered = filtered.filter(v => filters.modelFamilies.includes(v.modelFamily));
     }
-    
-    // Build main rows only
+
     const modelMap = {};
     
     // Group by model
@@ -117,15 +160,12 @@ export default function Leaderboard() {
     return mainRows;
   }, [temperatureFilter, topPFilter, systemPromptFilter, messagePromptFilter, modelFamilyFilter, sorting]);
 
-  // Build final flat data structure maintaining hierarchy
   const data = React.useMemo(() => {
     const rows = [];
     
     sortedMainRows.forEach(mainRow => {
-      // Add main row
       rows.push(mainRow);
       
-      // Add version rows if expanded
       if (expandedModels.has(mainRow.id) && mainRow.hasVersions) {
         mainRow.versions
           .filter(v => v.version !== mainRow.actualVersion)
@@ -184,8 +224,7 @@ export default function Leaderboard() {
               </div>
             );
           }
-          
-          // Main row - show expander if has versions
+ 
           if (!row.original.hasVersions) return null;
           
           const isOpen = expandedModels.has(row.original.id);
@@ -226,7 +265,10 @@ export default function Leaderboard() {
         header: () => (
           <div className="lb-col-header">
             SIRI-2
-            <span className="lb-info" title="RMSE - lower is better">ℹ</span>
+            <InfoBubble
+              title="SIRI-2"
+              content="RMSE — lower is better. This score reflects error across the SIRI-2 benchmark."
+            />
           </div>
         ),
         cell: ({ getValue }) => {
@@ -239,7 +281,10 @@ export default function Leaderboard() {
         header: () => (
           <div className="lb-col-header">
             A-Pharm
-            <span className="lb-info" title="RMSE - lower is better">ℹ</span>
+            <InfoBubble
+              title="A-Pharm"
+              content="RMSE — lower is better. Pharmacology subset performance."
+            />
           </div>
         ),
         cell: ({ getValue }) => {
@@ -252,7 +297,10 @@ export default function Leaderboard() {
         header: () => (
           <div className="lb-col-header">
             A-MaMH
-            <span className="lb-info" title="RMSE - lower is better">ℹ</span>
+            <InfoBubble
+              title="A-MaMH"
+              content="RMSE — lower is better. Math & reasoning subset performance."
+            />
           </div>
         ),
         cell: ({ getValue }) => {
@@ -293,16 +341,16 @@ export default function Leaderboard() {
 
   return (
     <div className="lb-container">
-      <div className="lb-tabs">
+      <div className="g-tabs">
         <button
-          className={`lb-tab ${activeTab === "models" ? "active" : ""}`}
+          className={`g-tab-bttn ${activeTab === "models" ? "active" : ""}`}
           onClick={() => setActiveTab("models")}
           type="button"
         >
           Models
         </button>
         <button
-          className={`lb-tab ${activeTab === "versions" ? "active" : ""}`}
+          className={`g-tab-bttn ${activeTab === "versions" ? "active" : ""}`}
           onClick={() => setActiveTab("versions")}
           type="button"
           aria-label={`Open Comparison tab with ${selectedVersions.size} selected`}
@@ -315,12 +363,14 @@ export default function Leaderboard() {
         <div className="lb-layout">
           <aside className="lb-sidebar">
             <div className="lb-search">
-              <input
-                className="lb-search-input"
-                value={globalFilter ?? ""}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                placeholder="Search..."
-              />
+              <div className="lb-search-island">
+                <input
+                  className="lb-search-input"
+                  value={globalFilter ?? ""}
+                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  placeholder="Search..."
+                />
+              </div>
             </div>
 
             <div className="lb-filter-section">
@@ -495,7 +545,8 @@ export default function Leaderboard() {
       )}
 
       {activeTab === "versions" && (
-        <div className="lb-layout">
+        /* NOTE: apply the 'no-sidebar' variant so the comparison table spans full width */
+        <div className="lb-layout no-sidebar">
           <div className="lb-comparison-content">
             <div className="lb-comparison-header">
               <h2>Version Comparison</h2>
@@ -515,9 +566,33 @@ export default function Leaderboard() {
                       <th>Model Family</th>
                       <th>Model</th>
                       <th>Version</th>
-                      <th>SIRI-2</th>
-                      <th>A-Pharm</th>
-                      <th>A-MaMH</th>
+                      <th>
+                        <div className="lb-col-header">
+                          SIRI-2
+                          <InfoBubble
+                            title="SIRI-2"
+                            content="RMSE — lower is better. This score reflects error across the SIRI-2 benchmark."
+                          />
+                        </div>
+                      </th>
+                      <th>
+                        <div className="lb-col-header">
+                          A-Pharm
+                          <InfoBubble
+                            title="A-Pharm"
+                            content="RMSE — lower is better. Pharmacology subset performance."
+                          />
+                        </div>
+                      </th>
+                      <th>
+                        <div className="lb-col-header">
+                          A-MaMH
+                          <InfoBubble
+                            title="A-MaMH"
+                            content="RMSE — lower is better. Math & reasoning subset performance."
+                          />
+                        </div>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>

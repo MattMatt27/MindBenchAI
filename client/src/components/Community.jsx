@@ -95,11 +95,11 @@ export default function Community() {
 
   return (
     <div>
-      <div className="cm-tabs">
+      <div className="g-tabs">
         {["What's New", "Suggestions", "Team members"].map((tab) => (
           <button
             key={tab}
-            className={`cm-tab ${activeTab === tab ? "active" : ""}`}
+            className={`g-tab-bttn ${activeTab === tab ? "active" : ""}`}
             onClick={() => setActiveTab(tab)}
             type="button"
             aria-pressed={activeTab === tab}

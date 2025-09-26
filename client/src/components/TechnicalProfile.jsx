@@ -107,15 +107,15 @@ export default function TechnicalProfile() {
   return (
     <>
       {/* Page-level tabs */}
-      <div className="page-tabs">
+      <div className="g-tabs">
         <button 
-          className={`page-tab ${activeTab === 'tools' ? 'active' : ''}`}
+          className={`g-tab-bttn ${activeTab === 'tools' ? 'active' : ''}`}
           onClick={() => setActiveTab('tools')}
         >
           Tools
         </button>
         <button 
-          className={`page-tab ${activeTab === 'models' ? 'active' : ''}`}
+          className={`g-tab-bttn ${activeTab === 'models' ? 'active' : ''}`}
           onClick={() => setActiveTab('models')}
         >
           Base Models
