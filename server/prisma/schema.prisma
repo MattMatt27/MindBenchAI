@@ -36,6 +36,14 @@ enum UserRole {
   RESEARCHER @map("researcher")
 }
 
+enum ExpertiseCategory {
+  EXPERT       @map("expert")
+  PROFESSIONAL @map("professional")
+  TRAINEE      @map("trainee")
+  STUDENT      @map("student")
+  PUBLIC       @map("public")
+}
+
 // ==================== CORE ENTITIES ====================
 model Model {
   id                String         @id @default(uuid())
@@ -147,8 +155,6 @@ model User {
   role                 UserRole  @default(USER)
   firstName            String?   @map("first_name")
   lastName             String?   @map("last_name")
-  expertiseLevel       String?   @map("expertise_level")
-  expertiseAreas       Json?     @map("expertise_areas")
   isActive             Boolean   @default(true) @map("is_active")
   isVerified           Boolean   @default(false) @map("is_verified")
   emailVerifiedAt      DateTime? @map("email_verified_at")
@@ -219,11 +225,34 @@ model User {
   permissionsGranted       UserPermission[]           @relation("PermissionGranter")
   questionReviews          BenchmarkQuestionSubmission[] @relation("QuestionReviewer")
 
+  // Relations - Expertise
+  expertiseHistory         UserExpertiseHistory[]     @relation("UserExpertiseHistory")
+  expertiseAssignments     UserExpertiseHistory[]     @relation("ExpertiseAssigner")
+
   @@index([email])
   @@index([username])
   @@index([role])
   @@index([isActive])
   @@map("users")
+}
+
+model UserExpertiseHistory {
+  id              String            @id @default(uuid())
+  userId          String            @map("user_id")
+  expertiseLevel  ExpertiseCategory @map("expertise_level")
+  effectiveFrom   DateTime          @default(now()) @map("effective_from")
+  effectiveTo     DateTime?         @map("effective_to")
+  assignedBy      String?           @map("assigned_by")
+  notes           String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  user     User  @relation("UserExpertiseHistory", fields: [userId], references: [id], onDelete: Cascade)
+  assigner User? @relation("ExpertiseAssigner", fields: [assignedBy], references: [id])
+
+  @@index([userId, effectiveFrom, effectiveTo])
+  @@index([userId])
+  @@map("user_expertise_history")
 }
 
 // ==================== AUTHENTICATION TABLES ====================

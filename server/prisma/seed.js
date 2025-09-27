@@ -3,6 +3,58 @@ const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
+// Helper function to create expertise history when creating users
+async function createUserWithExpertiseHistory(userData, assignedBy = null) {
+  // Create the user first
+  const user = await prisma.user.create({
+    data: userData
+  });
+
+  // Create the initial expertise history record
+  await prisma.userExpertiseHistory.create({
+    data: {
+      userId: user.id,
+      expertiseLevel: userData.expertiseLevel,
+      effectiveFrom: new Date(),
+      assignedBy: assignedBy,
+      notes: 'Initial assignment during account creation'
+    }
+  });
+
+  return user;
+}
+
+// Helper function to update user expertise level
+async function updateUserExpertise(userId, newLevel, assignedById, notes = null) {
+  // End the current expertise record
+  await prisma.userExpertiseHistory.updateMany({
+    where: {
+      userId: userId,
+      effectiveTo: null
+    },
+    data: {
+      effectiveTo: new Date()
+    }
+  });
+
+  // Create new expertise record
+  await prisma.userExpertiseHistory.create({
+    data: {
+      userId: userId,
+      expertiseLevel: newLevel,
+      effectiveFrom: new Date(),
+      assignedBy: assignedById,
+      notes: notes || `Updated to ${newLevel}`
+    }
+  });
+
+  // Update the user's current expertise level
+  await prisma.user.update({
+    where: { id: userId },
+    data: { expertiseLevel: newLevel }
+  });
+}
+
 async function main() {
   console.log('Starting database seed...');
 
@@ -23,12 +75,29 @@ async function main() {
       isActive: true,
       isVerified: true,
       emailVerifiedAt: new Date(),
-      expertiseLevel: 'Expert',
-      expertiseAreas: JSON.stringify(['NLP', 'Machine Learning', 'Benchmarking']),
     },
   });
 
   console.log('Created researcher user:', researcherUser.email);
+
+  // Create expertise history for researcher
+  const existingExpertise = await prisma.userExpertiseHistory.findFirst({
+    where: {
+      userId: researcherUser.id,
+      effectiveTo: null
+    }
+  });
+
+  if (!existingExpertise) {
+    await prisma.userExpertiseHistory.create({
+      data: {
+        userId: researcherUser.id,
+        expertiseLevel: 'EXPERT',
+        effectiveFrom: new Date(),
+        notes: 'Initial expertise assignment - NLP, Machine Learning, Benchmarking expert'
+      }
+    });
+  }
 
   // Regular user
   const regularUser = await prisma.user.upsert({
