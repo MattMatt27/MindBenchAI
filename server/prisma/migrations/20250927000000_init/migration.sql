@@ -1,3 +1,6 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateEnum
 CREATE TYPE "public"."EntityType" AS ENUM ('model_version', 'tool_configuration');
 
@@ -8,7 +11,10 @@ CREATE TYPE "public"."QuestionType" AS ENUM ('boolean', 'number', 'text', 'list'
 CREATE TYPE "public"."ReviewStatus" AS ENUM ('not_started', 'in_progress', 'submitted', 'approved', 'rejected');
 
 -- CreateEnum
-CREATE TYPE "public"."UserRole" AS ENUM ('user', 'researcher', 'admin');
+CREATE TYPE "public"."UserRole" AS ENUM ('user', 'researcher');
+
+-- CreateEnum
+CREATE TYPE "public"."ExpertiseCategory" AS ENUM ('expert', 'professional', 'trainee', 'student', 'public');
 
 -- CreateTable
 CREATE TABLE "public"."models" (
@@ -83,8 +89,6 @@ CREATE TABLE "public"."users" (
     "role" "public"."UserRole" NOT NULL DEFAULT 'user',
     "first_name" TEXT,
     "last_name" TEXT,
-    "expertise_level" TEXT,
-    "expertise_areas" JSONB,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "is_verified" BOOLEAN NOT NULL DEFAULT false,
     "email_verified_at" TIMESTAMP(3),
@@ -95,6 +99,20 @@ CREATE TABLE "public"."users" (
     "updated_at" TIMESTAMP(3),
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "public"."user_expertise_history" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "expertise_level" "public"."ExpertiseCategory" NOT NULL,
+    "effective_from" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "effective_to" TIMESTAMP(3),
+    "assigned_by" TEXT,
+    "notes" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "user_expertise_history_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -175,6 +193,9 @@ CREATE TABLE "public"."tech_profile_questions" (
     "display_order" INTEGER NOT NULL,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "is_displayed" BOOLEAN NOT NULL DEFAULT true,
+    "is_filterable" BOOLEAN NOT NULL DEFAULT false,
+    "filter_type" TEXT,
+    "filter_config" JSONB,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "created_by" TEXT,
     "updated_at" TIMESTAMP(3),
@@ -562,6 +583,12 @@ CREATE INDEX "users_role_idx" ON "public"."users"("role");
 CREATE INDEX "users_is_active_idx" ON "public"."users"("is_active");
 
 -- CreateIndex
+CREATE INDEX "user_expertise_history_user_id_effective_from_effective_to_idx" ON "public"."user_expertise_history"("user_id", "effective_from", "effective_to");
+
+-- CreateIndex
+CREATE INDEX "user_expertise_history_user_id_idx" ON "public"."user_expertise_history"("user_id");
+
+-- CreateIndex
 CREATE INDEX "user_sessions_user_id_idx" ON "public"."user_sessions"("user_id");
 
 -- CreateIndex
@@ -760,6 +787,12 @@ ALTER TABLE "public"."tool_configurations" ADD CONSTRAINT "tool_configurations_c
 ALTER TABLE "public"."tool_configurations" ADD CONSTRAINT "tool_configurations_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "public"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "public"."user_expertise_history" ADD CONSTRAINT "user_expertise_history_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "public"."user_expertise_history" ADD CONSTRAINT "user_expertise_history_assigned_by_fkey" FOREIGN KEY ("assigned_by") REFERENCES "public"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "public"."user_sessions" ADD CONSTRAINT "user_sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -941,3 +974,4 @@ ALTER TABLE "public"."team_members" ADD CONSTRAINT "team_members_created_by_fkey
 
 -- AddForeignKey
 ALTER TABLE "public"."team_members" ADD CONSTRAINT "team_members_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "public"."users"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
