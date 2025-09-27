@@ -201,6 +201,7 @@ model User {
   questionRatings          BenchmarkRating[]
   experiments              BenchmarkExperiment[]
   experimentsUpdated       BenchmarkExperiment[]      @relation("ExperimentUpdatedBy")
+  experimentsReviewed      BenchmarkExperiment[]      @relation("ExperimentReviewer")
   promptsCreated           BenchmarkPrompt[]          @relation("BenchmarkPromptCreatedBy")
   promptsUpdated           BenchmarkPrompt[]          @relation("BenchmarkPromptUpdatedBy")
   tagsCreated              BenchmarkTag[]             @relation("BenchmarkTagCreatedBy")
@@ -637,6 +638,10 @@ model BenchmarkExperiment {
   startedAt     DateTime? @map("started_at")
   completedAt   DateTime? @map("completed_at")
   errorMessage  String?   @map("error_message")
+  reviewedBy    String?   @map("reviewed_by")
+  reviewedAt    DateTime? @map("reviewed_at")
+  reviewNotes   String?   @map("review_notes")
+  isPublic      Boolean   @default(false) @map("is_public")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime? @updatedAt @map("updated_at")
   updatedBy     String?   @map("updated_by")
@@ -645,10 +650,12 @@ model BenchmarkExperiment {
   user          User            @relation(fields: [userId], references: [id])
   scale         BenchmarkScale? @relation(fields: [scaleId], references: [id])
   updatedByUser User?           @relation("ExperimentUpdatedBy", fields: [updatedBy], references: [id])
+  reviewer      User?           @relation("ExperimentReviewer", fields: [reviewedBy], references: [id])
   results       BenchmarkResult[]
 
   @@index([userId])
   @@index([status])
+  @@index([isPublic])
   @@map("benchmark_experiments")
 }
 
@@ -693,6 +700,8 @@ model BenchmarkResult {
   errorType            String?   @map("error_type")
   errorMessage         String?   @map("error_message")
   apiCost              Float?    @map("api_cost")
+  isApproved           Boolean   @default(false) @map("is_approved")
+  approvalSource       String    @default("experiment") @map("approval_source")
   createdAt            DateTime  @default(now()) @map("created_at")
 
   // Relations
@@ -707,6 +716,7 @@ model BenchmarkResult {
   @@index([modelVersionId])
   @@index([toolConfigurationId])
   @@index([questionId])
+  @@index([isApproved])
   @@map("benchmark_results")
 }
 
