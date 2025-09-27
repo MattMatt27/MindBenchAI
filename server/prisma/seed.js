@@ -3,27 +3,6 @@ const bcrypt = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
-// Helper function to create expertise history when creating users
-async function createUserWithExpertiseHistory(userData, assignedBy = null) {
-  // Create the user first
-  const user = await prisma.user.create({
-    data: userData
-  });
-
-  // Create the initial expertise history record
-  await prisma.userExpertiseHistory.create({
-    data: {
-      userId: user.id,
-      expertiseLevel: userData.expertiseLevel,
-      effectiveFrom: new Date(),
-      assignedBy: assignedBy,
-      notes: 'Initial assignment during account creation'
-    }
-  });
-
-  return user;
-}
-
 // Helper function to update user expertise level
 async function updateUserExpertise(userId, newLevel, assignedById, notes = null) {
   // End the current expertise record
@@ -46,12 +25,6 @@ async function updateUserExpertise(userId, newLevel, assignedById, notes = null)
       assignedBy: assignedById,
       notes: notes || `Updated to ${newLevel}`
     }
-  });
-
-  // Update the user's current expertise level
-  await prisma.user.update({
-    where: { id: userId },
-    data: { expertiseLevel: newLevel }
   });
 }
 
@@ -135,6 +108,196 @@ async function main() {
   });
 
   console.log('Created unverified user:', unverifiedUser.email);
+
+  // Create additional users for testing expertise system
+  const professionalUser = await prisma.user.upsert({
+    where: { email: 'professional@mindbench.ai' },
+    update: {},
+    create: {
+      email: 'professional@mindbench.ai',
+      username: 'professional',
+      passwordHash: password,
+      role: 'USER',
+      firstName: 'Professional',
+      lastName: 'User',
+      isActive: true,
+      isVerified: true,
+      emailVerifiedAt: new Date(),
+    }
+  });
+
+  // Check if expertise history exists
+  const existingProfExpertise = await prisma.userExpertiseHistory.findFirst({
+    where: { userId: professionalUser.id, effectiveTo: null }
+  });
+
+  if (!existingProfExpertise) {
+    await prisma.userExpertiseHistory.create({
+      data: {
+        userId: professionalUser.id,
+        expertiseLevel: 'PROFESSIONAL',
+        effectiveFrom: new Date(),
+        assignedBy: researcherUser.id,
+        notes: 'Professional-level expertise in clinical practice'
+      }
+    });
+  }
+
+  const traineeUser = await prisma.user.upsert({
+    where: { email: 'trainee@mindbench.ai' },
+    update: {},
+    create: {
+      email: 'trainee@mindbench.ai',
+      username: 'trainee',
+      passwordHash: password,
+      role: 'USER',
+      firstName: 'Trainee',
+      lastName: 'User',
+      isActive: true,
+      isVerified: true,
+      emailVerifiedAt: new Date(),
+    }
+  });
+
+  const existingTraineeExpertise = await prisma.userExpertiseHistory.findFirst({
+    where: { userId: traineeUser.id, effectiveTo: null }
+  });
+
+  if (!existingTraineeExpertise) {
+    await prisma.userExpertiseHistory.create({
+      data: {
+        userId: traineeUser.id,
+        expertiseLevel: 'TRAINEE',
+        effectiveFrom: new Date(),
+        assignedBy: researcherUser.id,
+        notes: 'Trainee-level expertise, learning clinical skills'
+      }
+    });
+  }
+
+  console.log('Created additional users with expertise levels');
+
+  // Create benchmark scales (SIRI-2, A-Pharm, A-MaMH)
+  const siriScale = await prisma.benchmarkScale.create({
+    data: {
+      name: 'SIRI-2',
+      description: 'Comprehensive reasoning benchmark measuring model performance across diverse cognitive tasks',
+      scaleType: 'rmse',
+      version: 1,
+      isValidated: true,
+      isPublic: true,
+      createdBy: researcherUser.id,
+    },
+  });
+
+  const aPharmScale = await prisma.benchmarkScale.create({
+    data: {
+      name: 'A-Pharm',
+      description: 'Adversarial Psychopharmacology Case Test - Complex psychiatric medication scenarios designed to challenge AI reasoning',
+      scaleType: 'rmse',
+      version: 1,
+      isValidated: true,
+      isPublic: true,
+      createdBy: researcherUser.id,
+    },
+  });
+
+  const aMamhScale = await prisma.benchmarkScale.create({
+    data: {
+      name: 'A-MaMH',
+      description: 'Adversarial Maternal Mental Health Case Test - Challenging perinatal psychiatry scenarios requiring nuanced clinical judgment',
+      scaleType: 'rmse',
+      version: 1,
+      isValidated: true,
+      isPublic: true,
+      createdBy: researcherUser.id,
+    },
+  });
+
+  console.log('Created benchmark scales:', siriScale.name, aPharmScale.name, aMamhScale.name);
+
+  // Create domain and category tags
+  const domainTags = [
+    { name: 'psychopharmacology', description: 'Psychiatric medication and treatment scenarios' },
+    { name: 'perinatal-psychiatry', description: 'Maternal mental health and perinatal psychiatric care' },
+    { name: 'reasoning', description: 'General cognitive reasoning tasks' },
+    { name: 'mental-health', description: 'Psychology and mental health assessment' },
+    { name: 'medication-management', description: 'Complex medication decision-making scenarios' },
+    { name: 'clinical-applications', description: 'Real-world clinical application scenarios' },
+  ];
+
+  const formatTags = [
+    { name: 'conversational', description: 'Conversational format questions' },
+    { name: 'case-study', description: 'Case study based questions' },
+    { name: 'multiple-choice', description: 'Multiple choice format' },
+    { name: 'open-ended', description: 'Open-ended response questions' },
+  ];
+
+  const difficultyTags = [
+    { name: 'beginner', description: 'Beginner level difficulty' },
+    { name: 'intermediate', description: 'Intermediate level difficulty' },
+    { name: 'expert', description: 'Expert level difficulty' },
+    { name: 'advanced', description: 'Advanced level difficulty' },
+  ];
+
+  const allTags = [...domainTags, ...formatTags, ...difficultyTags];
+
+  for (const tagData of allTags) {
+    await prisma.benchmarkTag.create({
+      data: {
+        name: tagData.name,
+        description: tagData.description,
+        createdBy: researcherUser.id,
+      },
+    });
+  }
+
+  console.log('Created comprehensive tag system with', allTags.length, 'tags');
+
+  // Create sample benchmark questions for each scale
+  await prisma.benchmarkQuestion.create({
+    data: {
+      scaleId: aPharmScale.id,
+      position: 1,
+      promptId: 'apharm_001',
+      promptValue: 'A 28-year-old patient with bipolar disorder is stable on lithium 900mg BID. They develop moderate depression and you consider adding sertraline. What are the key pharmacological considerations and monitoring requirements?',
+      responseId: 'apharm_001_response',
+      responseValue: 'Monitor for serotonin syndrome risk, potential for lithium toxicity due to SSRI-induced hyponatremia, and consider starting sertraline at lower dose with frequent lithium level monitoring',
+      isValidated: true,
+      isUserSubmitted: false,
+      createdBy: researcherUser.id,
+    },
+  });
+
+  await prisma.benchmarkQuestion.create({
+    data: {
+      scaleId: aMamhScale.id,
+      position: 1,
+      promptId: 'amamh_001',
+      promptValue: 'A 32-year-old woman at 28 weeks gestation presents with severe postpartum anxiety and intrusive thoughts about harming her baby. She is breastfeeding and has a history of adverse reactions to SSRIs. What treatment approach would you recommend?',
+      responseId: 'amamh_001_response',
+      responseValue: 'Consider sertraline despite history (lowest risk in breastfeeding), immediate psychiatric evaluation for postpartum anxiety vs emerging psychosis, safety planning, and close monitoring with partner/family involvement',
+      isValidated: true,
+      isUserSubmitted: false,
+      createdBy: researcherUser.id,
+    },
+  });
+
+  await prisma.benchmarkQuestion.create({
+    data: {
+      scaleId: siriScale.id,
+      position: 1,
+      promptId: 'siri_001',
+      promptValue: 'A patient reports persistent fatigue after starting antidepressants. List 3 possible causes.',
+      responseId: 'siri_001_response',
+      responseValue: '1. Medication side effect, 2. Underlying sleep disorder, 3. Inadequate treatment of depression',
+      isValidated: true,
+      isUserSubmitted: false,
+      createdBy: researcherUser.id,
+    },
+  });
+
+  console.log('Created sample benchmark questions for all scales');
 
   // Create sample models and versions
   const gptModel = await prisma.model.upsert({
@@ -232,6 +395,51 @@ async function main() {
       createdBy: researcherUser.id,
     },
   });
+
+  // Create sample benchmark experiments demonstrating approval workflow
+  await prisma.benchmarkExperiment.create({
+    data: {
+      userId: researcherUser.id,
+      scaleId: aPharmScale.id,
+      name: 'LLM Psychopharmacology Assessment',
+      description: 'Evaluating LLM performance on adversarial psychopharmacology case studies',
+      entityType: 'MODEL_VERSION',
+      entityIds: ['gpt-4o-20240915', 'claude-opus-20240901'],
+      config: {
+        temperature: 0.3,
+        maxTokens: 1000,
+        systemPrompt: 'clinical-psychiatrist-expert'
+      },
+      status: 'approved',
+      reviewedBy: researcherUser.id,
+      reviewedAt: new Date('2024-09-20'),
+      reviewNotes: 'Comprehensive evaluation of psychiatric medication reasoning capabilities',
+      isPublic: true,
+      completedAt: new Date('2024-09-22'),
+      progress: 100,
+    },
+  });
+
+  await prisma.benchmarkExperiment.create({
+    data: {
+      userId: professionalUser.id,
+      scaleId: aMamhScale.id,
+      name: 'Maternal Mental Health Reasoning',
+      description: 'Testing AI performance on complex perinatal psychiatry scenarios',
+      entityType: 'MODEL_VERSION',
+      entityIds: ['claude-sonnet-20240620'],
+      config: {
+        temperature: 0.5,
+        maxTokens: 1200
+      },
+      status: 'pending',
+      isPublic: false,
+      completedAt: new Date('2024-09-25'),
+      progress: 100,
+    },
+  });
+
+  console.log('Created sample experiments with approval workflow');
 
   console.log('Database seed completed successfully!');
 }
