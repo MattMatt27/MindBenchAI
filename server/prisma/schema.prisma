@@ -106,6 +106,7 @@ model ModelVersion {
   responseProfileAnswers        ResponseProfileAnswer[]  @relation("ResponseProfileAnswerModelVersion")
   benchmarkResults              BenchmarkResult[]
   hyperparameterLinks           ModelHyperparameterLink[]
+  scoreAggregates               BenchmarkScoreAggregate[]
 
   @@unique([modelId, version])
   @@index([modelId])
@@ -255,6 +256,10 @@ model User {
   // Relations - Reasoning
   reasoningEntriesCreated  ReasoningEntry[]           @relation("ReasoningEntryCreatedBy")
   reasoningEntriesUpdated  ReasoningEntry[]           @relation("ReasoningEntryUpdatedBy")
+
+  // Relations - System Configuration
+  systemConfigsCreated     SystemConfig[]             @relation("SystemConfigCreatedBy")
+  systemConfigsUpdated     SystemConfig[]             @relation("SystemConfigUpdatedBy")
 
   @@index([email])
   @@index([username])
@@ -598,6 +603,7 @@ model BenchmarkScale {
   updatedByUser User?                 @relation("BenchmarkScaleUpdatedBy", fields: [updatedBy], references: [id])
   questions     BenchmarkQuestion[]
   experiments   BenchmarkExperiment[]
+  scoreAggregates BenchmarkScoreAggregate[]
 
   @@map("benchmark_scales")
 }
@@ -658,6 +664,7 @@ model BenchmarkQuestion {
   ratings       BenchmarkRating[]
   results       BenchmarkResult[]
   tags          BenchmarkTagQuestionLink[]
+  expertConsensus ExpertConsensus?
 
   @@index([scaleId])
   @@index([adversarialType])
@@ -766,6 +773,8 @@ model BenchmarkPrompt {
   updatedByUser       User?             @relation("BenchmarkPromptUpdatedBy", fields: [updatedBy], references: [id])
   systemPromptResults BenchmarkResult[] @relation("SystemPromptResults")
   messagePromptResults BenchmarkResult[] @relation("MessagePromptResults")
+  systemPromptAggregates BenchmarkScoreAggregate[] @relation("AggregateSystemPrompt")
+  messagePromptAggregates BenchmarkScoreAggregate[] @relation("AggregateMessagePrompt")
 
   @@map("benchmark_prompts")
 }
@@ -835,6 +844,80 @@ model ReasoningEntry {
   @@index([reasoningType])
   @@index([sequenceOrder])
   @@map("reasoning_entries")
+}
+
+// ==================== AGGREGATION TABLES ====================
+model ExpertConsensus {
+  id                 String    @id @default(uuid())
+  questionId         String    @unique @map("question_id")
+  expertMean         Float     @map("expert_mean")
+  expertStd          Float?    @map("expert_std")
+  expertCount        Int       @map("expert_count")
+  individualRatings  Json?     @map("individual_ratings")
+  firstRating        DateTime  @map("first_rating")
+  lastRating         DateTime  @map("last_rating")
+  lastRefreshed      DateTime  @default(now()) @map("last_refreshed")
+
+  // Relations
+  question BenchmarkQuestion @relation(fields: [questionId], references: [id])
+
+  @@index([expertCount])
+  @@index([lastRefreshed])
+  @@map("expert_consensus")
+}
+
+model BenchmarkScoreAggregate {
+  id                    String    @id @default(uuid())
+  modelVersionId        String    @map("model_version_id")
+  scaleId               String    @map("scale_id")
+  hyperparameterHash    String?   @map("hyperparameter_hash")
+  hyperparameterConfig  Json?     @map("hyperparameter_config")
+  systemPromptId        String?   @map("system_prompt_id")
+  messagePromptId       String?   @map("message_prompt_id")
+  runCount              Int       @map("run_count")
+  modelMean             Float     @map("model_mean")
+  modelStd              Float?    @map("model_std")
+  modelMin              Float?    @map("model_min")
+  modelMax              Float?    @map("model_max")
+  modelMedian           Float?    @map("model_median")
+  expertConsensusMean   Float?    @map("expert_consensus_mean")
+  rmseVsExperts         Float?    @map("rmse_vs_experts")
+  firstRun              DateTime  @map("first_run")
+  lastRun               DateTime  @map("last_run")
+  experimentCount       Int       @map("experiment_count")
+  lastRefreshed         DateTime  @default(now()) @map("last_refreshed")
+
+  // Relations
+  modelVersion  ModelVersion     @relation(fields: [modelVersionId], references: [id])
+  scale         BenchmarkScale   @relation(fields: [scaleId], references: [id])
+  systemPrompt  BenchmarkPrompt? @relation("AggregateSystemPrompt", fields: [systemPromptId], references: [id])
+  messagePrompt BenchmarkPrompt? @relation("AggregateMessagePrompt", fields: [messagePromptId], references: [id])
+
+  @@unique([modelVersionId, scaleId, hyperparameterHash, systemPromptId, messagePromptId])
+  @@index([scaleId, rmseVsExperts])
+  @@index([runCount])
+  @@index([lastRefreshed])
+  @@map("benchmark_score_aggregates")
+}
+
+// ==================== SYSTEM CONFIGURATION ====================
+model SystemConfig {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  value       Json
+  description String?
+  configType  String    @default("general") @map("config_type")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
+
+  // Relations
+  createdByUser User? @relation("SystemConfigCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User? @relation("SystemConfigUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([configType])
+  @@map("system_config")
 }
 
 // ==================== COMMUNITY FEATURES ====================

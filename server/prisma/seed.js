@@ -649,12 +649,13 @@ async function main() {
       repeatNumber: 1,
       modelVersionId: gptModelVersions[0].id,
       questionId: aPharmQuestion.id,
-      config: {
+      hyperparameterConfig: {
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 2000,
+        top_p: 1.0,
+        frequency_penalty: 0,
+        presence_penalty: 0
       },
-      temperature: 0.7,
-      maxTokens: 2000,
       score: 8,
       reasoning: 'Model demonstrated good understanding of drug interactions and monitoring requirements',
       rawResponse: '{"response": "The key considerations are serotonin syndrome risk and lithium toxicity monitoring...", "reasoning": "I need to think through the pharmacological interactions..."}',
@@ -774,6 +775,85 @@ async function main() {
   });
 
   console.log('Created sample benchmark results with comprehensive reasoning entries');
+
+  // Create system configuration entries
+  const systemConfigs = [
+    {
+      key: 'expert_rating_minimum',
+      value: { value: 10 },
+      description: 'Minimum expert ratings needed for consensus calculation',
+      configType: 'leaderboard',
+    },
+    {
+      key: 'model_run_minimum',
+      value: { value: 10 },
+      description: 'Minimum model runs needed for leaderboard display',
+      configType: 'leaderboard',
+    },
+    {
+      key: 'cache_ttl_leaderboard',
+      value: { value: 21600 },
+      description: 'Leaderboard cache TTL in seconds (6 hours)',
+      configType: 'performance',
+    },
+    {
+      key: 'default_hyperparameters',
+      value: {
+        temperature: 0.7,
+        max_tokens: 2000,
+        top_p: 1.0
+      },
+      description: 'Default hyperparameters for model comparisons',
+      configType: 'model_params',
+    },
+  ];
+
+  for (const config of systemConfigs) {
+    await prisma.systemConfig.create({
+      data: {
+        ...config,
+        createdBy: researcherUser.id,
+      },
+    });
+  }
+
+  console.log('Created system configuration entries');
+
+  // Create sample expert ratings for testing aggregation
+  const expertUsers = [researcherUser, professionalUser]; // Both have expert-level expertise
+  const questions = [aPharmQuestion, aMamhQuestion, siriQuestion];
+
+  // Generate multiple expert ratings for each question
+  for (const question of questions) {
+    // Create 12 expert ratings per question (above the threshold)
+    for (let i = 0; i < 12; i++) {
+      const expert = expertUsers[i % expertUsers.length];
+      const baseScore = question.id === aPharmQuestion.id ? 8 :
+                       question.id === aMamhQuestion.id ? 9 : 7;
+
+      // Add some variance to ratings
+      const variance = (Math.random() - 0.5) * 2; // -1 to +1
+      const rating = Math.max(1, Math.min(10, baseScore + variance));
+
+      await prisma.benchmarkRating.create({
+        data: {
+          questionId: question.id,
+          userId: expert.id,
+          rating: rating,
+          confidence: 0.7 + (Math.random() * 0.3), // 0.7 to 1.0
+          reasoning: `Expert assessment based on clinical experience and literature review`,
+          metadata: {
+            expertiseAreas: ['clinical_practice', 'pharmacology', 'psychiatry'],
+            yearsExperience: 10 + i,
+            ratingContext: 'initial_calibration'
+          },
+          createdAt: new Date(Date.now() - (i * 24 * 60 * 60 * 1000)), // Spread over past days
+        },
+      });
+    }
+  }
+
+  console.log('Created sample expert ratings for aggregation testing');
 
   console.log('Database seed completed successfully!');
 }
