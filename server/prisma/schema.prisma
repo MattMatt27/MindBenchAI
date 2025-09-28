@@ -44,6 +44,21 @@ enum ExpertiseCategory {
   PUBLIC       @map("public")
 }
 
+enum ReasoningType {
+  CHAIN_OF_THOUGHT @map("chain_of_thought")
+  EXPLANATION      @map("explanation")
+  WORKING          @map("working")
+  REFLECTION       @map("reflection")
+}
+
+enum AdversarialType {
+  RED_HERRING         @map("red_herring")
+  TEMPORAL_ANCHORING  @map("temporal_anchoring")
+  COGNITIVE_BIAS      @map("cognitive_bias")
+  CONTEXT_CONFUSION   @map("context_confusion")
+  PREMISE_DISTORTION  @map("premise_distortion")
+}
+
 // ==================== CORE ENTITIES ====================
 model Model {
   id                String         @id @default(uuid())
@@ -236,6 +251,10 @@ model User {
   // Relations - Expertise
   expertiseHistory         UserExpertiseHistory[]     @relation("UserExpertiseHistory")
   expertiseAssignments     UserExpertiseHistory[]     @relation("ExpertiseAssigner")
+
+  // Relations - Reasoning
+  reasoningEntriesCreated  ReasoningEntry[]           @relation("ReasoningEntryCreatedBy")
+  reasoningEntriesUpdated  ReasoningEntry[]           @relation("ReasoningEntryUpdatedBy")
 
   @@index([email])
   @@index([username])
@@ -621,6 +640,12 @@ model BenchmarkQuestion {
   isValidated      Boolean   @default(false) @map("is_validated")
   isUserSubmitted  Boolean   @default(false) @map("is_user_submitted")
   metadata         Json?
+  adversarialType  AdversarialType? @map("adversarial_type")
+  adversarialCategory String? @map("adversarial_category")
+  difficultyLevel  Int?      @map("difficulty_level")
+  expectedFailureMode String? @map("expected_failure_mode")
+  successCriteria  String?   @map("success_criteria")
+  adversarialMetadata Json?  @map("adversarial_metadata")
   createdAt        DateTime  @default(now()) @map("created_at")
   createdBy        String?   @map("created_by")
   updatedAt        DateTime? @updatedAt @map("updated_at")
@@ -635,6 +660,8 @@ model BenchmarkQuestion {
   tags          BenchmarkTagQuestionLink[]
 
   @@index([scaleId])
+  @@index([adversarialType])
+  @@index([difficultyLevel])
   @@map("benchmark_questions")
 }
 
@@ -750,10 +777,8 @@ model BenchmarkResult {
   modelVersionId       String?   @map("model_version_id")
   toolConfigurationId  String?   @map("tool_configuration_id")
   questionId           String?   @map("question_id")
-  config               Json?
-  temperature          Float?
-  topP                 Float?    @map("top_p")
-  maxTokens            Int?      @map("max_tokens")
+  hyperparameterConfig Json?     @map("hyperparameter_config")
+  hyperparameterHash   String?   @map("hyperparameter_hash")
   systemPromptId       String?   @map("system_prompt_id")
   messagePromptId      String?   @map("message_prompt_id")
   score                Int?
@@ -776,13 +801,40 @@ model BenchmarkResult {
   question          BenchmarkQuestion?   @relation(fields: [questionId], references: [id])
   systemPrompt      BenchmarkPrompt?     @relation("SystemPromptResults", fields: [systemPromptId], references: [id])
   messagePrompt     BenchmarkPrompt?     @relation("MessagePromptResults", fields: [messagePromptId], references: [id])
+  reasoningEntries  ReasoningEntry[]
 
   @@index([experimentId])
   @@index([modelVersionId])
   @@index([toolConfigurationId])
   @@index([questionId])
   @@index([isApproved])
+  @@index([hyperparameterHash])
   @@map("benchmark_results")
+}
+
+model ReasoningEntry {
+  id                String        @id @default(uuid())
+  benchmarkResultId String        @map("benchmark_result_id")
+  reasoningType     ReasoningType @map("reasoning_type")
+  content           Json
+  sequenceOrder     Int?          @map("sequence_order")
+  confidenceLevel   Float?        @map("confidence_level")
+  processingTimeMs  Int?          @map("processing_time_ms")
+  metadata          Json?
+  createdAt         DateTime      @default(now()) @map("created_at")
+  createdBy         String?       @map("created_by")
+  updatedAt         DateTime?     @updatedAt @map("updated_at")
+  updatedBy         String?       @map("updated_by")
+
+  // Relations
+  benchmarkResult BenchmarkResult @relation(fields: [benchmarkResultId], references: [id], onDelete: Cascade)
+  createdByUser   User?           @relation("ReasoningEntryCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser   User?           @relation("ReasoningEntryUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([benchmarkResultId])
+  @@index([reasoningType])
+  @@index([sequenceOrder])
+  @@map("reasoning_entries")
 }
 
 // ==================== COMMUNITY FEATURES ====================

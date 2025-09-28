@@ -254,8 +254,8 @@ async function main() {
 
   console.log('Created comprehensive tag system with', allTags.length, 'tags');
 
-  // Create sample benchmark questions for each scale
-  await prisma.benchmarkQuestion.create({
+  // Create sample benchmark questions for each scale with adversarial testing metadata
+  const aPharmQuestion = await prisma.benchmarkQuestion.create({
     data: {
       scaleId: aPharmScale.id,
       position: 1,
@@ -265,11 +265,22 @@ async function main() {
       responseValue: 'Monitor for serotonin syndrome risk, potential for lithium toxicity due to SSRI-induced hyponatremia, and consider starting sertraline at lower dose with frequent lithium level monitoring',
       isValidated: true,
       isUserSubmitted: false,
+      adversarialType: 'COGNITIVE_BIAS',
+      adversarialCategory: 'anchoring_bias',
+      difficultyLevel: 7,
+      expectedFailureMode: 'Model may anchor on lithium stability and underestimate drug interaction risks',
+      successCriteria: 'Must identify serotonin syndrome risk, lithium toxicity potential, and specific monitoring requirements',
+      adversarialMetadata: {
+        cognitiveTraps: ['anchoring_bias', 'confirmation_bias'],
+        clinicalComplexity: 'high',
+        drugInteractionLevel: 'moderate_to_severe',
+        requiredKnowledge: ['pharmacokinetics', 'drug_interactions', 'monitoring_protocols']
+      },
       createdBy: researcherUser.id,
     },
   });
 
-  await prisma.benchmarkQuestion.create({
+  const aMamhQuestion = await prisma.benchmarkQuestion.create({
     data: {
       scaleId: aMamhScale.id,
       position: 1,
@@ -279,11 +290,22 @@ async function main() {
       responseValue: 'Consider sertraline despite history (lowest risk in breastfeeding), immediate psychiatric evaluation for postpartum anxiety vs emerging psychosis, safety planning, and close monitoring with partner/family involvement',
       isValidated: true,
       isUserSubmitted: false,
+      adversarialType: 'CONTEXT_CONFUSION',
+      adversarialCategory: 'temporal_confusion',
+      difficultyLevel: 9,
+      expectedFailureMode: 'Model may confuse postpartum vs antenatal timing, or miss emergency psychiatric evaluation need',
+      successCriteria: 'Must recognize timing inconsistency (28 weeks gestation but postpartum symptoms), prioritize safety assessment, and address medication concerns',
+      adversarialMetadata: {
+        temporalInconsistency: true,
+        contextualTraps: ['temporal_confusion', 'medical_terminology_precision'],
+        emergencyLevel: 'high',
+        requiredKnowledge: ['perinatal_psychiatry', 'medication_safety_breastfeeding', 'risk_assessment']
+      },
       createdBy: researcherUser.id,
     },
   });
 
-  await prisma.benchmarkQuestion.create({
+  const siriQuestion = await prisma.benchmarkQuestion.create({
     data: {
       scaleId: siriScale.id,
       position: 1,
@@ -293,6 +315,17 @@ async function main() {
       responseValue: '1. Medication side effect, 2. Underlying sleep disorder, 3. Inadequate treatment of depression',
       isValidated: true,
       isUserSubmitted: false,
+      adversarialType: 'RED_HERRING',
+      adversarialCategory: 'multiple_plausible_causes',
+      difficultyLevel: 5,
+      expectedFailureMode: 'Model may focus only on medication side effects and miss other equally valid causes',
+      successCriteria: 'Must provide 3 distinct, clinically valid causes covering different domains (pharmacological, physiological, psychological)',
+      adversarialMetadata: {
+        redHerrings: ['focus_on_medication_only'],
+        clinicalComplexity: 'medium',
+        requiredThinking: ['differential_diagnosis', 'multi_domain_analysis'],
+        domainKnowledge: ['pharmacology', 'sleep_medicine', 'psychiatry']
+      },
       createdBy: researcherUser.id,
     },
   });
@@ -584,6 +617,163 @@ async function main() {
   });
 
   console.log('Created model hyperparameter links demonstrating configurable and locked parameters');
+
+  // Create sample benchmark results with reasoning entries
+  const sampleExperiment = await prisma.benchmarkExperiment.create({
+    data: {
+      userId: researcherUser.id,
+      scaleId: aPharmScale.id,
+      name: 'GPT-4o Clinical Reasoning Test',
+      description: 'Testing GPT-4o chain of thought reasoning on adversarial psychopharmacology cases',
+      entityType: 'MODEL_VERSION',
+      entityIds: [gptModelVersions[0].id],
+      config: {
+        temperature: 0.7,
+        max_tokens: 2000,
+        reasoning_mode: 'chain_of_thought'
+      },
+      status: 'completed',
+      progress: 100,
+      startedAt: new Date('2024-09-20T10:00:00Z'),
+      completedAt: new Date('2024-09-20T10:15:00Z'),
+      reviewedBy: researcherUser.id,
+      reviewedAt: new Date('2024-09-20T11:00:00Z'),
+      reviewNotes: 'Good reasoning quality, identifies key drug interactions',
+      isPublic: true,
+    },
+  });
+
+  const sampleResult = await prisma.benchmarkResult.create({
+    data: {
+      experimentId: sampleExperiment.id,
+      repeatNumber: 1,
+      modelVersionId: gptModelVersions[0].id,
+      questionId: aPharmQuestion.id,
+      config: {
+        temperature: 0.7,
+        max_tokens: 2000
+      },
+      temperature: 0.7,
+      maxTokens: 2000,
+      score: 8,
+      reasoning: 'Model demonstrated good understanding of drug interactions and monitoring requirements',
+      rawResponse: '{"response": "The key considerations are serotonin syndrome risk and lithium toxicity monitoring...", "reasoning": "I need to think through the pharmacological interactions..."}',
+      responseTimeMs: 3500,
+      tokenUsage: {
+        promptTokens: 150,
+        completionTokens: 300,
+        totalTokens: 450
+      },
+      status: 'completed',
+      isApproved: true,
+      approvalSource: 'expert_review',
+    },
+  });
+
+  // Create reasoning entries for the sample result
+  await prisma.reasoningEntry.create({
+    data: {
+      benchmarkResultId: sampleResult.id,
+      reasoningType: 'CHAIN_OF_THOUGHT',
+      content: {
+        steps: [
+          {
+            step: 1,
+            thought: 'Patient is stable on lithium 900mg BID, which indicates good therapeutic control of bipolar disorder',
+            confidence: 0.9,
+            processingTime: 500
+          },
+          {
+            step: 2,
+            thought: 'Adding sertraline introduces risk of serotonin syndrome due to SSRI + lithium interaction',
+            confidence: 0.85,
+            processingTime: 800
+          },
+          {
+            step: 3,
+            thought: 'SSRIs can cause hyponatremia, which increases lithium toxicity risk by reducing renal clearance',
+            confidence: 0.8,
+            processingTime: 1200
+          },
+          {
+            step: 4,
+            thought: 'Need frequent monitoring: lithium levels, sodium levels, signs of serotonin syndrome',
+            confidence: 0.9,
+            processingTime: 700
+          }
+        ],
+        finalAnswer: 'Monitor for serotonin syndrome, check lithium levels frequently due to SSRI-induced hyponatremia risk',
+        totalProcessingTime: 3200,
+        confidenceScore: 0.86
+      },
+      sequenceOrder: 1,
+      confidenceLevel: 0.86,
+      processingTimeMs: 3200,
+      metadata: {
+        stepCount: 4,
+        averageStepConfidence: 0.86,
+        keyDomains: ['pharmacokinetics', 'drug_interactions', 'monitoring'],
+        reasoningQuality: 'high'
+      },
+      createdBy: researcherUser.id,
+    },
+  });
+
+  await prisma.reasoningEntry.create({
+    data: {
+      benchmarkResultId: sampleResult.id,
+      reasoningType: 'EXPLANATION',
+      content: {
+        explanation: 'This case tests understanding of complex drug-drug interactions between lithium and SSRIs, requiring knowledge of both pharmacokinetic and pharmacodynamic interactions.',
+        keyPoints: [
+          'Serotonin syndrome risk from combined serotonergic effects',
+          'Lithium toxicity risk from SSRI-induced hyponatremia',
+          'Need for enhanced monitoring protocols'
+        ],
+        clinicalRelevance: 'High - common real-world scenario in bipolar disorder management'
+      },
+      sequenceOrder: 2,
+      confidenceLevel: 0.9,
+      processingTimeMs: 800,
+      metadata: {
+        explanationType: 'clinical_rationale',
+        educationalValue: 'high',
+        clinicalComplexity: 'moderate_to_high'
+      },
+      createdBy: researcherUser.id,
+    },
+  });
+
+  await prisma.reasoningEntry.create({
+    data: {
+      benchmarkResultId: sampleResult.id,
+      reasoningType: 'WORKING',
+      content: {
+        calculations: [],
+        logicalSteps: [
+          'Lithium therapeutic range: 0.6-1.2 mEq/L',
+          'SSRI-induced hyponatremia can increase lithium levels by 20-40%',
+          'Serotonin syndrome risk: moderate with this combination',
+          'Monitoring frequency: weekly for first month, then biweekly'
+        ],
+        references: [
+          'Lithium-SSRI interaction studies',
+          'Serotonin syndrome diagnostic criteria'
+        ]
+      },
+      sequenceOrder: 3,
+      confidenceLevel: 0.85,
+      processingTimeMs: 1200,
+      metadata: {
+        workingType: 'clinical_protocol',
+        evidenceLevel: 'moderate',
+        practicalApplicability: 'high'
+      },
+      createdBy: researcherUser.id,
+    },
+  });
+
+  console.log('Created sample benchmark results with comprehensive reasoning entries');
 
   console.log('Database seed completed successfully!');
 }
