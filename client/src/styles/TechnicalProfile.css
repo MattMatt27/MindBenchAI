@@ -79,16 +79,6 @@ thead tr:nth-child(2) th { text-align: center; }
   font-size: 14px;
 }
 
-:root{
-  --bg:#e5e7eb;
-  --panel:#ffffff;
-  --panel-2:#f3f4f6;
-  --text:#111827;
-  --muted:#6b7280;
-  --border:#e5e7eb;
-  --ring:#2563eb33;
-}
-
 .layout{
   display:grid;
   grid-template-columns:260px 1fr;

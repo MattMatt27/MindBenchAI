@@ -169,6 +169,11 @@ export const suggestions = [
   {title: 'Add ability for users to input data', desc: 'Allow users to enter data in the dashboard', vote: 2, status: 'open vote'}
 ]
 
+export const articles = [
+  {link: 'https://pubmed.ncbi.nlm.nih.gov/10169714/', Title: 'The Suicide Intervention Response Inventory: a revision and validation',}
+]
+
+// this should belong in the backend and generate along with api code
 // Get latest versions of each model for the stest data
 export function getLatestStestVersions() {
   const latestMap = {};
