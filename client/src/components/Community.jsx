@@ -111,20 +111,23 @@ export default function Community() {
 
       {activeTab === "What's New" && (
         <>
+          {/* centered tags bar */}
           <div className="cm-tagsbar">
-            {TAGS.map((t) => (
-              <button
-                key={t}
-                className={`cm-tag ${activeTag === t ? "active" : ""} ${
-                  t === "All" ? "is-all" : tagClass(t)
-                }`}
-                onClick={() => setActiveTag(t)}
-                type="button"
-                aria-pressed={activeTag === t}
-              >
-                {t}
-              </button>
-            ))}
+            <div className="cm-tagsinner">
+              {TAGS.map((t) => (
+                <button
+                  key={t}
+                  className={`cm-tag ${activeTag === t ? "active" : ""} ${
+                    t === "All" ? "is-all" : tagClass(t)
+                  }`}
+                  onClick={() => setActiveTag(t)}
+                  type="button"
+                  aria-pressed={activeTag === t}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="cm-wrap">
