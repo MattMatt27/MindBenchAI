@@ -1,0 +1,98 @@
+model Model {
+    id              String    @id @default(uuid())
+    name            String    @unique
+    modelFamily     String    @map("model_family")
+    developer       String
+    baseApiEndpoint String?   @map("base_api_endpoint")
+    description     String?
+    createdAt       DateTime  @default(now()) @map("created_at")
+    createdBy       String?   @map("created_by")
+    updatedAt       DateTime? @updatedAt @map("updated_at")
+    updatedBy       String?   @map("updated_by")
+
+    versions      ModelVersion[]
+    createdByUser User?          @relation("ModelCreatedBy", fields: [createdBy], references: [id])
+    updatedByUser User?          @relation("ModelUpdatedBy", fields: [updatedBy], references: [id])
+
+    @@index([modelFamily])
+    @@index([developer])
+    @@index([name])
+    @@map("models")
+}
+
+model ModelVersion {
+    id              String    @id @default(uuid())
+    modelId         String    @map("model_id")
+    version         String
+    apiModelName    String    @map("api_model_name")
+    releaseDate     DateTime? @map("release_date") @db.Date
+    deprecationDate DateTime? @map("deprecation_date") @db.Date
+    isLatest        Boolean   @default(false) @map("is_latest")
+    isAvailable     Boolean   @default(true) @map("is_available")
+    createdAt       DateTime  @default(now()) @map("created_at")
+    createdBy       String?   @map("created_by")
+    updatedAt       DateTime? @updatedAt @map("updated_at")
+    updatedBy       String?   @map("updated_by")
+
+    model                  Model                     @relation(fields: [modelId], references: [id])
+    createdByUser          User?                     @relation("ModelVersionCreatedBy", fields: [createdBy], references: [id])
+    updatedByUser          User?                     @relation("ModelVersionUpdatedBy", fields: [updatedBy], references: [id])
+    toolConfigurations     ToolConfiguration[]
+    techProfileAnswers     TechProfileAnswer[]       @relation("TechProfileAnswerModelVersion")
+    responseProfileAnswers ResponseProfileAnswer[]   @relation("ResponseProfileAnswerModelVersion")
+    benchmarkResults       BenchmarkResult[]
+    hyperparameterLinks    ModelHyperparameterLink[]
+    scoreAggregates        BenchmarkScoreAggregate[]
+
+    @@unique([modelId, version])
+    @@index([modelId])
+    @@index([version])
+    @@index([apiModelName])
+    @@index([isLatest])
+    @@index([isAvailable])
+    @@map("model_versions")
+}
+
+model Tool {
+    id        String    @id @default(uuid())
+    name      String    @unique
+    version   String?
+    developer String?
+    createdAt DateTime  @default(now()) @map("created_at")
+    createdBy String?   @map("created_by")
+    updatedAt DateTime? @updatedAt @map("updated_at")
+    updatedBy String?   @map("updated_by")
+
+    createdByUser  User?               @relation("ToolCreatedBy", fields: [createdBy], references: [id])
+    updatedByUser  User?               @relation("ToolUpdatedBy", fields: [updatedBy], references: [id])
+    configurations ToolConfiguration[]
+
+    @@index([developer])
+    @@map("tools")
+}
+
+model ToolConfiguration {
+    id                    String    @id @default(uuid())
+    toolId                String    @map("tool_id")
+    modelVersionId        String    @map("model_version_id")
+    configurationName     String    @map("configuration_name")
+    configurationSettings Json?     @map("configuration_settings")
+    isActive              Boolean   @default(true) @map("is_active")
+    createdAt             DateTime  @default(now()) @map("created_at")
+    createdBy             String?   @map("created_by")
+    updatedAt             DateTime? @updatedAt @map("updated_at")
+    updatedBy             String?   @map("updated_by")
+
+    tool                   Tool                    @relation(fields: [toolId], references: [id])
+    modelVersion           ModelVersion            @relation(fields: [modelVersionId], references: [id])
+    createdByUser          User?                   @relation("ToolConfigCreatedBy", fields: [createdBy], references: [id])
+    updatedByUser          User?                   @relation("ToolConfigUpdatedBy", fields: [updatedBy], references: [id])
+    techProfileAnswers     TechProfileAnswer[]     @relation("TechProfileAnswerToolConfiguration")
+    responseProfileAnswers ResponseProfileAnswer[] @relation("ResponseProfileAnswerToolConfiguration")
+    benchmarkResults       BenchmarkResult[]
+
+    @@unique([toolId, modelVersionId])
+    @@index([modelVersionId])
+    @@index([isActive])
+    @@map("tool_configurations")
+}

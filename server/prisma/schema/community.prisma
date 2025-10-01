@@ -1,0 +1,101 @@
+model Update {
+    id          String    @id @default(uuid())
+    date        DateTime  @db.Date
+    title       String
+    tag         String
+    note        String?
+    imageUrl    String?   @map("image_url")
+    isPublished Boolean   @default(true) @map("is_published")
+    createdAt   DateTime  @default(now()) @map("created_at")
+    createdBy   String?   @map("created_by")
+    updatedAt   DateTime? @updatedAt @map("updated_at")
+    updatedBy   String?   @map("updated_by")
+
+    createdByUser User?            @relation("UpdateCreatedBy", fields: [createdBy], references: [id])
+    updatedByUser User?            @relation("UpdateUpdatedBy", fields: [updatedBy], references: [id])
+    reactions     UpdateReaction[]
+
+    @@index([date])
+    @@index([tag])
+    @@index([isPublished])
+    @@map("updates")
+}
+
+model UpdateReaction {
+    id        String   @id @default(uuid())
+    updateId  String   @map("update_id")
+    userId    String   @map("user_id")
+    emojiType String   @map("emoji_type")
+    createdAt DateTime @default(now()) @map("created_at")
+
+    update Update @relation(fields: [updateId], references: [id])
+    user   User   @relation(fields: [userId], references: [id])
+
+    @@unique([updateId, userId, emojiType])
+    @@index([updateId])
+    @@index([userId])
+    @@map("update_reactions")
+}
+
+model Suggestion {
+    id          String    @id @default(uuid())
+    title       String
+    description String?
+    status      String    @default("open_vote")
+    voteCount   Int       @default(0) @map("vote_count")
+    isVisible   Boolean   @default(true) @map("is_visible")
+    createdAt   DateTime  @default(now()) @map("created_at")
+    createdBy   String?   @map("created_by")
+    updatedAt   DateTime? @updatedAt @map("updated_at")
+    updatedBy   String?   @map("updated_by")
+
+    createdByUser User?            @relation("SuggestionCreatedBy", fields: [createdBy], references: [id])
+    updatedByUser User?            @relation("SuggestionUpdatedBy", fields: [updatedBy], references: [id])
+    votes         SuggestionVote[]
+
+    @@index([status])
+    @@index([voteCount])
+    @@index([isVisible])
+    @@index([createdAt])
+    @@map("suggestions")
+}
+
+model SuggestionVote {
+    id           String    @id @default(uuid())
+    suggestionId String    @map("suggestion_id")
+    userId       String    @map("user_id")
+    voteValue    Int       @map("vote_value")
+    createdAt    DateTime  @default(now()) @map("created_at")
+    updatedAt    DateTime? @updatedAt @map("updated_at")
+
+    suggestion Suggestion @relation(fields: [suggestionId], references: [id])
+    user       User       @relation(fields: [userId], references: [id])
+
+    @@unique([suggestionId, userId])
+    @@index([suggestionId])
+    @@index([userId])
+    @@map("suggestion_votes")
+}
+
+model TeamMember {
+    id           String    @id @default(uuid())
+    userId       String    @unique @map("user_id")
+    displayName  String    @map("display_name")
+    role         String
+    bio          String?
+    avatarUrl    String?   @map("avatar_url")
+    displayOrder Int?      @map("display_order")
+    isActive     Boolean   @default(true) @map("is_active")
+    createdAt    DateTime  @default(now()) @map("created_at")
+    createdBy    String?   @map("created_by")
+    updatedAt    DateTime? @updatedAt @map("updated_at")
+    updatedBy    String?   @map("updated_by")
+
+    user          User  @relation("TeamMemberUser", fields: [userId], references: [id])
+    createdByUser User? @relation("TeamMemberCreatedBy", fields: [createdBy], references: [id])
+    updatedByUser User? @relation("TeamMemberUpdatedBy", fields: [updatedBy], references: [id])
+
+    @@index([isActive])
+    @@index([displayOrder])
+    @@map("team_members")
+}

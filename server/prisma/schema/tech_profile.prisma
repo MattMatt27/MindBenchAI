@@ -1,0 +1,59 @@
+model TechProfileQuestion {
+    id           String       @id @default(uuid())
+    entityType   EntityType   @map("entity_type")
+    questionKey  String       @map("question_key")
+    questionText String       @map("question_text")
+    category     String
+    questionType QuestionType @map("question_type")
+    displayOrder Int          @map("display_order")
+    isActive     Boolean      @default(true) @map("is_active")
+    isDisplayed  Boolean      @default(true) @map("is_displayed")
+    isFilterable Boolean      @default(false) @map("is_filterable")
+    filterType   String?      @map("filter_type")
+    filterConfig Json?        @map("filter_config")
+    createdAt    DateTime     @default(now()) @map("created_at")
+    createdBy    String?      @map("created_by")
+    updatedAt    DateTime?    @updatedAt @map("updated_at")
+    updatedBy    String?      @map("updated_by")
+
+    createdByUser User?               @relation("TechQuestionCreatedBy", fields: [createdBy], references: [id])
+    updatedByUser User?               @relation("TechQuestionUpdatedBy", fields: [updatedBy], references: [id])
+    answers       TechProfileAnswer[]
+
+    @@unique([entityType, questionKey])
+    @@index([entityType, isActive])
+    @@index([isDisplayed, displayOrder])
+    @@map("tech_profile_questions")
+}
+
+model TechProfileAnswer {
+    id                 String     @id @default(uuid())
+    entityType         EntityType @map("entity_type")
+    entityId           String     @map("entity_id")
+    questionId         String     @map("question_id")
+    booleanValue       Boolean?   @map("boolean_value")
+    numericValue       Decimal?   @map("numeric_value")
+    textValue          String?    @map("text_value")
+    listValue          String?    @map("list_value")
+    notes              String?
+    reviewerId         String     @map("reviewer_id")
+    reviewAssignmentId String?    @map("review_assignment_id")
+    isApproved         Boolean    @default(false) @map("is_approved")
+    createdAt          DateTime   @default(now()) @map("created_at")
+    createdBy          String?    @map("created_by")
+    approvedAt         DateTime?  @map("approved_at")
+    approvedBy         String?    @map("approved_by")
+
+    question          TechProfileQuestion      @relation(fields: [questionId], references: [id])
+    reviewer          User                     @relation("TechProfileReviewer", fields: [reviewerId], references: [id])
+    approver          User?                    @relation("TechProfileApprover", fields: [approvedBy], references: [id])
+    createdByUser     User?                    @relation("TechProfileCreatedBy", fields: [createdBy], references: [id])
+    reviewAssignment  ProfileReviewAssignment? @relation(fields: [reviewAssignmentId], references: [id])
+    modelVersion      ModelVersion?            @relation("TechProfileAnswerModelVersion", fields: [entityId], references: [id], map: "tech_profile_answers_model_version_fkey")
+    toolConfiguration ToolConfiguration?       @relation("TechProfileAnswerToolConfiguration", fields: [entityId], references: [id], map: "tech_profile_answers_tool_configuration_fkey")
+
+    @@index([entityId, questionId, isApproved, createdAt])
+    @@index([reviewAssignmentId])
+    @@index([isApproved, createdAt])
+    @@map("tech_profile_answers")
+}

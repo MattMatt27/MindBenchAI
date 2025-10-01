@@ -1,0 +1,48 @@
+// ==================== ENUMS ====================
+enum EntityType {
+    MODEL_VERSION      @map("model_version")
+    TOOL_CONFIGURATION @map("tool_configuration")
+}
+
+enum QuestionType {
+    BOOLEAN @map("boolean")
+    NUMBER  @map("number")
+    TEXT    @map("text")
+    LIST    @map("list")
+}
+
+enum ReviewStatus {
+    NOT_STARTED @map("not_started")
+    IN_PROGRESS @map("in_progress")
+    SUBMITTED   @map("submitted")
+    APPROVED    @map("approved")
+    REJECTED    @map("rejected")
+}
+
+enum UserRole {
+    USER       @map("user")
+    RESEARCHER @map("researcher")
+}
+
+enum ExpertiseCategory {
+    EXPERT       @map("expert")
+    PROFESSIONAL @map("professional")
+    TRAINEE      @map("trainee")
+    STUDENT      @map("student")
+    PUBLIC       @map("public")
+}
+
+enum ReasoningType {
+    CHAIN_OF_THOUGHT @map("chain_of_thought")
+    EXPLANATION      @map("explanation")
+    WORKING          @map("working")
+    REFLECTION       @map("reflection")
+}
+
+enum AdversarialType {
+    RED_HERRING        @map("red_herring")
+    TEMPORAL_ANCHORING @map("temporal_anchoring")
+    COGNITIVE_BIAS     @map("cognitive_bias")
+    CONTEXT_CONFUSION  @map("context_confusion")
+    PREMISE_DISTORTION @map("premise_distortion")
+}
