@@ -36,6 +36,29 @@ enum UserRole {
   RESEARCHER @map("researcher")
 }
 
+enum ExpertiseCategory {
+  EXPERT       @map("expert")
+  PROFESSIONAL @map("professional")
+  TRAINEE      @map("trainee")
+  STUDENT      @map("student")
+  PUBLIC       @map("public")
+}
+
+enum ReasoningType {
+  CHAIN_OF_THOUGHT @map("chain_of_thought")
+  EXPLANATION      @map("explanation")
+  WORKING          @map("working")
+  REFLECTION       @map("reflection")
+}
+
+enum AdversarialType {
+  RED_HERRING         @map("red_herring")
+  TEMPORAL_ANCHORING  @map("temporal_anchoring")
+  COGNITIVE_BIAS      @map("cognitive_bias")
+  CONTEXT_CONFUSION   @map("context_confusion")
+  PREMISE_DISTORTION  @map("premise_distortion")
+}
+
 // ==================== CORE ENTITIES ====================
 model Model {
   id                String         @id @default(uuid())
@@ -82,6 +105,8 @@ model ModelVersion {
   techProfileAnswers            TechProfileAnswer[]      @relation("TechProfileAnswerModelVersion")
   responseProfileAnswers        ResponseProfileAnswer[]  @relation("ResponseProfileAnswerModelVersion")
   benchmarkResults              BenchmarkResult[]
+  hyperparameterLinks           ModelHyperparameterLink[]
+  scoreAggregates               BenchmarkScoreAggregate[]
 
   @@unique([modelId, version])
   @@index([modelId])
@@ -147,8 +172,6 @@ model User {
   role                 UserRole  @default(USER)
   firstName            String?   @map("first_name")
   lastName             String?   @map("last_name")
-  expertiseLevel       String?   @map("expertise_level")
-  expertiseAreas       Json?     @map("expertise_areas")
   isActive             Boolean   @default(true) @map("is_active")
   isVerified           Boolean   @default(false) @map("is_verified")
   emailVerifiedAt      DateTime? @map("email_verified_at")
@@ -186,6 +209,12 @@ model User {
   responseQuestionsCreated ResponseProfileQuestion[]  @relation("ResponseQuestionCreatedBy")
   responseQuestionsUpdated ResponseProfileQuestion[]  @relation("ResponseQuestionUpdatedBy")
 
+  // Relations - Hyperparameters
+  hyperparametersCreated   Hyperparameter[]           @relation("HyperparameterCreatedBy")
+  hyperparametersUpdated   Hyperparameter[]           @relation("HyperparameterUpdatedBy")
+  hyperparameterLinksCreated ModelHyperparameterLink[] @relation("ModelHyperparameterLinkCreatedBy")
+  hyperparameterLinksUpdated ModelHyperparameterLink[] @relation("ModelHyperparameterLinkUpdatedBy")
+
   // Relations - Benchmarking
   benchmarkScalesCreated   BenchmarkScale[]           @relation("BenchmarkScaleCreatedBy")
   benchmarkScalesUpdated   BenchmarkScale[]           @relation("BenchmarkScaleUpdatedBy")
@@ -195,6 +224,7 @@ model User {
   questionRatings          BenchmarkRating[]
   experiments              BenchmarkExperiment[]
   experimentsUpdated       BenchmarkExperiment[]      @relation("ExperimentUpdatedBy")
+  experimentsReviewed      BenchmarkExperiment[]      @relation("ExperimentReviewer")
   promptsCreated           BenchmarkPrompt[]          @relation("BenchmarkPromptCreatedBy")
   promptsUpdated           BenchmarkPrompt[]          @relation("BenchmarkPromptUpdatedBy")
   tagsCreated              BenchmarkTag[]             @relation("BenchmarkTagCreatedBy")
@@ -219,11 +249,42 @@ model User {
   permissionsGranted       UserPermission[]           @relation("PermissionGranter")
   questionReviews          BenchmarkQuestionSubmission[] @relation("QuestionReviewer")
 
+  // Relations - Expertise
+  expertiseHistory         UserExpertiseHistory[]     @relation("UserExpertiseHistory")
+  expertiseAssignments     UserExpertiseHistory[]     @relation("ExpertiseAssigner")
+
+  // Relations - Reasoning
+  reasoningEntriesCreated  ReasoningEntry[]           @relation("ReasoningEntryCreatedBy")
+  reasoningEntriesUpdated  ReasoningEntry[]           @relation("ReasoningEntryUpdatedBy")
+
+  // Relations - System Configuration
+  systemConfigsCreated     SystemConfig[]             @relation("SystemConfigCreatedBy")
+  systemConfigsUpdated     SystemConfig[]             @relation("SystemConfigUpdatedBy")
+
   @@index([email])
   @@index([username])
   @@index([role])
   @@index([isActive])
   @@map("users")
+}
+
+model UserExpertiseHistory {
+  id              String            @id @default(uuid())
+  userId          String            @map("user_id")
+  expertiseLevel  ExpertiseCategory @map("expertise_level")
+  effectiveFrom   DateTime          @default(now()) @map("effective_from")
+  effectiveTo     DateTime?         @map("effective_to")
+  assignedBy      String?           @map("assigned_by")
+  notes           String?
+  createdAt       DateTime          @default(now()) @map("created_at")
+
+  // Relations
+  user     User  @relation("UserExpertiseHistory", fields: [userId], references: [id], onDelete: Cascade)
+  assigner User? @relation("ExpertiseAssigner", fields: [assignedBy], references: [id])
+
+  @@index([userId, effectiveFrom, effectiveTo])
+  @@index([userId])
+  @@map("user_expertise_history")
 }
 
 // ==================== AUTHENTICATION TABLES ====================
@@ -465,6 +526,64 @@ model ResponseProfileAnswer {
   @@map("response_profile_answers")
 }
 
+// ==================== HYPERPARAMETER SYSTEM ====================
+model Hyperparameter {
+  id              String    @id @default(uuid())
+  name            String    @unique
+  displayName     String    @map("display_name")
+  parameterType   String    @map("parameter_type")
+  description     String?
+  isActive        Boolean   @default(true) @map("is_active")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  createdBy       String?   @map("created_by")
+  updatedAt       DateTime? @updatedAt @map("updated_at")
+  updatedBy       String?   @map("updated_by")
+
+  // Relations
+  createdByUser     User?                         @relation("HyperparameterCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser     User?                         @relation("HyperparameterUpdatedBy", fields: [updatedBy], references: [id])
+  modelLinks        ModelHyperparameterLink[]
+
+  @@index([name])
+  @@index([isActive])
+  @@map("hyperparameters")
+}
+
+model ModelHyperparameterLink {
+  id                String    @id @default(uuid())
+  modelVersionId    String    @map("model_version_id")
+  hyperparameterId  String    @map("hyperparameter_id")
+  isConfigurable    Boolean   @default(true) @map("is_configurable")
+  isRequired        Boolean   @default(false) @map("is_required")
+  lockedValue       Json?     @map("locked_value")
+  lockedAt          DateTime? @map("locked_at")
+  lockedReason      String?   @map("locked_reason")
+  minValue          Decimal?  @map("min_value")
+  maxValue          Decimal?  @map("max_value")
+  stepValue         Decimal?  @map("step_value")
+  allowedValues     Json?     @map("allowed_values")
+  defaultValue      Json?     @map("default_value")
+  uiComponent       String?   @map("ui_component")
+  uiOrder           Int       @default(0) @map("ui_order")
+  helpText          String?   @map("help_text")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  createdBy         String?   @map("created_by")
+  updatedAt         DateTime? @updatedAt @map("updated_at")
+  updatedBy         String?   @map("updated_by")
+
+  // Relations
+  modelVersion      ModelVersion    @relation(fields: [modelVersionId], references: [id])
+  hyperparameter    Hyperparameter  @relation(fields: [hyperparameterId], references: [id])
+  createdByUser     User?           @relation("ModelHyperparameterLinkCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser     User?           @relation("ModelHyperparameterLinkUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@unique([modelVersionId, hyperparameterId])
+  @@index([modelVersionId])
+  @@index([hyperparameterId])
+  @@index([isConfigurable])
+  @@map("model_hyperparameter_links")
+}
+
 // ==================== BENCHMARKING SYSTEM ====================
 model BenchmarkScale {
   id          String    @id @default(uuid())
@@ -484,6 +603,7 @@ model BenchmarkScale {
   updatedByUser User?                 @relation("BenchmarkScaleUpdatedBy", fields: [updatedBy], references: [id])
   questions     BenchmarkQuestion[]
   experiments   BenchmarkExperiment[]
+  scoreAggregates BenchmarkScoreAggregate[]
 
   @@map("benchmark_scales")
 }
@@ -526,6 +646,12 @@ model BenchmarkQuestion {
   isValidated      Boolean   @default(false) @map("is_validated")
   isUserSubmitted  Boolean   @default(false) @map("is_user_submitted")
   metadata         Json?
+  adversarialType  AdversarialType? @map("adversarial_type")
+  adversarialCategory String? @map("adversarial_category")
+  difficultyLevel  Int?      @map("difficulty_level")
+  expectedFailureMode String? @map("expected_failure_mode")
+  successCriteria  String?   @map("success_criteria")
+  adversarialMetadata Json?  @map("adversarial_metadata")
   createdAt        DateTime  @default(now()) @map("created_at")
   createdBy        String?   @map("created_by")
   updatedAt        DateTime? @updatedAt @map("updated_at")
@@ -538,8 +664,11 @@ model BenchmarkQuestion {
   ratings       BenchmarkRating[]
   results       BenchmarkResult[]
   tags          BenchmarkTagQuestionLink[]
+  expertConsensus ExpertConsensus?
 
   @@index([scaleId])
+  @@index([adversarialType])
+  @@index([difficultyLevel])
   @@map("benchmark_questions")
 }
 
@@ -608,6 +737,10 @@ model BenchmarkExperiment {
   startedAt     DateTime? @map("started_at")
   completedAt   DateTime? @map("completed_at")
   errorMessage  String?   @map("error_message")
+  reviewedBy    String?   @map("reviewed_by")
+  reviewedAt    DateTime? @map("reviewed_at")
+  reviewNotes   String?   @map("review_notes")
+  isPublic      Boolean   @default(false) @map("is_public")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime? @updatedAt @map("updated_at")
   updatedBy     String?   @map("updated_by")
@@ -616,10 +749,12 @@ model BenchmarkExperiment {
   user          User            @relation(fields: [userId], references: [id])
   scale         BenchmarkScale? @relation(fields: [scaleId], references: [id])
   updatedByUser User?           @relation("ExperimentUpdatedBy", fields: [updatedBy], references: [id])
+  reviewer      User?           @relation("ExperimentReviewer", fields: [reviewedBy], references: [id])
   results       BenchmarkResult[]
 
   @@index([userId])
   @@index([status])
+  @@index([isPublic])
   @@map("benchmark_experiments")
 }
 
@@ -638,6 +773,8 @@ model BenchmarkPrompt {
   updatedByUser       User?             @relation("BenchmarkPromptUpdatedBy", fields: [updatedBy], references: [id])
   systemPromptResults BenchmarkResult[] @relation("SystemPromptResults")
   messagePromptResults BenchmarkResult[] @relation("MessagePromptResults")
+  systemPromptAggregates BenchmarkScoreAggregate[] @relation("AggregateSystemPrompt")
+  messagePromptAggregates BenchmarkScoreAggregate[] @relation("AggregateMessagePrompt")
 
   @@map("benchmark_prompts")
 }
@@ -649,10 +786,8 @@ model BenchmarkResult {
   modelVersionId       String?   @map("model_version_id")
   toolConfigurationId  String?   @map("tool_configuration_id")
   questionId           String?   @map("question_id")
-  config               Json?
-  temperature          Float?
-  topP                 Float?    @map("top_p")
-  maxTokens            Int?      @map("max_tokens")
+  hyperparameterConfig Json?     @map("hyperparameter_config")
+  hyperparameterHash   String?   @map("hyperparameter_hash")
   systemPromptId       String?   @map("system_prompt_id")
   messagePromptId      String?   @map("message_prompt_id")
   score                Int?
@@ -664,6 +799,8 @@ model BenchmarkResult {
   errorType            String?   @map("error_type")
   errorMessage         String?   @map("error_message")
   apiCost              Float?    @map("api_cost")
+  isApproved           Boolean   @default(false) @map("is_approved")
+  approvalSource       String    @default("experiment") @map("approval_source")
   createdAt            DateTime  @default(now()) @map("created_at")
 
   // Relations
@@ -673,12 +810,114 @@ model BenchmarkResult {
   question          BenchmarkQuestion?   @relation(fields: [questionId], references: [id])
   systemPrompt      BenchmarkPrompt?     @relation("SystemPromptResults", fields: [systemPromptId], references: [id])
   messagePrompt     BenchmarkPrompt?     @relation("MessagePromptResults", fields: [messagePromptId], references: [id])
+  reasoningEntries  ReasoningEntry[]
 
   @@index([experimentId])
   @@index([modelVersionId])
   @@index([toolConfigurationId])
   @@index([questionId])
+  @@index([isApproved])
+  @@index([hyperparameterHash])
   @@map("benchmark_results")
+}
+
+model ReasoningEntry {
+  id                String        @id @default(uuid())
+  benchmarkResultId String        @map("benchmark_result_id")
+  reasoningType     ReasoningType @map("reasoning_type")
+  content           Json
+  sequenceOrder     Int?          @map("sequence_order")
+  confidenceLevel   Float?        @map("confidence_level")
+  processingTimeMs  Int?          @map("processing_time_ms")
+  metadata          Json?
+  createdAt         DateTime      @default(now()) @map("created_at")
+  createdBy         String?       @map("created_by")
+  updatedAt         DateTime?     @updatedAt @map("updated_at")
+  updatedBy         String?       @map("updated_by")
+
+  // Relations
+  benchmarkResult BenchmarkResult @relation(fields: [benchmarkResultId], references: [id], onDelete: Cascade)
+  createdByUser   User?           @relation("ReasoningEntryCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser   User?           @relation("ReasoningEntryUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([benchmarkResultId])
+  @@index([reasoningType])
+  @@index([sequenceOrder])
+  @@map("reasoning_entries")
+}
+
+// ==================== AGGREGATION TABLES ====================
+model ExpertConsensus {
+  id                 String    @id @default(uuid())
+  questionId         String    @unique @map("question_id")
+  expertMean         Float     @map("expert_mean")
+  expertStd          Float?    @map("expert_std")
+  expertCount        Int       @map("expert_count")
+  individualRatings  Json?     @map("individual_ratings")
+  firstRating        DateTime  @map("first_rating")
+  lastRating         DateTime  @map("last_rating")
+  lastRefreshed      DateTime  @default(now()) @map("last_refreshed")
+
+  // Relations
+  question BenchmarkQuestion @relation(fields: [questionId], references: [id])
+
+  @@index([expertCount])
+  @@index([lastRefreshed])
+  @@map("expert_consensus")
+}
+
+model BenchmarkScoreAggregate {
+  id                    String    @id @default(uuid())
+  modelVersionId        String    @map("model_version_id")
+  scaleId               String    @map("scale_id")
+  hyperparameterHash    String?   @map("hyperparameter_hash")
+  hyperparameterConfig  Json?     @map("hyperparameter_config")
+  systemPromptId        String?   @map("system_prompt_id")
+  messagePromptId       String?   @map("message_prompt_id")
+  runCount              Int       @map("run_count")
+  modelMean             Float     @map("model_mean")
+  modelStd              Float?    @map("model_std")
+  modelMin              Float?    @map("model_min")
+  modelMax              Float?    @map("model_max")
+  modelMedian           Float?    @map("model_median")
+  expertConsensusMean   Float?    @map("expert_consensus_mean")
+  rmseVsExperts         Float?    @map("rmse_vs_experts")
+  firstRun              DateTime  @map("first_run")
+  lastRun               DateTime  @map("last_run")
+  experimentCount       Int       @map("experiment_count")
+  lastRefreshed         DateTime  @default(now()) @map("last_refreshed")
+
+  // Relations
+  modelVersion  ModelVersion     @relation(fields: [modelVersionId], references: [id])
+  scale         BenchmarkScale   @relation(fields: [scaleId], references: [id])
+  systemPrompt  BenchmarkPrompt? @relation("AggregateSystemPrompt", fields: [systemPromptId], references: [id])
+  messagePrompt BenchmarkPrompt? @relation("AggregateMessagePrompt", fields: [messagePromptId], references: [id])
+
+  @@unique([modelVersionId, scaleId, hyperparameterHash, systemPromptId, messagePromptId])
+  @@index([scaleId, rmseVsExperts])
+  @@index([runCount])
+  @@index([lastRefreshed])
+  @@map("benchmark_score_aggregates")
+}
+
+// ==================== SYSTEM CONFIGURATION ====================
+model SystemConfig {
+  id          String    @id @default(uuid())
+  key         String    @unique
+  value       Json
+  description String?
+  configType  String    @default("general") @map("config_type")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
+
+  // Relations
+  createdByUser User? @relation("SystemConfigCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User? @relation("SystemConfigUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([configType])
+  @@map("system_config")
 }
 
 // ==================== COMMUNITY FEATURES ====================
