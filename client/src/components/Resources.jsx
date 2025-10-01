@@ -1,5 +1,7 @@
 import React from "react";
 import "../styles/Resources.css";
+import pubmedImg from "../assets/pubmed.png"
+import mindlamp from "../assets/mindlamp.png"
 
 function ArticleCard({ article }) {
   const { url, title, summary, image, siteName, tags = [] } = article;
@@ -36,17 +38,17 @@ export default function Resources() {
       title: "The Suicide Intervention Response Inventory: a revision and validation",
       summary:
         "The SIRI was developed to evaluate suicide intervention skills. Psychometric issues with the original motivated revisions; the SIRI-2 shows promise as an index of suicide counseling effectiveness.",
-      image: "https://picsum.photos/seed/a/1200/800",
+      image: pubmedImg,
       type: "Research paper",
       tags: ["Research paper"]
     },
     {
       url: "https://example.com/rag-playbook",
       siteName: "Tech Blog",
-      title: "The RAG Playbook: Patterns, Anti-Patterns, and Metrics",
+      title: "Recent research result indicates a correlation between phone usage and depression level",
       summary:
-        "From naive retrieval to multi-step planning: picking chunking, embeddings, and evaluation metrics that matter.",
-      image: "https://picsum.photos/seed/b/1200/800",
+        "A study explores how patterns of smartphone usage may be linked with symptoms of depression, suggesting mobile data could serve as an indicator of mental health.",
+      image: mindlamp,
       type: "News",
       tags: ["News"]
     },
