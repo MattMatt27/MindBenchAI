@@ -5,7 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const authRoutes = require('./routes/auth.routes');
-
+const currentVersionRoutes = require('./routes/CurrentVersion');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -55,6 +55,7 @@ app.get('/health', (req, res) => {
 
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/current', currentVersionRoutes);
 
 // 404 handler
 app.use((req, res) => {
