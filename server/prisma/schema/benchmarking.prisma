@@ -1,250 +1,250 @@
 model BenchmarkScale {
-    id          String    @id @default(uuid())
-    name        String
-    description String?
-    scaleType   String    @map("scale_type")
-    version     Int       @default(1)
-    isValidated Boolean   @default(false) @map("is_validated")
-    isPublic    Boolean   @default(false) @map("is_public")
-    createdAt   DateTime  @default(now()) @map("created_at")
-    createdBy   String?   @map("created_by")
-    updatedAt   DateTime? @updatedAt @map("updated_at")
-    updatedBy   String?   @map("updated_by")
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  scaleType   String    @map("scale_type")
+  version     Int       @default(1)
+  isValidated Boolean   @default(false) @map("is_validated")
+  isPublic    Boolean   @default(false) @map("is_public")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
 
-    createdByUser   User?                     @relation("BenchmarkScaleCreatedBy", fields: [createdBy], references: [id])
-    updatedByUser   User?                     @relation("BenchmarkScaleUpdatedBy", fields: [updatedBy], references: [id])
-    questions       BenchmarkQuestion[]
-    experiments     BenchmarkExperiment[]
-    scoreAggregates BenchmarkScoreAggregate[]
+  createdByUser   User?                     @relation("BenchmarkScaleCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser   User?                     @relation("BenchmarkScaleUpdatedBy", fields: [updatedBy], references: [id])
+  questions       BenchmarkQuestion[]
+  experiments     BenchmarkExperiment[]
+  scoreAggregates BenchmarkScoreAggregate[]
 
-    @@map("benchmark_scales")
+  @@map("benchmark_scales")
 }
 
 model BenchmarkQuestionSubmission {
-    id                String    @id @default(uuid())
-    userId            String    @map("user_id")
-    promptValue       String    @map("prompt_value")
-    response1Value    String    @map("response_1_value")
-    response2Value    String    @map("response_2_value")
-    rating1           Float     @map("rating_1")
-    rating2           Float     @map("rating_2")
-    instructionPrompt String?   @map("instruction_prompt")
-    notes             String?
-    metadata          Json?
-    status            String    @default("pending")
-    reviewedBy        String?   @map("reviewed_by")
-    reviewedAt        DateTime? @map("reviewed_at")
-    rejectionReason   String?   @map("rejection_reason")
-    createdAt         DateTime  @default(now()) @map("created_at")
+  id                String    @id @default(uuid())
+  userId            String    @map("user_id")
+  promptValue       String    @map("prompt_value")
+  response1Value    String    @map("response_1_value")
+  response2Value    String    @map("response_2_value")
+  rating1           Float     @map("rating_1")
+  rating2           Float     @map("rating_2")
+  instructionPrompt String?   @map("instruction_prompt")
+  notes             String?
+  metadata          Json?
+  status            String    @default("pending")
+  reviewedBy        String?   @map("reviewed_by")
+  reviewedAt        DateTime? @map("reviewed_at")
+  rejectionReason   String?   @map("rejection_reason")
+  createdAt         DateTime  @default(now()) @map("created_at")
 
-    user     User  @relation(fields: [userId], references: [id])
-    reviewer User? @relation("QuestionReviewer", fields: [reviewedBy], references: [id])
+  user     User  @relation(fields: [userId], references: [id])
+  reviewer User? @relation("QuestionReviewer", fields: [reviewedBy], references: [id])
 
-    @@index([userId])
-    @@index([status])
-    @@index([createdAt])
-    @@map("benchmark_question_submissions")
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("benchmark_question_submissions")
 }
 
 model BenchmarkQuestion {
-    id                  String           @id @default(uuid())
-    scaleId             String?          @map("scale_id")
-    position            Int?
-    promptId            String           @map("prompt_id")
-    promptValue         String           @map("prompt_value")
-    responseId          String           @map("response_id")
-    responseValue       String           @map("response_value")
-    isValidated         Boolean          @default(false) @map("is_validated")
-    isUserSubmitted     Boolean          @default(false) @map("is_user_submitted")
-    metadata            Json?
-    adversarialType     AdversarialType? @map("adversarial_type")
-    adversarialCategory String?          @map("adversarial_category")
-    difficultyLevel     Int?             @map("difficulty_level")
-    expectedFailureMode String?          @map("expected_failure_mode")
-    successCriteria     String?          @map("success_criteria")
-    adversarialMetadata Json?            @map("adversarial_metadata")
-    createdAt           DateTime         @default(now()) @map("created_at")
-    createdBy           String?          @map("created_by")
-    updatedAt           DateTime?        @updatedAt @map("updated_at")
-    updatedBy           String?          @map("updated_by")
+  id                  String           @id @default(uuid())
+  scaleId             String?          @map("scale_id")
+  position            Int?
+  promptId            String           @map("prompt_id")
+  promptValue         String           @map("prompt_value")
+  responseId          String           @map("response_id")
+  responseValue       String           @map("response_value")
+  isValidated         Boolean          @default(false) @map("is_validated")
+  isUserSubmitted     Boolean          @default(false) @map("is_user_submitted")
+  metadata            Json?
+  adversarialType     AdversarialType? @map("adversarial_type")
+  adversarialCategory String?          @map("adversarial_category")
+  difficultyLevel     Int?             @map("difficulty_level")
+  expectedFailureMode String?          @map("expected_failure_mode")
+  successCriteria     String?          @map("success_criteria")
+  adversarialMetadata Json?            @map("adversarial_metadata")
+  createdAt           DateTime         @default(now()) @map("created_at")
+  createdBy           String?          @map("created_by")
+  updatedAt           DateTime?        @updatedAt @map("updated_at")
+  updatedBy           String?          @map("updated_by")
 
-    scale           BenchmarkScale?            @relation(fields: [scaleId], references: [id])
-    createdByUser   User?                      @relation("BenchmarkQuestionCreatedBy", fields: [createdBy], references: [id])
-    updatedByUser   User?                      @relation("BenchmarkQuestionUpdatedBy", fields: [updatedBy], references: [id])
-    ratings         BenchmarkRating[]
-    results         BenchmarkResult[]
-    tags            BenchmarkTagQuestionLink[]
-    expertConsensus ExpertConsensus?
+  scale           BenchmarkScale?            @relation(fields: [scaleId], references: [id])
+  createdByUser   User?                      @relation("BenchmarkQuestionCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser   User?                      @relation("BenchmarkQuestionUpdatedBy", fields: [updatedBy], references: [id])
+  ratings         BenchmarkRating[]
+  results         BenchmarkResult[]
+  tags            BenchmarkTagQuestionLink[]
+  expertConsensus ExpertConsensus?
 
-    @@index([scaleId])
-    @@index([adversarialType])
-    @@index([difficultyLevel])
-    @@map("benchmark_questions")
+  @@index([scaleId])
+  @@index([adversarialType])
+  @@index([difficultyLevel])
+  @@map("benchmark_questions")
 }
 
 model BenchmarkRating {
-    id         String   @id @default(uuid())
-    questionId String   @map("question_id")
-    userId     String   @map("user_id")
-    rating     Float
-    confidence Float?
-    reasoning  String?
-    metadata   Json?
-    createdAt  DateTime @default(now()) @map("created_at")
+  id         String   @id @default(uuid())
+  questionId String   @map("question_id")
+  userId     String   @map("user_id")
+  rating     Float
+  confidence Float?
+  reasoning  String?
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
 
-    question BenchmarkQuestion @relation(fields: [questionId], references: [id])
-    user     User              @relation(fields: [userId], references: [id])
+  question BenchmarkQuestion @relation(fields: [questionId], references: [id])
+  user     User              @relation(fields: [userId], references: [id])
 
-    @@index([questionId])
-    @@index([userId])
-    @@map("benchmark_ratings")
+  @@index([questionId])
+  @@index([userId])
+  @@map("benchmark_ratings")
 }
 
 model BenchmarkTag {
-    id          String    @id @default(uuid())
-    name        String
-    description String?
-    createdAt   DateTime  @default(now()) @map("created_at")
-    createdBy   String?   @map("created_by")
-    updatedAt   DateTime? @updatedAt @map("updated_at")
-    updatedBy   String?   @map("updated_by")
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
 
-    createdByUser User?                      @relation("BenchmarkTagCreatedBy", fields: [createdBy], references: [id])
-    updatedByUser User?                      @relation("BenchmarkTagUpdatedBy", fields: [updatedBy], references: [id])
-    questions     BenchmarkTagQuestionLink[]
+  createdByUser User?                      @relation("BenchmarkTagCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                      @relation("BenchmarkTagUpdatedBy", fields: [updatedBy], references: [id])
+  questions     BenchmarkTagQuestionLink[]
 
-    @@map("benchmark_tags")
+  @@map("benchmark_tags")
 }
 
 model BenchmarkTagQuestionLink {
-    id         String @id @default(uuid())
-    questionId String @map("question_id")
-    tagId      String @map("tag_id")
+  id         String @id @default(uuid())
+  questionId String @map("question_id")
+  tagId      String @map("tag_id")
 
-    question BenchmarkQuestion @relation(fields: [questionId], references: [id])
-    tag      BenchmarkTag      @relation(fields: [tagId], references: [id])
+  question BenchmarkQuestion @relation(fields: [questionId], references: [id])
+  tag      BenchmarkTag      @relation(fields: [tagId], references: [id])
 
-    @@map("benchmark_tag_question_link")
+  @@map("benchmark_tag_question_link")
 }
 
 model BenchmarkExperiment {
-    id            String     @id @default(uuid())
-    userId        String     @map("user_id")
-    scaleId       String?    @map("scale_id")
-    name          String
-    description   String?
-    entityType    EntityType @map("entity_type")
-    entityIds     Json       @map("entity_ids")
-    config        Json
-    status        String     @default("pending")
-    taskId        String?    @map("task_id")
-    estimatedCost Float?     @map("estimated_cost")
-    actualCost    Float?     @map("actual_cost")
-    progress      Int        @default(0)
-    startedAt     DateTime?  @map("started_at")
-    completedAt   DateTime?  @map("completed_at")
-    errorMessage  String?    @map("error_message")
-    reviewedBy    String?    @map("reviewed_by")
-    reviewedAt    DateTime?  @map("reviewed_at")
-    reviewNotes   String?    @map("review_notes")
-    isPublic      Boolean    @default(false) @map("is_public")
-    createdAt     DateTime   @default(now()) @map("created_at")
-    updatedAt     DateTime?  @updatedAt @map("updated_at")
-    updatedBy     String?    @map("updated_by")
+  id            String     @id @default(uuid())
+  userId        String     @map("user_id")
+  scaleId       String?    @map("scale_id")
+  name          String
+  description   String?
+  entityType    EntityType @map("entity_type")
+  entityIds     Json       @map("entity_ids")
+  config        Json
+  status        String     @default("pending")
+  taskId        String?    @map("task_id")
+  estimatedCost Float?     @map("estimated_cost")
+  actualCost    Float?     @map("actual_cost")
+  progress      Int        @default(0)
+  startedAt     DateTime?  @map("started_at")
+  completedAt   DateTime?  @map("completed_at")
+  errorMessage  String?    @map("error_message")
+  reviewedBy    String?    @map("reviewed_by")
+  reviewedAt    DateTime?  @map("reviewed_at")
+  reviewNotes   String?    @map("review_notes")
+  isPublic      Boolean    @default(false) @map("is_public")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime?  @updatedAt @map("updated_at")
+  updatedBy     String?    @map("updated_by")
 
-    user          User              @relation(fields: [userId], references: [id])
-    scale         BenchmarkScale?   @relation(fields: [scaleId], references: [id])
-    updatedByUser User?             @relation("ExperimentUpdatedBy", fields: [updatedBy], references: [id])
-    reviewer      User?             @relation("ExperimentReviewer", fields: [reviewedBy], references: [id])
-    results       BenchmarkResult[]
+  user          User              @relation(fields: [userId], references: [id])
+  scale         BenchmarkScale?   @relation(fields: [scaleId], references: [id])
+  updatedByUser User?             @relation("ExperimentUpdatedBy", fields: [updatedBy], references: [id])
+  reviewer      User?             @relation("ExperimentReviewer", fields: [reviewedBy], references: [id])
+  results       BenchmarkResult[]
 
-    @@index([userId])
-    @@index([status])
-    @@index([isPublic])
-    @@map("benchmark_experiments")
+  @@index([userId])
+  @@index([status])
+  @@index([isPublic])
+  @@map("benchmark_experiments")
 }
 
 model BenchmarkPrompt {
-    id         String    @id @default(uuid())
-    name       String?
-    promptType String    @map("prompt_type")
-    content    String
-    createdAt  DateTime  @default(now()) @map("created_at")
-    createdBy  String?   @map("created_by")
-    updatedAt  DateTime? @updatedAt @map("updated_at")
-    updatedBy  String?   @map("updated_by")
+  id         String    @id @default(uuid())
+  name       String?
+  promptType String    @map("prompt_type")
+  content    String
+  createdAt  DateTime  @default(now()) @map("created_at")
+  createdBy  String?   @map("created_by")
+  updatedAt  DateTime? @updatedAt @map("updated_at")
+  updatedBy  String?   @map("updated_by")
 
-    createdByUser           User?                     @relation("BenchmarkPromptCreatedBy", fields: [createdBy], references: [id])
-    updatedByUser           User?                     @relation("BenchmarkPromptUpdatedBy", fields: [updatedBy], references: [id])
-    systemPromptResults     BenchmarkResult[]         @relation("SystemPromptResults")
-    messagePromptResults    BenchmarkResult[]         @relation("MessagePromptResults")
-    systemPromptAggregates  BenchmarkScoreAggregate[] @relation("AggregateSystemPrompt")
-    messagePromptAggregates BenchmarkScoreAggregate[] @relation("AggregateMessagePrompt")
+  createdByUser           User?                     @relation("BenchmarkPromptCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser           User?                     @relation("BenchmarkPromptUpdatedBy", fields: [updatedBy], references: [id])
+  systemPromptResults     BenchmarkResult[]         @relation("SystemPromptResults")
+  messagePromptResults    BenchmarkResult[]         @relation("MessagePromptResults")
+  systemPromptAggregates  BenchmarkScoreAggregate[] @relation("AggregateSystemPrompt")
+  messagePromptAggregates BenchmarkScoreAggregate[] @relation("AggregateMessagePrompt")
 
-    @@map("benchmark_prompts")
+  @@map("benchmark_prompts")
 }
 
 model BenchmarkResult {
-    id                   String   @id @default(uuid())
-    experimentId         String?  @map("experiment_id")
-    repeatNumber         Int?     @map("repeat_number")
-    modelVersionId       String?  @map("model_version_id")
-    toolConfigurationId  String?  @map("tool_configuration_id")
-    questionId           String?  @map("question_id")
-    hyperparameterConfig Json?    @map("hyperparameter_config")
-    hyperparameterHash   String?  @map("hyperparameter_hash")
-    systemPromptId       String?  @map("system_prompt_id")
-    messagePromptId      String?  @map("message_prompt_id")
-    score                Int?
-    reasoning            String?
-    rawResponse          String?  @map("raw_response")
-    responseTimeMs       Int?     @map("response_time_ms")
-    tokenUsage           Json?    @map("token_usage")
-    status               String   @default("pending")
-    errorType            String?  @map("error_type")
-    errorMessage         String?  @map("error_message")
-    apiCost              Float?   @map("api_cost")
-    isApproved           Boolean  @default(false) @map("is_approved")
-    approvalSource       String   @default("experiment") @map("approval_source")
-    createdAt            DateTime @default(now()) @map("created_at")
+  id                   String   @id @default(uuid())
+  experimentId         String?  @map("experiment_id")
+  repeatNumber         Int?     @map("repeat_number")
+  modelVersionId       String?  @map("model_version_id")
+  toolConfigurationId  String?  @map("tool_configuration_id")
+  questionId           String?  @map("question_id")
+  hyperparameterConfig Json?    @map("hyperparameter_config")
+  hyperparameterHash   String?  @map("hyperparameter_hash")
+  systemPromptId       String?  @map("system_prompt_id")
+  messagePromptId      String?  @map("message_prompt_id")
+  score                Int?
+  reasoning            String?
+  rawResponse          String?  @map("raw_response")
+  responseTimeMs       Int?     @map("response_time_ms")
+  tokenUsage           Json?    @map("token_usage")
+  status               String   @default("pending")
+  errorType            String?  @map("error_type")
+  errorMessage         String?  @map("error_message")
+  apiCost              Float?   @map("api_cost")
+  isApproved           Boolean  @default(false) @map("is_approved")
+  approvalSource       String   @default("experiment") @map("approval_source")
+  createdAt            DateTime @default(now()) @map("created_at")
 
-    experiment        BenchmarkExperiment? @relation(fields: [experimentId], references: [id])
-    modelVersion      ModelVersion?        @relation(fields: [modelVersionId], references: [id])
-    toolConfiguration ToolConfiguration?   @relation(fields: [toolConfigurationId], references: [id])
-    question          BenchmarkQuestion?   @relation(fields: [questionId], references: [id])
-    systemPrompt      BenchmarkPrompt?     @relation("SystemPromptResults", fields: [systemPromptId], references: [id])
-    messagePrompt     BenchmarkPrompt?     @relation("MessagePromptResults", fields: [messagePromptId], references: [id])
-    reasoningEntries  ReasoningEntry[]
+  experiment        BenchmarkExperiment? @relation(fields: [experimentId], references: [id])
+  modelVersion      ModelVersion?        @relation(fields: [modelVersionId], references: [id])
+  toolConfiguration ToolConfiguration?   @relation(fields: [toolConfigurationId], references: [id])
+  question          BenchmarkQuestion?   @relation(fields: [questionId], references: [id])
+  systemPrompt      BenchmarkPrompt?     @relation("SystemPromptResults", fields: [systemPromptId], references: [id])
+  messagePrompt     BenchmarkPrompt?     @relation("MessagePromptResults", fields: [messagePromptId], references: [id])
+  reasoningEntries  ReasoningEntry[]
 
-    @@index([experimentId])
-    @@index([modelVersionId])
-    @@index([toolConfigurationId])
-    @@index([questionId])
-    @@index([isApproved])
-    @@index([hyperparameterHash])
-    @@map("benchmark_results")
+  @@index([experimentId])
+  @@index([modelVersionId])
+  @@index([toolConfigurationId])
+  @@index([questionId])
+  @@index([isApproved])
+  @@index([hyperparameterHash])
+  @@map("benchmark_results")
 }
 
 model ReasoningEntry {
-    id                String        @id @default(uuid())
-    benchmarkResultId String        @map("benchmark_result_id")
-    reasoningType     ReasoningType @map("reasoning_type")
-    content           Json
-    sequenceOrder     Int?          @map("sequence_order")
-    confidenceLevel   Float?        @map("confidence_level")
-    processingTimeMs  Int?          @map("processing_time_ms")
-    metadata          Json?
-    createdAt         DateTime      @default(now()) @map("created_at")
-    createdBy         String?       @map("created_by")
-    updatedAt         DateTime?     @updatedAt @map("updated_at")
-    updatedBy         String?       @map("updated_by")
+  id                String        @id @default(uuid())
+  benchmarkResultId String        @map("benchmark_result_id")
+  reasoningType     ReasoningType @map("reasoning_type")
+  content           Json
+  sequenceOrder     Int?          @map("sequence_order")
+  confidenceLevel   Float?        @map("confidence_level")
+  processingTimeMs  Int?          @map("processing_time_ms")
+  metadata          Json?
+  createdAt         DateTime      @default(now()) @map("created_at")
+  createdBy         String?       @map("created_by")
+  updatedAt         DateTime?     @updatedAt @map("updated_at")
+  updatedBy         String?       @map("updated_by")
 
-    benchmarkResult BenchmarkResult @relation(fields: [benchmarkResultId], references: [id], onDelete: Cascade)
-    createdByUser   User?           @relation("ReasoningEntryCreatedBy", fields: [createdBy], references: [id])
-    updatedByUser   User?           @relation("ReasoningEntryUpdatedBy", fields: [updatedBy], references: [id])
+  benchmarkResult BenchmarkResult @relation(fields: [benchmarkResultId], references: [id], onDelete: Cascade)
+  createdByUser   User?           @relation("ReasoningEntryCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser   User?           @relation("ReasoningEntryUpdatedBy", fields: [updatedBy], references: [id])
 
-    @@index([benchmarkResultId])
-    @@index([reasoningType])
-    @@index([sequenceOrder])
-    @@map("reasoning_entries")
+  @@index([benchmarkResultId])
+  @@index([reasoningType])
+  @@index([sequenceOrder])
+  @@map("reasoning_entries")
 }

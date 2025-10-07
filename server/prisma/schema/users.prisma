@@ -1,130 +1,134 @@
 model User {
-    id                  String    @id @default(uuid())
-    email               String    @unique
-    username            String    @unique
-    passwordHash        String    @map("password_hash")
-    role                UserRole  @default(USER)
-    firstName           String?   @map("first_name")
-    lastName            String?   @map("last_name")
-    isActive            Boolean   @default(true) @map("is_active")
-    isVerified          Boolean   @default(false) @map("is_verified")
-    emailVerifiedAt     DateTime? @map("email_verified_at")
-    lastLoginAt         DateTime? @map("last_login_at")
-    failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
-    lockedUntil         DateTime? @map("locked_until")
-    createdAt           DateTime  @default(now()) @map("created_at")
-    updatedAt           DateTime? @updatedAt @map("updated_at")
+  id                  String    @id @default(uuid())
+  email               String    @unique
+  username            String    @unique
+  passwordHash        String    @map("password_hash")
+  role                UserRole  @default(USER)
+  firstName           String?   @map("first_name")
+  lastName            String?   @map("last_name")
+  isActive            Boolean   @default(true) @map("is_active")
+  isVerified          Boolean   @default(false) @map("is_verified")
+  emailVerifiedAt     DateTime? @map("email_verified_at")
+  lastLoginAt         DateTime? @map("last_login_at")
+  failedLoginAttempts Int       @default(0) @map("failed_login_attempts")
+  lockedUntil         DateTime? @map("locked_until")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime? @updatedAt @map("updated_at")
 
-    // Models/Tools
-    modelsCreated        Model[]             @relation("ModelCreatedBy")
-    modelsUpdated        Model[]             @relation("ModelUpdatedBy")
-    modelVersionsCreated ModelVersion[]      @relation("ModelVersionCreatedBy")
-    modelVersionsUpdated ModelVersion[]      @relation("ModelVersionUpdatedBy")
-    toolsCreated         Tool[]              @relation("ToolCreatedBy")
-    toolsUpdated         Tool[]              @relation("ToolUpdatedBy")
-    toolConfigsCreated   ToolConfiguration[] @relation("ToolConfigCreatedBy")
-    toolConfigsUpdated   ToolConfiguration[] @relation("ToolConfigUpdatedBy")
+  // Models/Tools
+  modelsCreated             Model[]             @relation("ModelCreatedBy")
+  modelsUpdated             Model[]             @relation("ModelUpdatedBy")
+  modelVersionsCreated      ModelVersion[]      @relation("ModelVersionCreatedBy")
+  modelVersionsUpdated      ModelVersion[]      @relation("ModelVersionUpdatedBy")
+  toolsCreated              Tool[]              @relation("ToolCreatedBy")
+  toolsUpdated              Tool[]              @relation("ToolUpdatedBy")
+  toolConfigsCreated        ToolConfiguration[] @relation("ToolConfigCreatedBy")
+  toolConfigsUpdated        ToolConfiguration[] @relation("ToolConfigUpdatedBy")
+  evaluationEntitiesCreated EvaluationEntity[]  @relation("EvaluationEntityCreatedBy")
+  evaluationEntitiesUpdated EvaluationEntity[]  @relation("EvaluationEntityUpdatedBy")
+  modelFamiliesCreated      ModelFamily[]       @relation("ModelFamilyCreatedBy")
+  modelFamiliesUpdated      ModelFamily[]       @relation("ModelFamilyUpdatedBy")
 
-    // Reviews & Qs
-    reviewAssignments        ProfileReviewAssignment[] @relation("ReviewerAssignments")
-    assignedReviews          ProfileReviewAssignment[] @relation("AssignedReviews")
-    techProfileAnswers       TechProfileAnswer[]       @relation("TechProfileReviewer")
-    techProfileApprovals     TechProfileAnswer[]       @relation("TechProfileApprover")
-    techProfileCreated       TechProfileAnswer[]       @relation("TechProfileCreatedBy")
-    responseProfileAnswers   ResponseProfileAnswer[]   @relation("ResponseProfileReviewer")
-    responseProfileApprovals ResponseProfileAnswer[]   @relation("ResponseProfileApprover")
-    responseProfileCreated   ResponseProfileAnswer[]   @relation("ResponseProfileCreatedBy")
-    techQuestionsCreated     TechProfileQuestion[]     @relation("TechQuestionCreatedBy")
-    techQuestionsUpdated     TechProfileQuestion[]     @relation("TechQuestionUpdatedBy")
-    responseQuestionsCreated ResponseProfileQuestion[] @relation("ResponseQuestionCreatedBy")
-    responseQuestionsUpdated ResponseProfileQuestion[] @relation("ResponseQuestionUpdatedBy")
+  // Reviews & Qs
+  reviewAssignments        ProfileReviewAssignment[] @relation("ReviewerAssignments")
+  assignedReviews          ProfileReviewAssignment[] @relation("AssignedReviews")
+  techProfileAnswers       TechProfileAnswer[]       @relation("TechProfileReviewer")
+  techProfileApprovals     TechProfileAnswer[]       @relation("TechProfileApprover")
+  techProfileCreated       TechProfileAnswer[]       @relation("TechProfileCreatedBy")
+  responseProfileAnswers   ResponseProfileAnswer[]   @relation("ResponseProfileReviewer")
+  responseProfileApprovals ResponseProfileAnswer[]   @relation("ResponseProfileApprover")
+  responseProfileCreated   ResponseProfileAnswer[]   @relation("ResponseProfileCreatedBy")
+  techQuestionsCreated     TechProfileQuestion[]     @relation("TechQuestionCreatedBy")
+  techQuestionsUpdated     TechProfileQuestion[]     @relation("TechQuestionUpdatedBy")
+  responseQuestionsCreated ResponseProfileQuestion[] @relation("ResponseQuestionCreatedBy")
+  responseQuestionsUpdated ResponseProfileQuestion[] @relation("ResponseQuestionUpdatedBy")
 
-    // Hyperparams
-    hyperparametersCreated     Hyperparameter[]          @relation("HyperparameterCreatedBy")
-    hyperparametersUpdated     Hyperparameter[]          @relation("HyperparameterUpdatedBy")
-    hyperparameterLinksCreated ModelHyperparameterLink[] @relation("ModelHyperparameterLinkCreatedBy")
-    hyperparameterLinksUpdated ModelHyperparameterLink[] @relation("ModelHyperparameterLinkUpdatedBy")
+  // Hyperparams
+  hyperparametersCreated     Hyperparameter[]          @relation("HyperparameterCreatedBy")
+  hyperparametersUpdated     Hyperparameter[]          @relation("HyperparameterUpdatedBy")
+  hyperparameterLinksCreated ModelHyperparameterLink[] @relation("ModelHyperparameterLinkCreatedBy")
+  hyperparameterLinksUpdated ModelHyperparameterLink[] @relation("ModelHyperparameterLinkUpdatedBy")
 
-    // Benchmarking
-    benchmarkScalesCreated BenchmarkScale[]              @relation("BenchmarkScaleCreatedBy")
-    benchmarkScalesUpdated BenchmarkScale[]              @relation("BenchmarkScaleUpdatedBy")
-    questionSubmissions    BenchmarkQuestionSubmission[]
-    questionsCreated       BenchmarkQuestion[]           @relation("BenchmarkQuestionCreatedBy")
-    questionsUpdated       BenchmarkQuestion[]           @relation("BenchmarkQuestionUpdatedBy")
-    questionRatings        BenchmarkRating[]
-    experiments            BenchmarkExperiment[]
-    experimentsUpdated     BenchmarkExperiment[]         @relation("ExperimentUpdatedBy")
-    experimentsReviewed    BenchmarkExperiment[]         @relation("ExperimentReviewer")
-    promptsCreated         BenchmarkPrompt[]             @relation("BenchmarkPromptCreatedBy")
-    promptsUpdated         BenchmarkPrompt[]             @relation("BenchmarkPromptUpdatedBy")
-    tagsCreated            BenchmarkTag[]                @relation("BenchmarkTagCreatedBy")
-    tagsUpdated            BenchmarkTag[]                @relation("BenchmarkTagUpdatedBy")
+  // Benchmarking
+  benchmarkScalesCreated BenchmarkScale[]              @relation("BenchmarkScaleCreatedBy")
+  benchmarkScalesUpdated BenchmarkScale[]              @relation("BenchmarkScaleUpdatedBy")
+  questionSubmissions    BenchmarkQuestionSubmission[]
+  questionsCreated       BenchmarkQuestion[]           @relation("BenchmarkQuestionCreatedBy")
+  questionsUpdated       BenchmarkQuestion[]           @relation("BenchmarkQuestionUpdatedBy")
+  questionRatings        BenchmarkRating[]
+  experiments            BenchmarkExperiment[]
+  experimentsUpdated     BenchmarkExperiment[]         @relation("ExperimentUpdatedBy")
+  experimentsReviewed    BenchmarkExperiment[]         @relation("ExperimentReviewer")
+  promptsCreated         BenchmarkPrompt[]             @relation("BenchmarkPromptCreatedBy")
+  promptsUpdated         BenchmarkPrompt[]             @relation("BenchmarkPromptUpdatedBy")
+  tagsCreated            BenchmarkTag[]                @relation("BenchmarkTagCreatedBy")
+  tagsUpdated            BenchmarkTag[]                @relation("BenchmarkTagUpdatedBy")
 
-    // Community
-    updatesCreated     Update[]         @relation("UpdateCreatedBy")
-    updatesUpdated     Update[]         @relation("UpdateUpdatedBy")
-    updateReactions    UpdateReaction[]
-    suggestionsCreated Suggestion[]     @relation("SuggestionCreatedBy")
-    suggestionsUpdated Suggestion[]     @relation("SuggestionUpdatedBy")
-    suggestionVotes    SuggestionVote[]
-    teamMemberProfile  TeamMember?      @relation("TeamMemberUser")
-    teamMembersCreated TeamMember[]     @relation("TeamMemberCreatedBy")
-    teamMembersUpdated TeamMember[]     @relation("TeamMemberUpdatedBy")
+  // Community
+  updatesCreated     Update[]         @relation("UpdateCreatedBy")
+  updatesUpdated     Update[]         @relation("UpdateUpdatedBy")
+  updateReactions    UpdateReaction[]
+  suggestionsCreated Suggestion[]     @relation("SuggestionCreatedBy")
+  suggestionsUpdated Suggestion[]     @relation("SuggestionUpdatedBy")
+  suggestionVotes    SuggestionVote[]
+  teamMemberProfile  TeamMember?      @relation("TeamMemberUser")
+  teamMembersCreated TeamMember[]     @relation("TeamMemberCreatedBy")
+  teamMembersUpdated TeamMember[]     @relation("TeamMemberUpdatedBy")
 
-    // Auth & Expertise
-    sessions             UserSession[]
-    emailVerifications   EmailVerificationToken[]
-    passwordResets       PasswordResetToken[]
-    permissions          UserPermission[]              @relation("UserPermissions")
-    permissionsGranted   UserPermission[]              @relation("PermissionGranter")
-    questionReviews      BenchmarkQuestionSubmission[] @relation("QuestionReviewer")
-    expertiseHistory     UserExpertiseHistory[]        @relation("UserExpertiseHistory")
-    expertiseAssignments UserExpertiseHistory[]        @relation("ExpertiseAssigner")
+  // Auth & Expertise
+  sessions             UserSession[]
+  emailVerifications   EmailVerificationToken[]
+  passwordResets       PasswordResetToken[]
+  permissions          UserPermission[]              @relation("UserPermissions")
+  permissionsGranted   UserPermission[]              @relation("PermissionGranter")
+  questionReviews      BenchmarkQuestionSubmission[] @relation("QuestionReviewer")
+  expertiseHistory     UserExpertiseHistory[]        @relation("UserExpertiseHistory")
+  expertiseAssignments UserExpertiseHistory[]        @relation("ExpertiseAssigner")
 
-    // Reasoning & System
-    reasoningEntriesCreated ReasoningEntry[] @relation("ReasoningEntryCreatedBy")
-    reasoningEntriesUpdated ReasoningEntry[] @relation("ReasoningEntryUpdatedBy")
-    systemConfigsCreated    SystemConfig[]   @relation("SystemConfigCreatedBy")
-    systemConfigsUpdated    SystemConfig[]   @relation("SystemConfigUpdatedBy")
+  // Reasoning & System
+  reasoningEntriesCreated ReasoningEntry[] @relation("ReasoningEntryCreatedBy")
+  reasoningEntriesUpdated ReasoningEntry[] @relation("ReasoningEntryUpdatedBy")
+  systemConfigsCreated    SystemConfig[]   @relation("SystemConfigCreatedBy")
+  systemConfigsUpdated    SystemConfig[]   @relation("SystemConfigUpdatedBy")
 
-    @@index([email])
-    @@index([username])
-    @@index([role])
-    @@index([isActive])
-    @@map("users")
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
 }
 
 model UserExpertiseHistory {
-    id             String            @id @default(uuid())
-    userId         String            @map("user_id")
-    expertiseLevel ExpertiseCategory @map("expertise_level")
-    effectiveFrom  DateTime          @default(now()) @map("effective_from")
-    effectiveTo    DateTime?         @map("effective_to")
-    assignedBy     String?           @map("assigned_by")
-    notes          String?
-    createdAt      DateTime          @default(now()) @map("created_at")
+  id             String            @id @default(uuid())
+  userId         String            @map("user_id")
+  expertiseLevel ExpertiseCategory @map("expertise_level")
+  effectiveFrom  DateTime          @default(now()) @map("effective_from")
+  effectiveTo    DateTime?         @map("effective_to")
+  assignedBy     String?           @map("assigned_by")
+  notes          String?
+  createdAt      DateTime          @default(now()) @map("created_at")
 
-    user     User  @relation("UserExpertiseHistory", fields: [userId], references: [id], onDelete: Cascade)
-    assigner User? @relation("ExpertiseAssigner", fields: [assignedBy], references: [id])
+  user     User  @relation("UserExpertiseHistory", fields: [userId], references: [id], onDelete: Cascade)
+  assigner User? @relation("ExpertiseAssigner", fields: [assignedBy], references: [id])
 
-    @@index([userId, effectiveFrom, effectiveTo])
-    @@index([userId])
-    @@map("user_expertise_history")
+  @@index([userId, effectiveFrom, effectiveTo])
+  @@index([userId])
+  @@map("user_expertise_history")
 }
 
 model UserPermission {
-    id         String    @id @default(uuid())
-    userId     String    @map("user_id")
-    permission String
-    grantedBy  String?   @map("granted_by")
-    grantedAt  DateTime  @default(now()) @map("granted_at")
-    revokedAt  DateTime? @map("revoked_at")
+  id         String    @id @default(uuid())
+  userId     String    @map("user_id")
+  permission String
+  grantedBy  String?   @map("granted_by")
+  grantedAt  DateTime  @default(now()) @map("granted_at")
+  revokedAt  DateTime? @map("revoked_at")
 
-    user    User  @relation("UserPermissions", fields: [userId], references: [id], onDelete: Cascade)
-    granter User? @relation("PermissionGranter", fields: [grantedBy], references: [id])
+  user    User  @relation("UserPermissions", fields: [userId], references: [id], onDelete: Cascade)
+  granter User? @relation("PermissionGranter", fields: [grantedBy], references: [id])
 
-    @@unique([userId, permission])
-    @@index([userId])
-    @@index([permission])
-    @@map("user_permissions")
+  @@unique([userId, permission])
+  @@index([userId])
+  @@index([permission])
+  @@map("user_permissions")
 }

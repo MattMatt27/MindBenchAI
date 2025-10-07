@@ -10,63 +10,29 @@ const ENTITY_TYPE_QUERY_MAP = {
 const toClientEntityType = (entityType) =>
   entityType === EntityType.TOOL_CONFIGURATION ? 'tool_configuration' : 'base_model';
 
-const toNumber = (value) =>
-  value && typeof value.toNumber === 'function' ? value.toNumber() : value ?? null;
+const extractAnswerValue = (answer) => {
+  const rawPayload = answer.answer ?? null;
+  let typeSource = answer.question.questionType;
+  let value = rawPayload;
 
-const formatToolConfiguration = (answer) => {
-  const { toolConfiguration, question } = answer;
-  const tool = toolConfiguration?.tool;
-  const modelVersion = toolConfiguration?.modelVersion;
-  const baseModel = modelVersion?.model;
+  if (rawPayload && typeof rawPayload === 'object' && 'value' in rawPayload) {
+    value = rawPayload.value;
+    if (rawPayload.type) {
+      typeSource = rawPayload.type.toUpperCase();
+    }
+  }
 
-  return {
-    entity_type: toClientEntityType(answer.entityType),
-    entity_id: toolConfiguration?.id ?? answer.entityId,
-    entity_name: toolConfiguration?.configurationName ?? null,
-    tool_name: tool?.name ?? null,
-    base_model_name: baseModel?.name ?? null,
-    question_id: question.id,
-    question_key: question.questionKey,
-    question_text: question.questionText,
-    category: question.category,
-    question_type: question.questionType.toLowerCase(),
-    display_order: question.displayOrder,
-    boolean_value: answer.booleanValue,
-    numeric_value: toNumber(answer.numericValue),
-    text_value: answer.textValue,
-    list_value: answer.listValue,
-    evidence_url: answer.evidenceUrl ?? null,
-  };
-};
+  const normalizedType = (typeSource || 'TEXT').toString().toLowerCase();
 
-const formatModelVersion = (answer) => {
-  const { modelVersion, question } = answer;
-  const model = modelVersion?.model;
+  if (normalizedType === 'boolean' && typeof value !== 'boolean') {
+    value = Boolean(value);
+  }
 
   return {
-    entity_type: toClientEntityType(answer.entityType),
-    entity_id: modelVersion?.id ?? answer.entityId,
-    entity_name: model?.name ?? null,
-    developer: model?.developer ?? null,
-    version: modelVersion?.version ?? null,
-    question_id: question.id,
-    question_key: question.questionKey,
-    question_text: question.questionText,
-    category: question.category,
-    question_type: question.questionType.toLowerCase(),
-    display_order: question.displayOrder,
-    boolean_value: answer.booleanValue,
-    numeric_value: toNumber(answer.numericValue),
-    text_value: answer.textValue,
-    list_value: answer.listValue,
-    evidence_url: answer.evidenceUrl ?? null,
+    type: normalizedType,
+    value,
   };
 };
-
-const formatAnswer = (answer) =>
-  answer.entityType === EntityType.TOOL_CONFIGURATION
-    ? formatToolConfiguration(answer)
-    : formatModelVersion(answer);
 
 const getTechProfileDisplay = async (req, res, next) => {
   try {
@@ -82,16 +48,18 @@ const getTechProfileDisplay = async (req, res, next) => {
       where: whereClause,
       include: {
         question: true,
-        toolConfiguration: {
+        evaluationEntity: {
           include: {
-            tool: true,
+            toolConfiguration: {
+              include: {
+                tool: true,
+                model: true,
+              },
+            },
             modelVersion: {
               include: { model: true },
             },
           },
-        },
-        modelVersion: {
-          include: { model: true },
         },
       },
       orderBy: [
@@ -100,8 +68,54 @@ const getTechProfileDisplay = async (req, res, next) => {
       ],
     });
 
-    const payload = answers.map(formatAnswer).filter(Boolean);
-    res.json({ success: true, data: payload });
+    const grouped = new Map();
+
+    for (const answer of answers) {
+      const entityType = toClientEntityType(answer.entityType);
+      const question = answer.question;
+      const evaluationEntity = answer.evaluationEntity;
+
+      const toolConfiguration = evaluationEntity?.toolConfiguration;
+      const modelVersion = evaluationEntity?.modelVersion;
+      const modelFromToolConfig = toolConfiguration?.model;
+      const baseModel = modelVersion?.model ?? modelFromToolConfig;
+
+      const profileId = toolConfiguration?.id || modelVersion?.id || answer.entityId;
+
+      if (!grouped.has(profileId)) {
+        if (entityType === 'tool_configuration') {
+          grouped.set(profileId, {
+            id: profileId,
+            entity_type: entityType,
+            name: toolConfiguration?.configurationName ?? null,
+            tool_name: toolConfiguration?.tool?.name ?? null,
+            base_model_name: modelFromToolConfig?.name ?? null,
+            answers: {},
+          });
+        } else {
+          grouped.set(profileId, {
+            id: profileId,
+            entity_type: entityType,
+            name: baseModel?.name ?? null,
+            developer: baseModel?.developer ?? null,
+            version: modelVersion?.version ?? null,
+            answers: {},
+          });
+        }
+      }
+
+      const bucket = grouped.get(profileId);
+      if (!bucket) {
+        continue;
+      }
+
+      bucket.answers[question.questionKey] = {
+        ...extractAnswerValue(answer),
+        notes: answer.notes ?? null,
+      };
+    }
+
+    res.json({ success: true, data: Array.from(grouped.values()) });
   } catch (error) {
     next(error);
   }

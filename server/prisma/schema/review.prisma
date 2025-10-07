@@ -1,22 +1,25 @@
 model ProfileReviewAssignment {
-    id          String       @id @default(uuid())
-    reviewerId  String       @map("reviewer_id")
-    entityType  EntityType   @map("entity_type")
-    entityId    String       @map("entity_id")
-    assignedAt  DateTime     @default(now()) @map("assigned_at")
-    assignedBy  String?      @map("assigned_by")
-    dueDate     DateTime?    @map("due_date")
-    status      ReviewStatus @default(NOT_STARTED)
-    completedAt DateTime?    @map("completed_at")
-    notes       String?
+  id                 String       @id @default(uuid())
+  reviewerId         String       @map("reviewer_id")
+  entityType         EntityType   @map("entity_type")
+  entityId           String       @map("entity_id")
+  evaluationEntityId String       @map("evaluation_entity_id")
+  assignedAt         DateTime     @default(now()) @map("assigned_at")
+  assignedBy         String?      @map("assigned_by")
+  dueDate            DateTime?    @map("due_date")
+  status             ReviewStatus @default(NOT_STARTED)
+  completedAt        DateTime?    @map("completed_at")
+  notes              String?
 
-    reviewer           User                    @relation("ReviewerAssignments", fields: [reviewerId], references: [id])
-    assigner           User?                   @relation("AssignedReviews", fields: [assignedBy], references: [id])
-    techProfileAnswers TechProfileAnswer[]
-    responseAnswers    ResponseProfileAnswer[]
+  reviewer           User                    @relation("ReviewerAssignments", fields: [reviewerId], references: [id])
+  assigner           User?                   @relation("AssignedReviews", fields: [assignedBy], references: [id])
+  evaluationEntity   EvaluationEntity        @relation(fields: [evaluationEntityId], references: [id])
+  techProfileAnswers TechProfileAnswer[]
+  responseAnswers    ResponseProfileAnswer[]
 
-    @@unique([reviewerId, entityType, entityId])
-    @@index([reviewerId, status])
-    @@index([status])
-    @@map("profile_review_assignments")
+  @@unique([reviewerId, entityType, entityId])
+  @@index([reviewerId, status])
+  @@index([status])
+  @@index([evaluationEntityId])
+  @@map("profile_review_assignments")
 }
