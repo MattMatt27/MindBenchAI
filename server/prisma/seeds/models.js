@@ -1,130 +1,100 @@
+const toolData = [
+  { name: 'ChatGPT', developer: 'OpenAI' },
+  { name: 'Claude', developer: 'Anthropic' },
+  { name: 'Gemini', developer: 'Google' },
+];
+
+const modelData = [
+  { name: 'GPT-4o', developer: 'OpenAI', toolName: 'ChatGPT' },
+  { name: 'Sonnet 3.7', developer: 'Anthropic', toolName: 'Claude' },
+  { name: 'Gemini 2.0 Flash', developer: 'Google', toolName: 'Gemini' },
+];
+
 module.exports = async function seedModels(prisma) {
-  const chatGptTool = await prisma.tool.upsert({
-    where: { name: 'ChatGPT' },
-    update: {},
-    create: {
-      name: 'ChatGPT',
-      developer: 'OpenAI',
-    },
-  });
+  const tools = {};
+  for (const tool of toolData) {
+    const record = await prisma.tool.upsert({
+      where: { name: tool.name },
+      update: { developer: tool.developer ?? null },
+      create: {
+        name: tool.name,
+        developer: tool.developer ?? null,
+      },
+    });
+    tools[tool.name] = record;
+  }
 
-  const claudeTool = await prisma.tool.upsert({
-    where: { name: 'Claude' },
-    update: {},
-    create: {
-      name: 'Claude',
-      developer: 'Anthropic',
-    },
-  });
+  const models = {};
+  for (const model of modelData) {
+    const record = await prisma.model.upsert({
+      where: { name: model.name },
+      update: {
+        developer: model.developer ?? null,
+      },
+      create: {
+        name: model.name,
+        developer: model.developer ?? null,
+      },
+    });
+    models[model.name] = record;
+  }
 
-  const gptModel = await prisma.model.upsert({
-    where: { name: 'GPT-4o' },
-    update: {},
-    create: {
-      name: 'GPT-4o',
-      developer: 'OpenAI',
-    },
-  });
-
-  const claudeModel = await prisma.model.upsert({
-    where: { name: 'Sonnet 3.7' },
-    update: {},
-    create: {
-      name: 'Sonnet 3.7',
-      developer: 'Anthropic',
-    },
-  });
-
-  const gptModelVersion = await prisma.modelVersion.upsert({
-    where: {
-      modelId_version: {
-        modelId: gptModel.id,
+  const modelVersions = {};
+  for (const model of modelData) {
+    const parent = models[model.name];
+    const record = await prisma.modelVersion.upsert({
+      where: {
+        modelId_version: {
+          modelId: parent.id,
+          version: 'latest',
+        },
+      },
+      update: {
+        isLatest: true,
+        isAvailable: true,
+        releaseDate: null,
+        deprecationDate: null,
+      },
+      create: {
+        modelId: parent.id,
         version: 'latest',
+        isLatest: true,
+        isAvailable: true,
       },
-    },
-    update: {
-      isLatest: true,
-      isAvailable: true,
-      releaseDate: null,
-      deprecationDate: null,
-    },
-    create: {
-      modelId: gptModel.id,
-      version: 'latest',
-      isLatest: true,
-      isAvailable: true,
-    },
-  });
+    });
+    modelVersions[parent.id] = record;
+  }
 
-  const claudeModelVersion = await prisma.modelVersion.upsert({
-    where: {
-      modelId_version: {
-        modelId: claudeModel.id,
-        version: 'latest',
+  const toolConfigurations = {};
+  for (const model of modelData) {
+    const tool = tools[model.toolName];
+    const parentModel = models[model.name];
+    const configName = `${model.toolName} ${model.name}`;
+    const record = await prisma.toolConfiguration.upsert({
+      where: {
+        toolId_modelId: {
+          toolId: tool.id,
+          modelId: parentModel.id,
+        },
       },
-    },
-    update: {
-      isLatest: true,
-      isAvailable: true,
-      releaseDate: null,
-      deprecationDate: null,
-    },
-    create: {
-      modelId: claudeModel.id,
-      version: 'latest',
-      isLatest: true,
-      isAvailable: true,
-    },
-  });
-
-  const chatGptToolConfiguration = await prisma.toolConfiguration.upsert({
-    where: {
-      toolId_modelId: {
-        toolId: chatGptTool.id,
-        modelId: gptModel.id,
+      update: {
+        configurationName: configName,
+        isActive: true,
       },
-    },
-    update: {
-      isActive: true,
-      configurationSettings: null,
-    },
-    create: {
-      toolId: chatGptTool.id,
-      modelId: gptModel.id,
-      configurationName: 'ChatGPT-4o',
-      isActive: true,
-      configurationSettings: null,
-    },
-  });
-
-  const claudeToolConfiguration = await prisma.toolConfiguration.upsert({
-    where: {
-      toolId_modelId: {
-        toolId: claudeTool.id,
-        modelId: claudeModel.id,
+      create: {
+        toolId: tool.id,
+        modelId: parentModel.id,
+        configurationName: configName,
+        isActive: true,
       },
-    },
-    update: {
-      isActive: true,
-      configurationSettings: null,
-    },
-    create: {
-      toolId: claudeTool.id,
-      modelId: claudeModel.id,
-      configurationName: 'Claude Sonnet 3.7',
-      isActive: true,
-      configurationSettings: null,
-    },
-  });
+    });
+    toolConfigurations[parentModel.id] = record;
+  }
 
   return {
-    chatGptTool,
-    claudeTool,
-    gptModel,
-    gptModelVersion,
-    claudeModel,
-    claudeModelVersion,
-    chatGptToolConfiguration,
-    claudeToolConfiguration,
+    tools,
+    models,
+    modelVersions,
+    toolConfigurations,
   };
 };

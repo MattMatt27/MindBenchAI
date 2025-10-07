@@ -21,10 +21,8 @@ async function main() {
 
   await seedTechProfiles(prisma, {
     // researcherUser: users?.researcherUser,
-    toolConfigurations: [
-      models.chatGptToolConfiguration,
-      models.claudeToolConfiguration,
-    ],
+    toolConfigurations: models.toolConfigurations,
+    tools: models.tools,
   });
 
   // const benchmarking = await seedBenchmarking(prisma, {

@@ -112,6 +112,10 @@ const getTechProfileDisplay = async (req, res, next) => {
       bucket.answers[question.questionKey] = {
         ...extractAnswerValue(answer),
         notes: answer.notes ?? null,
+        category: question.category,
+        question_text: question.questionText,
+        display_order: question.displayOrder,
+        question_type: question.questionType.toLowerCase(),
       };
     }
 
