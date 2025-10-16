@@ -12,9 +12,11 @@ import {
 } from "recharts";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5001";
+const TRAITS = ["O", "C", "E", "A", "N"];
 
 export default function StandardizeTest() {
   const [activeTab, setActiveTab] = React.useState("models");
+  const [activeTest, setActiveTest] = React.useState("big5");
   const [expandedModels, setExpandedModels] = React.useState(() => new Set());
   const [selectedRow, setSelectedRow] = React.useState(null);
   const [selectedVersions, setSelectedVersions] = React.useState(() => new Set());
@@ -149,7 +151,7 @@ export default function StandardizeTest() {
         E: latest?.E ?? 0,
         A: latest?.A ?? 0,
         N: latest?.N ?? 0,
-        hasVersions: data.versions.length > 1,
+        hasVersions: data.versions.length >= 1,
         versions: [...data.versions],
       };
     });
@@ -170,13 +172,6 @@ export default function StandardizeTest() {
         );
         const isExpanded = expandedModels.has(mainRow.id);
         versions.forEach((v, idx) => {
-          if (
-            v.modelVersionId === mainRow.modelVersionId ||
-            v.version === mainRow.actualVersion
-          ) {
-            return;
-          }
-
           const versionId = v.modelVersionId ?? `${v.modelFamily}-${v.model}-${v.version}`;
           const isSelected = selectedVersions.has(versionId);
           if (isExpanded || isSelected) {
@@ -282,24 +277,45 @@ export default function StandardizeTest() {
 
   return (
     <div>
+      {/* Page-level tabs for Models (Tools hidden for now) */}
       <div className="g-tabs">
         <button
           className={`g-tab-bttn ${activeTab === "models" ? "active" : ""}`}
           onClick={() => setActiveTab("models")}
           type="button"
         >
-          Big 5 Test
-        </button>
-        <button
-          className={`g-tab-bttn ${activeTab === "snapshots" ? "active" : ""}`}
-          onClick={() => setActiveTab("snapshots")}
-          type="button"
-        >
-          Test
+          Models
         </button>
       </div>
 
+      {/* Test selection buttons */}
       {activeTab === "models" && (
+        <div style={{ padding: "16px", display: "flex", gap: "12px", background: "var(--bg)" }}>
+          <button
+            className={`st-btn ${activeTest === "big5" ? "st-btn-active" : ""}`}
+            onClick={() => setActiveTest("big5")}
+            type="button"
+          >
+            Big 5 Personality Test
+          </button>
+          <button
+            className={`st-btn ${activeTest === "iri" ? "st-btn-active" : ""}`}
+            onClick={() => setActiveTest("iri")}
+            type="button"
+          >
+            Interpersonal Reactivity Index (IRI)
+          </button>
+          <button
+            className={`st-btn ${activeTest === "csi" ? "st-btn-active" : ""}`}
+            onClick={() => setActiveTest("csi")}
+            type="button"
+          >
+            Communication Style Inventory (CSI)
+          </button>
+        </div>
+      )}
+
+      {activeTab === "models" && activeTest === "big5" && (
         <div className="st-layout st-layout-no-sidebar">
           <div className="ui-table-wrap st-table">
             <table className="ui-table">
@@ -397,9 +413,9 @@ export default function StandardizeTest() {
                       <td>{r.modelFamily ?? "—"}</td>
                       <td>{r.model ?? "—"}</td>
                       <td>
-                        {isVersionRow
-                          ? `${r.versionLabel ?? "—"}${r.isLatest ? " (Latest)" : ""}`
-                          : ""}
+                        {isMainRow
+                          ? r.displayVersion ?? r.versionLabel ?? "—"
+                          : r.versionLabel ?? "—"}
                       </td>
                       <td>{r.O ?? "—"}</td>
                       <td>{r.C ?? "—"}</td>
@@ -540,7 +556,19 @@ export default function StandardizeTest() {
         </div>
       )}
 
-      {activeTab === "snapshots" && <div className="st-layout st-layout-single" />}
+      {activeTab === "models" && activeTest === "iri" && (
+        <div className="st-layout st-layout-no-sidebar" style={{ padding: "40px", textAlign: "center", color: "var(--muted)" }}>
+          <h3>Interpersonal Reactivity Index (IRI)</h3>
+          <p>Data coming soon...</p>
+        </div>
+      )}
+
+      {activeTab === "models" && activeTest === "csi" && (
+        <div className="st-layout st-layout-no-sidebar" style={{ padding: "40px", textAlign: "center", color: "var(--muted)" }}>
+          <h3>Communication Style Inventory (CSI)</h3>
+          <p>Data coming soon...</p>
+        </div>
+      )}
     </div>
   );
 }

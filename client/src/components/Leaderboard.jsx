@@ -135,7 +135,7 @@ export default function Leaderboard() {
         SIRI_2: latest.SIRI_2,
         A_pharm: latest.A_pharm,
         A_mamh: latest.A_mamh,
-        hasVersions: data.versions.length > 1,
+        hasVersions: data.versions.length >= 1,
         versions: data.versions
       };
     });
@@ -168,7 +168,6 @@ export default function Leaderboard() {
       
       if (expandedModels.has(mainRow.id) && mainRow.hasVersions) {
         mainRow.versions
-          .filter(v => v.version !== mainRow.actualVersion)
           .sort((a, b) => b.version.localeCompare(a.version))
           .forEach(v => {
             rows.push({

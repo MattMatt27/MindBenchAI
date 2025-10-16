@@ -13,7 +13,7 @@ export default function NavBar() {
   return (
     <nav className="navbar">
       <div className="navbar-container">
-        <div className="navbar-brand">MindBenchAI</div>
+        <div className="navbar-brand">MindBench.ai</div>
 
         <div className="navbar-menu">
           <NavLink to="/" className={itemClass} end>

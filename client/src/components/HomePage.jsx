@@ -78,7 +78,6 @@ export default function HomePage() {
   return (
     <div className="dashboard-home-page">
       <section className="hero">
-        <div className="hero-pill">MindBenchAI</div>
         <h1>
           Benchmark Leading <span>Language Models</span>
         </h1>
