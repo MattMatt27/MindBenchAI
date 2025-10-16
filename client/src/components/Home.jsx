@@ -7,7 +7,7 @@ export default function Home() {
   return (
     <div className="home-container">
       <div className="home-header">
-        <h1 className="home-title">MindBenchAI</h1>
+        <h1 className="home-title">MindBench.ai</h1>
         <p className="home-description">
           A comprehensive framework for evaluating and comparing AI models and tools 
           in mental health applications. Discover technical capabilities, performance 
