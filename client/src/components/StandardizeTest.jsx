@@ -170,13 +170,6 @@ export default function StandardizeTest() {
         );
         const isExpanded = expandedModels.has(mainRow.id);
         versions.forEach((v, idx) => {
-          if (
-            v.modelVersionId === mainRow.modelVersionId ||
-            v.version === mainRow.actualVersion
-          ) {
-            return;
-          }
-
           const versionId = v.modelVersionId ?? `${v.modelFamily}-${v.model}-${v.version}`;
           const isSelected = selectedVersions.has(versionId);
           if (isExpanded || isSelected) {
@@ -397,9 +390,9 @@ export default function StandardizeTest() {
                       <td>{r.modelFamily ?? "—"}</td>
                       <td>{r.model ?? "—"}</td>
                       <td>
-                        {isVersionRow
-                          ? `${r.versionLabel ?? "—"}${r.isLatest ? " (Latest)" : ""}`
-                          : ""}
+                        {isMainRow
+                          ? r.displayVersion ?? r.versionLabel ?? "—"
+                          : r.versionLabel ?? "—"}
                       </td>
                       <td>{r.O ?? "—"}</td>
                       <td>{r.C ?? "—"}</td>

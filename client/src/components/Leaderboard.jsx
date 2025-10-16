@@ -168,7 +168,6 @@ export default function Leaderboard() {
       
       if (expandedModels.has(mainRow.id) && mainRow.hasVersions) {
         mainRow.versions
-          .filter(v => v.version !== mainRow.actualVersion)
           .sort((a, b) => b.version.localeCompare(a.version))
           .forEach(v => {
             rows.push({
