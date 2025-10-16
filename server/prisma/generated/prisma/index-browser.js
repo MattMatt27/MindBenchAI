@@ -472,6 +472,19 @@ exports.Prisma.EvaluationEntityScalarFieldEnum = {
   updatedBy: 'updatedBy'
 };
 
+exports.Prisma.BigFiveProfileScalarFieldEnum = {
+  id: 'id',
+  modelVersionId: 'modelVersionId',
+  modelFamily: 'modelFamily',
+  openness: 'openness',
+  conscientiousness: 'conscientiousness',
+  extraversion: 'extraversion',
+  agreeableness: 'agreeableness',
+  neuroticism: 'neuroticism',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.HyperparameterScalarFieldEnum = {
   id: 'id',
   name: 'name',
@@ -589,6 +602,7 @@ exports.Prisma.TechProfileQuestionScalarFieldEnum = {
   entityType: 'entityType',
   questionKey: 'questionKey',
   questionText: 'questionText',
+  questionLabel: 'questionLabel',
   category: 'category',
   questionType: 'questionType',
   displayOrder: 'displayOrder',
@@ -762,6 +776,7 @@ exports.Prisma.ModelName = {
   Tool: 'Tool',
   ToolConfiguration: 'ToolConfiguration',
   EvaluationEntity: 'EvaluationEntity',
+  BigFiveProfile: 'BigFiveProfile',
   Hyperparameter: 'Hyperparameter',
   ModelHyperparameterLink: 'ModelHyperparameterLink',
   ResponseProfileTest: 'ResponseProfileTest',

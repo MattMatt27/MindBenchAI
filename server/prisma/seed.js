@@ -2,6 +2,7 @@ const { PrismaClient } = require('./generated/prisma');
 
 const seedModels = require('./seeds/models');
 const seedTechProfiles = require('./seeds/techProfiles');
+const seedBigFive = require('./seeds/bigFive');
 // const seedUsers = require('./seeds/users');
 // const seedBenchmarking = require('./seeds/benchmarking');
 // const seedCommunity = require('./seeds/community');
@@ -18,6 +19,11 @@ async function main() {
 
   // const users = await seedUsers(prisma);
   const models = await seedModels(prisma);
+
+  await seedBigFive(prisma, {
+    models: models.models,
+    modelVersions: models.modelVersions,
+  });
 
   await seedTechProfiles(prisma, {
     // researcherUser: users?.researcherUser,

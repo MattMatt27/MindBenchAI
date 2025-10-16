@@ -53,11 +53,22 @@ const getTechProfileDisplay = async (req, res, next) => {
             toolConfiguration: {
               include: {
                 tool: true,
-                model: true,
+                model: {
+                  include: {
+                    modelFamily: true,
+                  },
+                },
               },
             },
             modelVersion: {
-              include: { model: true },
+              include: {
+                model: {
+                  include: {
+                    modelFamily: true,
+                  },
+                },
+                bigFiveProfile: true,
+              },
             },
           },
         },
@@ -79,6 +90,8 @@ const getTechProfileDisplay = async (req, res, next) => {
       const modelVersion = evaluationEntity?.modelVersion;
       const modelFromToolConfig = toolConfiguration?.model;
       const baseModel = modelVersion?.model ?? modelFromToolConfig;
+      const modelFamily = baseModel?.modelFamily ?? modelFromToolConfig?.modelFamily ?? null;
+      const bigFiveProfile = modelVersion?.bigFiveProfile ?? null;
 
       const profileId = toolConfiguration?.id || modelVersion?.id || answer.entityId;
 
@@ -89,7 +102,9 @@ const getTechProfileDisplay = async (req, res, next) => {
             entity_type: entityType,
             name: toolConfiguration?.configurationName ?? null,
             tool_name: toolConfiguration?.tool?.name ?? null,
+            developer: toolConfiguration?.tool?.developer ?? null,
             base_model_name: modelFromToolConfig?.name ?? null,
+            model_family: modelFamily?.name ?? null,
             answers: {},
           });
         } else {
@@ -99,6 +114,16 @@ const getTechProfileDisplay = async (req, res, next) => {
             name: baseModel?.name ?? null,
             developer: baseModel?.developer ?? null,
             version: modelVersion?.version ?? null,
+            model_family: modelFamily?.name ?? null,
+            big_five_profile: bigFiveProfile
+              ? {
+                  openness: bigFiveProfile.openness,
+                  conscientiousness: bigFiveProfile.conscientiousness,
+                  extraversion: bigFiveProfile.extraversion,
+                  agreeableness: bigFiveProfile.agreeableness,
+                  neuroticism: bigFiveProfile.neuroticism,
+                }
+              : null,
             answers: {},
           });
         }
@@ -114,6 +139,7 @@ const getTechProfileDisplay = async (req, res, next) => {
         notes: answer.notes ?? null,
         category: question.category,
         question_text: question.questionText,
+        question_label: question.questionLabel ?? question.questionText,
         display_order: question.displayOrder,
         question_type: question.questionType.toLowerCase(),
       };

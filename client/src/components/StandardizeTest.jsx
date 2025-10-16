@@ -10,9 +10,8 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer
 } from "recharts";
-import { stest, getStestModelFamilies } from "../data/models";
 
-const TRAITS = ["O", "C", "E", "A", "N"];
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5001";
 
 export default function StandardizeTest() {
   const [activeTab, setActiveTab] = React.useState("models");
@@ -24,9 +23,62 @@ export default function StandardizeTest() {
   const [mfMenuPos, setMfMenuPos] = React.useState({ left: 0, top: 0 });
   const mfBtnRef = React.useRef(null);
   const mfMenuRef = React.useRef(null);
+  const [profiles, setProfiles] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
 
-  const allRows = React.useMemo(() => (Array.isArray(stest) ? [...stest] : []), []);
-  const modelFamilies = React.useMemo(() => getStestModelFamilies(), []);
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const fetchProfiles = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_BASE}/api/current/big-five/profiles`);
+        if (!res.ok) {
+          throw new Error("Failed to load personality profiles");
+        }
+        const payload = await res.json();
+        const normalized = (payload.data ?? []).map((item) => ({
+          id: item.id,
+          modelVersionId: item.model_version_id ?? item.id,
+          modelId: item.model_id ?? null,
+          modelFamily: item.model_family ?? "Unknown",
+          model: item.model_name ?? "Unknown model",
+          version: item.version ?? "—",
+          isLatest: Boolean(item.is_latest),
+          releaseDate: item.release_date ?? null,
+          O: item.openness ?? 0,
+          C: item.conscientiousness ?? 0,
+          E: item.extraversion ?? 0,
+          A: item.agreeableness ?? 0,
+          N: item.neuroticism ?? 0,
+        }));
+
+        if (isMounted) {
+          setProfiles(normalized);
+          setError(null);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message ?? "Unable to load data");
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    fetchProfiles();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const allRows = React.useMemo(() => [...profiles], [profiles]);
+  const modelFamilies = React.useMemo(() => {
+    return Array.from(
+      new Set(allRows.map((row) => row.modelFamily).filter(Boolean)),
+    ).sort((a, b) => a.localeCompare(b));
+  }, [allRows]);
 
   const selectRow = (rowData) => {
     if (!rowData.isMainRow) {
@@ -60,35 +112,52 @@ export default function StandardizeTest() {
     }
     const modelMap = {};
     filtered.forEach((v) => {
-      const key = `${v.modelFamily}-${v.model}`;
+      const family = v.modelFamily ?? "Unknown";
+      const model = v.model ?? "Unknown model";
+      const key = `${family}-${model}`;
       if (!modelMap[key]) {
         modelMap[key] = { latest: null, versions: [] };
       }
-      if (!modelMap[key].latest || v.version > modelMap[key].latest.version) {
+      modelMap[key].versions.push(v);
+      const candidate = modelMap[key].latest;
+      if (
+        !candidate ||
+        v.isLatest ||
+        (!candidate.isLatest &&
+          String(v.version).localeCompare(String(candidate.version)) > 0)
+      ) {
         modelMap[key].latest = v;
       }
-      modelMap[key].versions.push(v);
     });
     const mainRows = Object.entries(modelMap).map(([key, data]) => {
-      const latest = data.latest;
+      const latest = data.latest ?? data.versions[0];
       const mainRowId = `main-${key}`;
+      const actualVersion = latest?.version ?? "—";
+
       return {
         id: mainRowId,
         isMainRow: true,
-        modelFamily: latest.modelFamily,
-        model: latest.model,
-        version: "Latest",
-        actualVersion: latest.version,
-        O: latest.O,
-        C: latest.C,
-        E: latest.E,
-        A: latest.A,
-        N: latest.N,
+        modelFamily: latest?.modelFamily ?? "Unknown",
+        model: latest?.model ?? "Unknown model",
+        versionLabel: actualVersion,
+        displayVersion: latest?.isLatest ? "Latest" : actualVersion,
+        actualVersion,
+        modelVersionId: latest?.modelVersionId ?? latest?.id,
+        isLatest: Boolean(latest?.isLatest),
+        O: latest?.O ?? 0,
+        C: latest?.C ?? 0,
+        E: latest?.E ?? 0,
+        A: latest?.A ?? 0,
+        N: latest?.N ?? 0,
         hasVersions: data.versions.length > 1,
-        versions: data.versions
+        versions: [...data.versions],
       };
     });
-    return mainRows;
+    return mainRows.sort((a, b) => {
+      const famCompare = String(a.modelFamily).localeCompare(String(b.modelFamily));
+      if (famCompare !== 0) return famCompare;
+      return String(a.model).localeCompare(String(b.model));
+    });
   }, [allRows, modelFamilyFilter]);
 
   const rows = React.useMemo(() => {
@@ -96,28 +165,39 @@ export default function StandardizeTest() {
     sortedMainRows.forEach((mainRow) => {
       data.push(mainRow);
       if (mainRow.hasVersions) {
-        const versions = mainRow.versions
-          .filter((v) => v.version !== mainRow.actualVersion)
-          .sort((a, b) => b.version.localeCompare(a.version));
+        const versions = [...mainRow.versions].sort((a, b) =>
+          String(b.version).localeCompare(String(a.version))
+        );
         const isExpanded = expandedModels.has(mainRow.id);
         versions.forEach((v, idx) => {
-          const versionId = `${v.modelFamily}-${v.model}-${v.version}`;
+          if (
+            v.modelVersionId === mainRow.modelVersionId ||
+            v.version === mainRow.actualVersion
+          ) {
+            return;
+          }
+
+          const versionId = v.modelVersionId ?? `${v.modelFamily}-${v.model}-${v.version}`;
           const isSelected = selectedVersions.has(versionId);
           if (isExpanded || isSelected) {
+            const versionLabel = v.version ?? "—";
             data.push({
               id: versionId,
               isMainRow: false,
               parentId: mainRow.id,
               modelFamily: v.modelFamily,
               model: v.model,
-              version: v.version,
+              versionLabel,
+              displayVersion: v.isLatest ? "Latest" : versionLabel,
+              actualVersion: v.version,
+              isLatest: Boolean(v.isLatest),
               O: v.O,
               C: v.C,
               E: v.E,
               A: v.A,
               N: v.N,
               vFirst: idx === 0,
-              vLast: idx === versions.length - 1
+              vLast: idx === versions.length - 1,
             });
           }
         });
@@ -141,7 +221,7 @@ export default function StandardizeTest() {
     ["O", "C", "E", "A", "N"].forEach((trait) => {
       const d = { trait };
       chartRows.forEach((row) => {
-        const key = `${row.model}-${row.version}`;
+        const key = `${row.model}-${row.actualVersion ?? row.versionLabel}`;
         d[key] = row[trait] ?? 0;
       });
       allData.push(d);
@@ -191,6 +271,14 @@ export default function StandardizeTest() {
     setMfMenuPos({ left: r.left, top: r.bottom });
     setMfMenuOpen((v) => !v);
   };
+
+  if (loading) {
+    return <div className="st-loading">Loading Big 5 profiles…</div>;
+  }
+
+  if (error) {
+    return <div className="st-error">Failed to load Big 5 profiles: {error}</div>;
+  }
 
   return (
     <div>
@@ -279,7 +367,7 @@ export default function StandardizeTest() {
                           ? r.hasVersions
                             ? `${expandedModels.has(r.id) ? "Collapse" : "Expand"} versions for ${r.model}`
                             : r.model
-                          : `Show chart for ${r.model} ${r.version || ""}`
+                          : `Show chart for ${r.model} ${r.displayVersion ?? r.versionLabel ?? ""}`
                       }
                     >
                       <td>
@@ -308,7 +396,11 @@ export default function StandardizeTest() {
                       </td>
                       <td>{r.modelFamily ?? "—"}</td>
                       <td>{r.model ?? "—"}</td>
-                      <td>{r.version ?? "—"}</td>
+                      <td>
+                        {isVersionRow
+                          ? `${r.versionLabel ?? "—"}${r.isLatest ? " (Latest)" : ""}`
+                          : ""}
+                      </td>
                       <td>{r.O ?? "—"}</td>
                       <td>{r.C ?? "—"}</td>
                       <td>{r.E ?? "—"}</td>
@@ -350,7 +442,7 @@ export default function StandardizeTest() {
             <div className="st-chart-title">
               {chartRows.length > 0
                 ? chartRows.length === 1
-                  ? `${chartRows[0].model} ${chartRows[0].version !== "Latest" ? chartRows[0].version : "(Latest)"}`
+                  ? `${chartRows[0].model ?? "—"} ${chartRows[0].versionLabel ?? "—"}${chartRows[0].isLatest ? " (Latest)" : ""}`
                   : `${chartRows.length} Models Selected`
                 : "No model selected"}
             </div>
@@ -364,7 +456,7 @@ export default function StandardizeTest() {
                       <PolarAngleAxis dataKey="trait" />
                       <PolarRadiusAxis domain={[0, 50]} />
                       {chartRows.map((row, index) => {
-                        const key = `${row.model}-${row.version}`;
+                        const key = `${row.model}-${row.actualVersion ?? row.versionLabel}`;
                         return (
                           <Radar
                             key={key}
@@ -388,11 +480,14 @@ export default function StandardizeTest() {
             {chartRows.length > 0 && (
               <div className="st-legend">
                 {chartRows.map((row, index) => {
-                  const key = `${row.model}-${row.version}`;
+                  const key = `${row.model}-${row.actualVersion ?? row.versionLabel}`;
                   return (
                     <div key={key} className="st-legend-item">
                       <div className="st-legend-color" style={{ backgroundColor: chartColors[index % chartColors.length] }}></div>
-                      <span className="st-legend-text">{key}</span>
+                      <span className="st-legend-text">
+                        {row.model} {row.versionLabel ?? row.displayVersion ?? ""}
+                        {row.isLatest ? " (Latest)" : ""}
+                      </span>
                     </div>
                   );
                 })}

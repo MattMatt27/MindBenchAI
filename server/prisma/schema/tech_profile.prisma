@@ -3,6 +3,7 @@ model TechProfileQuestion {
   entityType   EntityType   @map("entity_type")
   questionKey  String       @map("question_key")
   questionText String       @map("question_text")
+  questionLabel String?     @map("question_label")
   category     String
   questionType QuestionType @map("question_type")
   displayOrder Int          @map("display_order")

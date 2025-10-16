@@ -1,7 +1,7 @@
 model Model {
   id            String    @id @default(uuid())
   name          String    @unique
-  modelFamilyId String?   @map("model_family_id")
+  modelFamilyId String    @map("model_family_id")
   developer     String
   description   String?
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -11,7 +11,7 @@ model Model {
 
   versions           ModelVersion[]
   toolConfigurations ToolConfiguration[]
-  modelFamily        ModelFamily?   @relation(fields: [modelFamilyId], references: [id])
+  modelFamily        ModelFamily    @relation(fields: [modelFamilyId], references: [id])
   createdByUser      User?          @relation("ModelCreatedBy", fields: [createdBy], references: [id])
   updatedByUser      User?          @relation("ModelUpdatedBy", fields: [updatedBy], references: [id])
 
@@ -41,6 +41,7 @@ model ModelVersion {
   benchmarkResults    BenchmarkResult[]
   hyperparameterLinks ModelHyperparameterLink[]
   scoreAggregates     BenchmarkScoreAggregate[]
+  bigFiveProfile      BigFiveProfile?
 
   @@unique([modelId, version])
   @@index([modelId])
@@ -130,4 +131,22 @@ model EvaluationEntity {
   @@index([modelVersionId])
   @@index([toolConfigurationId])
   @@map("evaluation_entities")
+}
+
+model BigFiveProfile {
+  id              String    @id @default(uuid())
+  modelVersionId  String    @unique @map("model_version_id")
+  modelFamily     String?   @map("model_family")
+  openness        Int
+  conscientiousness Int
+  extraversion    Int
+  agreeableness   Int
+  neuroticism     Int
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime? @updatedAt @map("updated_at")
+
+  modelVersion ModelVersion @relation(fields: [modelVersionId], references: [id])
+
+  @@index([modelFamily])
+  @@map("big_five_profiles")
 }

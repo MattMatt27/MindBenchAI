@@ -467,7 +467,7 @@ model TeamMember {
 model Model {
   id            String    @id @default(uuid())
   name          String    @unique
-  modelFamilyId String?   @map("model_family_id")
+  modelFamilyId String    @map("model_family_id")
   developer     String
   description   String?
   createdAt     DateTime  @default(now()) @map("created_at")
@@ -477,7 +477,7 @@ model Model {
 
   versions           ModelVersion[]
   toolConfigurations ToolConfiguration[]
-  modelFamily        ModelFamily?        @relation(fields: [modelFamilyId], references: [id])
+  modelFamily        ModelFamily         @relation(fields: [modelFamilyId], references: [id])
   createdByUser      User?               @relation("ModelCreatedBy", fields: [createdBy], references: [id])
   updatedByUser      User?               @relation("ModelUpdatedBy", fields: [updatedBy], references: [id])
 
@@ -507,6 +507,7 @@ model ModelVersion {
   benchmarkResults    BenchmarkResult[]
   hyperparameterLinks ModelHyperparameterLink[]
   scoreAggregates     BenchmarkScoreAggregate[]
+  bigFiveProfile      BigFiveProfile?
 
   @@unique([modelId, version])
   @@index([modelId])
@@ -596,6 +597,24 @@ model EvaluationEntity {
   @@index([modelVersionId])
   @@index([toolConfigurationId])
   @@map("evaluation_entities")
+}
+
+model BigFiveProfile {
+  id                String    @id @default(uuid())
+  modelVersionId    String    @unique @map("model_version_id")
+  modelFamily       String?   @map("model_family")
+  openness          Int
+  conscientiousness Int
+  extraversion      Int
+  agreeableness     Int
+  neuroticism       Int
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime? @updatedAt @map("updated_at")
+
+  modelVersion ModelVersion @relation(fields: [modelVersionId], references: [id])
+
+  @@index([modelFamily])
+  @@map("big_five_profiles")
 }
 
 // ==================== ENUMS ====================
@@ -822,22 +841,23 @@ model SystemConfig {
 }
 
 model TechProfileQuestion {
-  id           String       @id @default(uuid())
-  entityType   EntityType   @map("entity_type")
-  questionKey  String       @map("question_key")
-  questionText String       @map("question_text")
-  category     String
-  questionType QuestionType @map("question_type")
-  displayOrder Int          @map("display_order")
-  isActive     Boolean      @default(true) @map("is_active")
-  isDisplayed  Boolean      @default(true) @map("is_displayed")
-  isFilterable Boolean      @default(false) @map("is_filterable")
-  filterType   String?      @map("filter_type")
-  filterConfig Json?        @map("filter_config")
-  createdAt    DateTime     @default(now()) @map("created_at")
-  createdBy    String?      @map("created_by")
-  updatedAt    DateTime?    @updatedAt @map("updated_at")
-  updatedBy    String?      @map("updated_by")
+  id            String       @id @default(uuid())
+  entityType    EntityType   @map("entity_type")
+  questionKey   String       @map("question_key")
+  questionText  String       @map("question_text")
+  questionLabel String?      @map("question_label")
+  category      String
+  questionType  QuestionType @map("question_type")
+  displayOrder  Int          @map("display_order")
+  isActive      Boolean      @default(true) @map("is_active")
+  isDisplayed   Boolean      @default(true) @map("is_displayed")
+  isFilterable  Boolean      @default(false) @map("is_filterable")
+  filterType    String?      @map("filter_type")
+  filterConfig  Json?        @map("filter_config")
+  createdAt     DateTime     @default(now()) @map("created_at")
+  createdBy     String?      @map("created_by")
+  updatedAt     DateTime?    @updatedAt @map("updated_at")
+  updatedBy     String?      @map("updated_by")
 
   createdByUser User?               @relation("TechQuestionCreatedBy", fields: [createdBy], references: [id])
   updatedByUser User?               @relation("TechQuestionUpdatedBy", fields: [updatedBy], references: [id])

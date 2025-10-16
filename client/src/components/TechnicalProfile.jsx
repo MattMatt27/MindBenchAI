@@ -1,121 +1,187 @@
-import { useState, useMemo } from 'react'
-import { getEntityProfiles, techProfileQuestions } from '../data/technicalProfiles'
-import "../styles/TechnicalProfile.css"
+import { useEffect, useMemo, useState } from 'react';
+import '../styles/TechnicalProfile.css';
+
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001';
 
 function Dot({ on }) {
-  return <span className={`dot ${on ? 'on' : 'off'}`} aria-label={on ? 'yes' : 'no'} />
+  return <span className={`dot ${on ? 'on' : 'off'}`} aria-label={on ? 'yes' : 'no'} />;
 }
 
 function ValueDisplay({ answer }) {
-  if (answer.type === 'boolean') {
-    return <Dot on={answer.value} />
+  if (!answer) return <span>—</span>;
+
+  const type = (answer.type ?? '').toLowerCase();
+  const value = answer.value;
+
+  if (type === 'boolean') {
+    return <Dot on={Boolean(value)} />;
   }
-  if (answer.type === 'list' && Array.isArray(answer.value)) {
-    return (
-      <div className="list-value">
-        {answer.value.join(', ')}
-      </div>
-    )
+
+  if (type === 'list' && Array.isArray(value)) {
+    return <div className="list-value">{value.join(', ')}</div>;
   }
-  return <span>{answer.value || '—'}</span>
+
+  return <span>{value ?? '—'}</span>;
 }
 
 export default function TechnicalProfile() {
-  const [activeTab, setActiveTab] = useState('tools')
-  const [q, setQ] = useState('')
+  const [activeTab, setActiveTab] = useState('tools');
+  const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({
-    // Tool configuration filters
-    android: false,
-    ios: false,
-    web: false,
-    free: false,
+    android_support: false,
+    ios_support: false,
+    web_support: false,
+    free_tier: false,
     crisis_detection: false,
     mood_tracking: false,
     hipaa_compliant: false,
-    // Base model filters
+    // placeholders for future base-model filters
     multimodal: false,
     open_source: false,
     function_calling: false,
-    code_generation: false
-  })
-  const [selectedCategory, setSelectedCategory] = useState('all')
+    code_generation: false,
+  });
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [profilesByType, setProfilesByType] = useState({ tools: [], models: [] });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Get profiles based on active tab
-  const profiles = useMemo(() => {
-    return getEntityProfiles(activeTab === 'tools' ? 'tool_configuration' : 'base_model')
-  }, [activeTab])
+  const tabKey = activeTab === 'tools' ? 'tools' : 'models';
 
-  // Get unique categories based on active tab
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchProfiles() {
+      try {
+        setLoading(true);
+
+        const [toolsRes, modelsRes] = await Promise.all([
+          fetch(`${API_BASE}/api/current/tech-profiles/display?entityType=tool_configuration`),
+          fetch(`${API_BASE}/api/current/tech-profiles/display?entityType=base_model`),
+        ]);
+
+        if (!toolsRes.ok || !modelsRes.ok) {
+          throw new Error('Failed to load technical profiles');
+        }
+
+        const toolsData = await toolsRes.json();
+        const modelsData = await modelsRes.json();
+
+        if (isMounted) {
+          setProfilesByType({
+            tools: toolsData.data ?? [],
+            models: modelsData.data ?? [],
+          });
+          setError(null);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message ?? 'Unable to load technical profiles');
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    fetchProfiles();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const rawProfiles = profilesByType[tabKey] ?? [];
+
+  const questionCatalog = useMemo(() => {
+    const map = new Map();
+
+    rawProfiles.forEach((profile) => {
+      Object.entries(profile.answers ?? {}).forEach(([key, answer]) => {
+        if (!answer) return;
+
+        const existing = map.get(key);
+        const displayOrder = answer.display_order ?? Number.MAX_SAFE_INTEGER;
+
+        if (!existing || displayOrder < existing.displayOrder) {
+          map.set(key, {
+            key,
+            category: answer.category ?? 'Other',
+            questionText: answer.question_text ?? key,
+            questionLabel: answer.question_label ?? answer.question_text ?? key,
+            questionType: (answer.question_type ?? answer.type ?? 'text').toLowerCase(),
+            displayOrder,
+          });
+        }
+      });
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.displayOrder - b.displayOrder);
+  }, [rawProfiles]);
+
   const categories = useMemo(() => {
-    const cats = new Set()
-    techProfileQuestions
-      .filter(q => q.entity_type === (activeTab === 'tools' ? 'tool_configuration' : 'base_model'))
-      .forEach(q => cats.add(q.category))
-    return ['all', ...Array.from(cats)]
-  }, [activeTab])
+    const unique = new Set(questionCatalog.map((q) => q.category));
+    return ['all', ...unique];
+  }, [questionCatalog]);
 
-  // Filter profiles based on search and filters
   const filteredProfiles = useMemo(() => {
-    return profiles
-      .filter(p => {
-        const searchTerm = q.toLowerCase()
-        if (activeTab === 'tools') {
-          return p.name.toLowerCase().includes(searchTerm) ||
-                 p.tool_name?.toLowerCase().includes(searchTerm) ||
-                 p.base_model_name?.toLowerCase().includes(searchTerm)
-        } else {
-          return p.name.toLowerCase().includes(searchTerm) ||
-                 p.developer?.toLowerCase().includes(searchTerm) ||
-                 p.version?.toLowerCase().includes(searchTerm)
-        }
-      })
-      .filter(p => {
-        if (activeTab === 'tools') {
-          // Tool configuration filters
-          if (filters.android && !p.answers.platform_android?.value) return false
-          if (filters.ios && !p.answers.platform_ios?.value) return false
-          if (filters.web && !p.answers.platform_web?.value) return false
-          if (filters.free && !p.answers.has_free_tier?.value) return false
-          if (filters.crisis_detection && !p.answers.crisis_detection?.value) return false
-          if (filters.mood_tracking && !p.answers.mood_tracking?.value) return false
-          if (filters.hipaa_compliant && !p.answers.hipaa_compliant?.value) return false
-        } else {
-          // Base model filters
-          if (filters.multimodal && !p.answers.multimodal?.value) return false
-          if (filters.open_source && !p.answers.open_source?.value) return false
-          if (filters.function_calling && !p.answers.function_calling?.value) return false
-          if (filters.code_generation && !p.answers.code_generation?.value) return false
-        }
-        return true
-      })
-  }, [q, filters, profiles, activeTab])
+    const term = query.toLowerCase();
 
-  // Get questions to display based on category and active tab
+    return rawProfiles
+      .filter((profile) => {
+        const nameMatch =
+          (profile.name ?? '').toLowerCase().includes(term) ||
+          (profile.tool_name ?? '').toLowerCase().includes(term) ||
+          (profile.base_model_name ?? '').toLowerCase().includes(term) ||
+          (profile.developer ?? '').toLowerCase().includes(term) ||
+          (profile.version ?? '').toLowerCase().includes(term);
+
+        if (!nameMatch) return false;
+
+        if (tabKey === 'tools') {
+          if (filters.android_support && !profile.answers?.android_support?.value) return false;
+          if (filters.ios_support && !profile.answers?.ios_support?.value) return false;
+          if (filters.web_support && !profile.answers?.web_support?.value) return false;
+          if (filters.free_tier && !profile.answers?.free_tier?.value) return false;
+          if (filters.crisis_detection && !profile.answers?.crisis_detection?.value) return false;
+          if (filters.mood_tracking && !profile.answers?.mood_tracking?.value) return false;
+          if (filters.hipaa_compliant && !profile.answers?.hipaa_compliant?.value) return false;
+        } else {
+          if (filters.multimodal && !profile.answers?.multimodal?.value) return false;
+          if (filters.open_source && !profile.answers?.open_source?.value) return false;
+          if (filters.function_calling && !profile.answers?.function_calling?.value) return false;
+          if (filters.code_generation && !profile.answers?.code_generation?.value) return false;
+        }
+
+        return true;
+      });
+  }, [rawProfiles, query, filters, tabKey]);
+
   const displayQuestions = useMemo(() => {
-    return techProfileQuestions
-      .filter(q => {
-        const entityType = activeTab === 'tools' ? 'tool_configuration' : 'base_model'
-        return q.entity_type === entityType && 
-               q.is_displayed && 
-               (selectedCategory === 'all' || q.category === selectedCategory)
-      })
-      .sort((a, b) => a.display_order - b.display_order)
-  }, [selectedCategory, activeTab])
+    return questionCatalog.filter((q) => selectedCategory === 'all' || q.category === selectedCategory);
+  }, [questionCatalog, selectedCategory]);
 
-  const toggle = key => setFilters(f => ({ ...f, [key]: !f[key] }))
+  const toggleFilter = (key) => {
+    setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  if (loading) {
+    return <div className="technical-profiles-loading">Loading technical profiles…</div>;
+  }
+
+  if (error) {
+    return <div className="technical-profiles-error">Failed to load profiles: {error}</div>;
+  }
 
   return (
     <>
-      {/* Page-level tabs */}
       <div className="g-tabs">
-        <button 
-          className={`g-tab-bttn ${activeTab === 'tools' ? 'active' : ''}`}
+        <button
+          className={`g-tab-bttn ${tabKey === 'tools' ? 'active' : ''}`}
           onClick={() => setActiveTab('tools')}
         >
           Tools
         </button>
-        <button 
-          className={`g-tab-bttn ${activeTab === 'models' ? 'active' : ''}`}
+        <button
+          className={`g-tab-bttn ${tabKey === 'models' ? 'active' : ''}`}
           onClick={() => setActiveTab('models')}
         >
           Base Models
@@ -123,211 +189,247 @@ export default function TechnicalProfile() {
       </div>
 
       <div className="layout">
-        {/* sidebar (vertical filters) */}
         <aside className="sidebar island">
-          {/* Search moved to top of sidebar */}
           <div className="search-island">
             <input
-              value={q}
-              onChange={e => setQ(e.target.value)}
-              placeholder={activeTab === 'tools' ? 
-                "Search by tool, model, or configuration name" : 
-                "Search by model name, developer, or version"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={
+                tabKey === 'tools'
+                  ? 'Search by tool, model, or configuration name'
+                  : 'Search by model name, developer, or version'
               }
               className="search-input"
             />
           </div>
-          
+
           <h3 className="sidebar-title">Search Filters</h3>
 
-        {activeTab === 'tools' ? (
-          <>
-            <div className="filter-group">
-              <div className="filter-heading">Platforms</div>
-              {['android', 'ios', 'web'].map(key => (
-                <label key={key} className="filter-item">
+          {tabKey === 'tools' ? (
+            <>
+              <div className="filter-group">
+                <div className="filter-heading">Platforms</div>
+                {[
+                  { key: 'android_support', label: 'Android' },
+                  { key: 'ios_support', label: 'iOS' },
+                  { key: 'web_support', label: 'Web' },
+                ].map(({ key, label }) => (
+                  <label key={key} className="filter-item">
+                    <input
+                      type="checkbox"
+                      checked={filters[key]}
+                      onChange={() => toggleFilter(key)}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-heading">Cost</div>
+                <label className="filter-item">
                   <input
                     type="checkbox"
-                    checked={filters[key]}
-                    onChange={() => toggle(key)}
+                    checked={filters.free_tier}
+                    onChange={() => toggleFilter('free_tier')}
                   />
-                  <span>{key === 'ios' ? 'iOS' : key[0].toUpperCase() + key.slice(1)}</span>
+                  <span>Free tier</span>
                 </label>
-              ))}
-            </div>
+              </div>
 
-            <div className="filter-group">
-              <div className="filter-heading">Cost</div>
-              <label className="filter-item">
-                <input
-                  type="checkbox"
-                  checked={filters.free}
-                  onChange={() => toggle('free')}
-                />
-                <span>Free tier</span>
-              </label>
-            </div>
+              <div className="filter-group">
+                <div className="filter-heading">Mental Health</div>
+                {[
+                  { key: 'crisis_detection', label: 'Crisis detection' },
+                  { key: 'mood_tracking', label: 'Mood tracking' },
+                ].map(({ key, label }) => (
+                  <label key={key} className="filter-item">
+                    <input
+                      type="checkbox"
+                      checked={filters[key]}
+                      onChange={() => toggleFilter(key)}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
 
-            <div className="filter-group">
-              <div className="filter-heading">Mental Health</div>
-              {['crisis_detection', 'mood_tracking'].map(key => (
-                <label key={key} className="filter-item">
+              <div className="filter-group">
+                <div className="filter-heading">Compliance</div>
+                <label className="filter-item">
                   <input
                     type="checkbox"
-                    checked={filters[key]}
-                    onChange={() => toggle(key)}
+                    checked={filters.hipaa_compliant}
+                    onChange={() => toggleFilter('hipaa_compliant')}
                   />
-                  <span>{key.split('_').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')}</span>
+                  <span>HIPAA compliant</span>
                 </label>
-              ))}
-            </div>
-
-            <div className="filter-group">
-              <div className="filter-heading">Compliance</div>
-              <label className="filter-item">
-                <input
-                  type="checkbox"
-                  checked={filters.hipaa_compliant}
-                  onChange={() => toggle('hipaa_compliant')}
-                />
-                <span>HIPAA Compliant</span>
-              </label>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="filter-group">
-              <div className="filter-heading">Architecture</div>
-              <label className="filter-item">
-                <input
-                  type="checkbox"
-                  checked={filters.multimodal}
-                  onChange={() => toggle('multimodal')}
-                />
-                <span>Multimodal</span>
-              </label>
-            </div>
-
-            <div className="filter-group">
-              <div className="filter-heading">Capabilities</div>
-              {['function_calling', 'code_generation'].map(key => (
-                <label key={key} className="filter-item">
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="filter-group">
+                <div className="filter-heading">Architecture</div>
+                <label className="filter-item">
                   <input
                     type="checkbox"
-                    checked={filters[key]}
-                    onChange={() => toggle(key)}
+                    checked={filters.multimodal}
+                    onChange={() => toggleFilter('multimodal')}
                   />
-                  <span>{key.split('_').map(w => w[0].toUpperCase() + w.slice(1)).join(' ')}</span>
+                  <span>Multimodal</span>
                 </label>
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-heading">Capabilities</div>
+                {[
+                  { key: 'function_calling', label: 'Function calling' },
+                  { key: 'code_generation', label: 'Code generation' },
+                ].map(({ key, label }) => (
+                  <label key={key} className="filter-item">
+                    <input
+                      type="checkbox"
+                      checked={filters[key]}
+                      onChange={() => toggleFilter(key)}
+                    />
+                    <span>{label}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div className="filter-group">
+                <div className="filter-heading">Licensing</div>
+                <label className="filter-item">
+                  <input
+                    type="checkbox"
+                    checked={filters.open_source}
+                    onChange={() => toggleFilter('open_source')}
+                  />
+                  <span>Open Source</span>
+                </label>
+              </div>
+            </>
+          )}
+
+          <div className="filter-group">
+            <div className="filter-heading">Category View</div>
+            <select
+              className="category-select"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat === 'all' ? 'All Categories' : cat}
+                </option>
               ))}
-            </div>
+            </select>
+          </div>
+        </aside>
 
-            <div className="filter-group">
-              <div className="filter-heading">Licensing</div>
-              <label className="filter-item">
-                <input
-                  type="checkbox"
-                  checked={filters.open_source}
-                  onChange={() => toggle('open_source')}
-                />
-                <span>Open Source</span>
-              </label>
-            </div>
-          </>
-        )}
+        <main className="content">
+          <div className="island table-wrap">
+            <table className="technical-profiles-table">
+              <thead>
+                <tr>
+                  <th rowSpan="2" className="sticky-column">
+                    {tabKey === 'tools' ? 'Configuration' : 'Model'}
+                  </th>
+                  <th rowSpan="2">
+                    {tabKey === 'tools' ? 'Base Model' : 'Developer'}
+                  </th>
+                  {tabKey === 'models' && <th rowSpan="2">Version</th>}
+                  {displayQuestions.map((question, index) => {
+                    const colSpan = displayQuestions.filter(
+                      (dq) => dq.category === question.category,
+                    ).length;
+                    const firstInCategory =
+                      displayQuestions.findIndex((dq) => dq.category === question.category) ===
+                      index;
 
-        <div className="filter-group">
-          <div className="filter-heading">Category View</div>
-          <select 
-            className="category-select"
-            value={selectedCategory} 
-            onChange={e => setSelectedCategory(e.target.value)}
-          >
-            {categories.map(cat => (
-              <option key={cat} value={cat}>
-                {cat === 'all' ? 'All Categories' : cat}
-              </option>
-            ))}
-          </select>
-        </div>
-      </aside>
+                    if (firstInCategory && colSpan > 1) {
+                      return (
+                        <th
+                          key={`cat-${question.category}`}
+                          colSpan={colSpan}
+                          className="category-header"
+                        >
+                          {question.category}
+                        </th>
+                      );
+                    }
 
-      {/* main content */}
-      <main className="content">
+                    if (!firstInCategory) return null;
 
-        <div className="island table-wrap">
-          <table className="technical-profiles-table">
-            <thead>
-              <tr>
-                <th rowSpan="2" className="sticky-column">{activeTab === 'tools' ? 'Configuration' : 'Model'}</th>
-                <th rowSpan="2">{activeTab === 'tools' ? 'Base Model' : 'Developer'}</th>
-                {activeTab === 'models' && <th rowSpan="2">Version</th>}
-                {displayQuestions.map(q => {
-                  const colSpan = displayQuestions.filter(dq => dq.category === q.category).length
-                  const isFirstInCategory = displayQuestions.findIndex(dq => dq.category === q.category) === displayQuestions.indexOf(q)
-                  
-                  if (isFirstInCategory && colSpan > 1) {
                     return (
-                      <th key={`cat-${q.category}`} colSpan={colSpan} className="category-header">
-                        {q.category}
+                      <th key={question.key} rowSpan="2" className="question-header">
+                        {question.questionLabel}
                       </th>
-                    )
-                  } else if (!isFirstInCategory) {
-                    return null
-                  } else {
-                    return (
-                      <th key={q.id} rowSpan="2" className="question-header">
-                        {q.question_text}
-                      </th>
-                    )
-                  }
-                })}
-              </tr>
-              <tr>
-                {displayQuestions.map(q => {
-                  const colSpan = displayQuestions.filter(dq => dq.category === q.category).length
-                  if (colSpan > 1) {
-                    return (
-                      <th key={q.id} className="question-header">
-                        {q.question_text}
-                      </th>
-                    )
-                  }
-                  return null
-                })}
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProfiles.map(profile => (
-                <tr key={profile.id}>
-                  <td className="sticky-column">
-                    <div className="app-cell">
-                      <div className="app-title">{activeTab === 'tools' ? profile.tool_name : profile.name}</div>
-                      <div className="app-desc">{activeTab === 'tools' ? profile.name : ''}</div>
-                    </div>
-                  </td>
-                  <td>{activeTab === 'tools' ? profile.base_model_name : profile.developer}</td>
-                  {activeTab === 'models' && <td>{profile.version || '—'}</td>}
-                  {displayQuestions.map(q => {
-                    const answer = profile.answers[q.question_key]
-                    return (
-                      <td key={q.id} className={`answer-cell ${q.question_type}`}>
-                        {answer ? <ValueDisplay answer={answer} /> : '—'}
-                      </td>
-                    )
+                    );
                   })}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {filteredProfiles.length === 0 && (
-            <div className="no-results">
-              No configurations match your search criteria
-            </div>
-          )}
-        </div>
-      </main>
+                <tr>
+                  {displayQuestions.map((question) => {
+                    const colSpan = displayQuestions.filter(
+                      (dq) => dq.category === question.category,
+                    ).length;
+
+                    if (colSpan > 1) {
+                      return (
+                      <th key={`${question.key}-child`} className="question-header">
+                        {question.questionLabel}
+                        </th>
+                      );
+                    }
+
+                    return null;
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProfiles.map((profile) => {
+                  const isToolsTab = tabKey === 'tools';
+                  const configTitle = isToolsTab ? (profile.name ?? profile.tool_name) : profile.name;
+                  const configSubtitle =
+                    isToolsTab && (profile.developer || profile.tool_name)
+                      ? `by ${profile.developer ?? profile.tool_name}`
+                      : '';
+
+                  return (
+                    <tr key={profile.id}>
+                      <td className="sticky-column">
+                        <div className="app-cell">
+                          <div className="app-title">{configTitle}</div>
+                          {configSubtitle && <div className="app-desc">{configSubtitle}</div>}
+                        </div>
+                      </td>
+                      <td>
+                        {tabKey === 'tools' ? profile.base_model_name : profile.developer}
+                      </td>
+                      {tabKey === 'models' && <td>{profile.version ?? '—'}</td>}
+                      {displayQuestions.map((question) => {
+                        const answer = profile.answers?.[question.key];
+                        return (
+                          <td
+                            key={`${profile.id}-${question.key}`}
+                            className={`answer-cell ${question.questionType}`}
+                          >
+                            <ValueDisplay answer={answer} />
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {filteredProfiles.length === 0 && (
+              <div className="no-results">No configurations match your search criteria.</div>
+            )}
+          </div>
+        </main>
       </div>
     </>
-  )
+  );
 }
