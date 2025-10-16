@@ -7,6 +7,7 @@ import Resources from "./components/Resources"
 import Community from "./components/Community";
 import Leaderboard from "./components/Leaderboard";
 import StandardizeTest from "./components/StandardizeTest"
+import SIRIReasoning from "./components/SIRIReasoning";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import ForgotPassword from "./components/ForgotPassword";
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/technical_profile" element={<TechnicalProfile />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/standard_test" element = {<StandardizeTest />}/>
+          <Route path="/siri-reasoning" element={<SIRIReasoning />} />
           <Route path = "/resources" element={<Resources />} />
           <Route path = "/community" element ={<Community />} />
           <Route path="/login" element={<Login />} />

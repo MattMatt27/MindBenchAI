@@ -15,7 +15,8 @@ import { stest, getStestModelFamilies } from "../data/models";
 const TRAITS = ["O", "C", "E", "A", "N"];
 
 export default function StandardizeTest() {
-  const [activeTab, setActiveTab] = React.useState("models");
+  const [activeTab, setActiveTab] = React.useState("tools");
+  const [activeTest, setActiveTest] = React.useState("big5");
   const [expandedModels, setExpandedModels] = React.useState(() => new Set());
   const [selectedRow, setSelectedRow] = React.useState(null);
   const [selectedVersions, setSelectedVersions] = React.useState(() => new Set());
@@ -96,8 +97,8 @@ export default function StandardizeTest() {
     sortedMainRows.forEach((mainRow) => {
       data.push(mainRow);
       if (mainRow.hasVersions) {
+        // Include ALL versions in the dropdown, sorted by date descending
         const versions = mainRow.versions
-          .filter((v) => v.version !== mainRow.actualVersion)
           .sort((a, b) => b.version.localeCompare(a.version));
         const isExpanded = expandedModels.has(mainRow.id);
         versions.forEach((v, idx) => {
@@ -194,24 +195,50 @@ export default function StandardizeTest() {
 
   return (
     <div>
+      {/* Page-level tabs for Models vs Tools */}
       <div className="g-tabs">
+        <button
+          className={`g-tab-bttn ${activeTab === "tools" ? "active" : ""}`}
+          onClick={() => setActiveTab("tools")}
+          type="button"
+        >
+          Tools
+        </button>
         <button
           className={`g-tab-bttn ${activeTab === "models" ? "active" : ""}`}
           onClick={() => setActiveTab("models")}
           type="button"
         >
-          Big 5 Test
-        </button>
-        <button
-          className={`g-tab-bttn ${activeTab === "snapshots" ? "active" : ""}`}
-          onClick={() => setActiveTab("snapshots")}
-          type="button"
-        >
-          Test
+          Models
         </button>
       </div>
 
-      {activeTab === "models" && (
+      {/* Test selection buttons */}
+      <div style={{ padding: "16px 16px 0 16px", display: "flex", gap: "12px", background: "var(--bg)" }}>
+        <button
+          className={`st-btn ${activeTest === "big5" ? "st-btn-primary" : "st-btn-secondary"}`}
+          onClick={() => setActiveTest("big5")}
+          type="button"
+        >
+          Big 5 Personality Test
+        </button>
+        <button
+          className={`st-btn ${activeTest === "iri" ? "st-btn-primary" : "st-btn-secondary"}`}
+          onClick={() => setActiveTest("iri")}
+          type="button"
+        >
+          Interpersonal Reactivity Index (IRI)
+        </button>
+        <button
+          className={`st-btn ${activeTest === "csi" ? "st-btn-primary" : "st-btn-secondary"}`}
+          onClick={() => setActiveTest("csi")}
+          type="button"
+        >
+          Communication Style Inventory (CSI)
+        </button>
+      </div>
+
+      {activeTab === "models" && activeTest === "big5" && (
         <div className="st-layout st-layout-no-sidebar">
           <div className="ui-table-wrap st-table">
             <table className="ui-table">
@@ -445,7 +472,26 @@ export default function StandardizeTest() {
         </div>
       )}
 
-      {activeTab === "snapshots" && <div className="st-layout st-layout-single" />}
+      {activeTab === "models" && activeTest === "iri" && (
+        <div className="st-layout st-layout-no-sidebar" style={{ padding: "40px", textAlign: "center", color: "var(--muted)" }}>
+          <h3>Interpersonal Reactivity Index (IRI)</h3>
+          <p>Data coming soon...</p>
+        </div>
+      )}
+
+      {activeTab === "models" && activeTest === "csi" && (
+        <div className="st-layout st-layout-no-sidebar" style={{ padding: "40px", textAlign: "center", color: "var(--muted)" }}>
+          <h3>Communication Style Inventory (CSI)</h3>
+          <p>Data coming soon...</p>
+        </div>
+      )}
+
+      {activeTab === "tools" && (
+        <div className="st-layout st-layout-no-sidebar" style={{ padding: "40px", textAlign: "center", color: "var(--muted)" }}>
+          <h3>Tools Communication Dynamics</h3>
+          <p>Data coming soon...</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -48,8 +48,9 @@ export default function TechnicalProfile() {
   // Get unique categories based on active tab
   const categories = useMemo(() => {
     const cats = new Set()
+    const entityType = activeTab === 'tools' ? 'tool_configuration' : 'base_model'
     techProfileQuestions
-      .filter(q => q.entity_type === (activeTab === 'tools' ? 'tool_configuration' : 'base_model'))
+      .filter(q => q.entity_type === entityType || q.entity_type === 'both')
       .forEach(q => cats.add(q.category))
     return ['all', ...Array.from(cats)]
   }, [activeTab])
@@ -92,11 +93,11 @@ export default function TechnicalProfile() {
 
   // Get questions to display based on category and active tab
   const displayQuestions = useMemo(() => {
+    const entityType = activeTab === 'tools' ? 'tool_configuration' : 'base_model'
     return techProfileQuestions
       .filter(q => {
-        const entityType = activeTab === 'tools' ? 'tool_configuration' : 'base_model'
-        return q.entity_type === entityType && 
-               q.is_displayed && 
+        return (q.entity_type === entityType || q.entity_type === 'both') &&
+               q.is_displayed &&
                (selectedCategory === 'all' || q.category === selectedCategory)
       })
       .sort((a, b) => a.display_order - b.display_order)
@@ -114,11 +115,11 @@ export default function TechnicalProfile() {
         >
           Tools
         </button>
-        <button 
+        <button
           className={`g-tab-bttn ${activeTab === 'models' ? 'active' : ''}`}
           onClick={() => setActiveTab('models')}
         >
-          Base Models
+          Models
         </button>
       </div>
 
@@ -277,7 +278,7 @@ export default function TechnicalProfile() {
                   } else {
                     return (
                       <th key={q.id} rowSpan="2" className="question-header">
-                        {q.question_text}
+                        {q.short_text || q.question_text}
                       </th>
                     )
                   }
@@ -289,7 +290,7 @@ export default function TechnicalProfile() {
                   if (colSpan > 1) {
                     return (
                       <th key={q.id} className="question-header">
-                        {q.question_text}
+                        {q.short_text || q.question_text}
                       </th>
                     )
                   }

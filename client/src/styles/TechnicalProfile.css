@@ -221,8 +221,8 @@ thead tr:nth-child(2) th { text-align: center; }
 
 .table-wrap th,
 .table-wrap td {
-  min-width: 150px;
-  padding: 10px 12px;
+  min-width: 80px;
+  padding: 8px 10px;
   white-space: nowrap;
   text-align: center;
 }
@@ -237,18 +237,29 @@ thead tr:nth-child(2) th { text-align: center; }
 }
 
 .answer-cell.number {
-  min-width: 120px;
+  min-width: 80px;
+}
+
+.answer-cell.boolean {
+  min-width: 60px;
+}
+
+.answer-cell.text {
+  min-width: 100px;
 }
 
 .category-header {
   background: #f9fafb !important;
   font-weight: 600;
   font-size: 13px;
+  text-align: left !important;
+  padding-left: 16px !important;
 }
 
 .question-header {
   font-weight: 500;
-  font-size: 13px;
+  font-size: 12px;
+  text-align: center !important;
 }
 
 .sticky-column {

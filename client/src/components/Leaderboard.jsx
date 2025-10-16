@@ -168,7 +168,6 @@ export default function Leaderboard() {
       
       if (expandedModels.has(mainRow.id) && mainRow.hasVersions) {
         mainRow.versions
-          .filter(v => v.version !== mainRow.actualVersion)
           .sort((a, b) => b.version.localeCompare(a.version))
           .forEach(v => {
             rows.push({
@@ -343,6 +342,13 @@ export default function Leaderboard() {
     <div className="lb-container">
       <div className="g-tabs">
         <button
+          className={`g-tab-bttn ${activeTab === "tools" ? "active" : ""}`}
+          onClick={() => setActiveTab("tools")}
+          type="button"
+        >
+          Tools
+        </button>
+        <button
           className={`g-tab-bttn ${activeTab === "models" ? "active" : ""}`}
           onClick={() => setActiveTab("models")}
           type="button"
@@ -358,6 +364,14 @@ export default function Leaderboard() {
           Comparison{selectedVersions.size ? ` (${selectedVersions.size})` : ""}
         </button>
       </div>
+
+      {activeTab === "tools" && (
+        <div className="lb-layout no-sidebar">
+          <div className="lb-main-content">
+            <div className="lb-empty">Tools leaderboard coming soon.</div>
+          </div>
+        </div>
+      )}
 
       {activeTab === "models" && (
         <div className="lb-layout">

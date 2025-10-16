@@ -1,10 +1,10 @@
 
 export const models_tab = [
-  {baseModel: 'Chatgpt', models: ['Chatgpt-4', 'Chatgpt-5'], SIRI_2: 0.490, A_pharm: 0.294, A_mamh: 0.113},
-  {baseModel: 'Claude', models: ['Claude Opus 4.1', 'Claude Sonnet 4'], SIRI_2: 0.440, A_pharm: 0.614, A_mamh: 0.331},
-  {baseModel: 'Gemini', models: ['Gemini 2.5', 'Gemini 2.0', 'Gemini 1.5'], SIRI_2: 0.374, A_pharm: 0.597, A_mamh: 0.175},
+  {baseModel: 'GPT', models: ['GPT-4o', 'GPT-3.5 Turbo', 'GPT-4o Mini'], SIRI_2: 0.490, A_pharm: 0.294, A_mamh: 0.113},
+  {baseModel: 'Claude', models: ['Claude Opus 4.1', 'Claude Sonnet 4', 'Claude 3.5 Sonnet'], SIRI_2: 0.440, A_pharm: 0.614, A_mamh: 0.331},
+  {baseModel: 'Gemini', models: ['Gemini 2.5 Pro', 'Gemini 2.5 Flash', 'Gemini 2.0 Flash'], SIRI_2: 0.374, A_pharm: 0.597, A_mamh: 0.175},
   {baseModel: 'DeepSeek', models: ['DeepSeek-V3', 'DeepSeek-V2.5'], SIRI_2: 0.423, A_pharm: 0.267, A_mamh: 0.602},
-  {baseModel: 'Llama', models: ['Llama 3', 'Llama 4'], SIRI_2: 0.243, A_pharm: 0.601, A_mamh: 0.402}
+  {baseModel: 'LLaMA', models: ['LLaMA 3.1 405B', 'LLaMA 3.1 70B', 'LLaMA 3'], SIRI_2: 0.243, A_pharm: 0.601, A_mamh: 0.402}
 ]
 
 export const leaderboard_ext = [
@@ -158,7 +158,7 @@ export const stest = [
 
 export const updates = [
   {date: "Sept 1st, 2025", title: "App v1.0 released", tag: 'new features', note: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."},
-  {date: "Sept 15th, 2025", title: "New model added", tag: 'updates', note: "Added Claude Sonnet 4, Chat-gpt-4o to our database"},
+  {date: "Sept 15th, 2025", title: "New models added", tag: 'updates', note: "Added Claude Sonnet 4, GPT-4o, Gemini 2.5 Pro to our database"},
   {date: "Sept 17th, 2025", title: "New features added", tag:'updates', note: "Added information about the scale we use in leaderboard"},
   {date: "Sept 17th, 2025", title: "Fix comparison chart not showing", tag: 'bug fixes', note: "Comparison chart from our test is now working properly"}
 ]
