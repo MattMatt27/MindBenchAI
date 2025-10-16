@@ -149,7 +149,7 @@ export default function StandardizeTest() {
         E: latest?.E ?? 0,
         A: latest?.A ?? 0,
         N: latest?.N ?? 0,
-        hasVersions: data.versions.length > 1,
+        hasVersions: data.versions.length >= 1,
         versions: [...data.versions],
       };
     });
