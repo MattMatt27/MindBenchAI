@@ -6,15 +6,22 @@ const toolData = [
 
 const modelFamilyData = [
   { name: 'GPT' },
-  { name: 'Claude 3' },
+  { name: 'Claude' },
   { name: 'Gemini' },
 ];
 
 const modelData = [
   { name: 'GPT-4o', developer: 'OpenAI', toolName: 'ChatGPT', modelFamilyName: 'GPT' },
-  { name: 'Sonnet 3.7', developer: 'Anthropic', toolName: 'Claude', modelFamilyName: 'Claude 3' },
-  { name: 'Gemini 2.0 Flash', developer: 'Google', toolName: 'Gemini', modelFamilyName: 'Gemini' },
+  { name: 'GPT-3.5 Turbo', developer: 'OpenAI', toolName: 'ChatGPT', modelFamilyName: 'GPT' },
+  { name: 'GPT-4o Mini', developer: 'OpenAI', toolName: 'ChatGPT', modelFamilyName: 'GPT' },
   { name: 'GPT-5', developer: 'OpenAI', toolName: 'ChatGPT', modelFamilyName: 'GPT' },
+  { name: 'Claude Opus 4.1', developer: 'Anthropic', toolName: 'Claude', modelFamilyName: 'Claude' },
+  { name: 'Claude Sonnet 4', developer: 'Anthropic', toolName: 'Claude', modelFamilyName: 'Claude' },
+  { name: 'Claude 3.5 Sonnet', developer: 'Anthropic', toolName: 'Claude', modelFamilyName: 'Claude' },
+  { name: 'Claude 3.5 Haiku', developer: 'Anthropic', toolName: 'Claude', modelFamilyName: 'Claude' },
+  { name: 'Gemini 2.5 Pro', developer: 'Google', toolName: 'Gemini', modelFamilyName: 'Gemini' },
+  { name: 'Gemini 2.5 Flash', developer: 'Google', toolName: 'Gemini', modelFamilyName: 'Gemini' },
+  { name: 'Gemini 2.0 Flash', developer: 'Google', toolName: 'Gemini', modelFamilyName: 'Gemini' },
 ];
 
 const modelVersionData = [
@@ -45,7 +52,7 @@ const modelVersionData = [
     ],
   },
   {
-    modelName: 'Sonnet 3.7',
+    modelName: 'Claude Sonnet 4',
     versions: [
       {
         version: '20250910',
@@ -97,6 +104,44 @@ const modelVersionData = [
     ],
   },
   {
+    modelName: 'GPT-3.5 Turbo',
+    versions: [
+      {
+        version: '20250815',
+        isLatest: true,
+        isAvailable: true,
+        releaseDate: new Date('2025-08-15'),
+        deprecationDate: null,
+      },
+      {
+        version: '20250701',
+        isLatest: false,
+        isAvailable: true,
+        releaseDate: new Date('2025-07-01'),
+        deprecationDate: null,
+      },
+    ],
+  },
+  {
+    modelName: 'GPT-4o Mini',
+    versions: [
+      {
+        version: '20250815',
+        isLatest: true,
+        isAvailable: true,
+        releaseDate: new Date('2025-08-15'),
+        deprecationDate: null,
+      },
+      {
+        version: '20250701',
+        isLatest: false,
+        isAvailable: true,
+        releaseDate: new Date('2025-07-01'),
+        deprecationDate: null,
+      },
+    ],
+  },
+  {
     modelName: 'GPT-5',
     versions: [
       {
@@ -104,6 +149,115 @@ const modelVersionData = [
         isLatest: true,
         isAvailable: true,
         releaseDate: new Date('2025-08-07'),
+        deprecationDate: null,
+      },
+    ],
+  },
+  {
+    modelName: 'Claude Opus 4.1',
+    versions: [
+      {
+        version: '20250901',
+        isLatest: true,
+        isAvailable: true,
+        releaseDate: new Date('2025-09-01'),
+        deprecationDate: null,
+      },
+      {
+        version: '20250815',
+        isLatest: false,
+        isAvailable: true,
+        releaseDate: new Date('2025-08-15'),
+        deprecationDate: null,
+      },
+      {
+        version: '20250701',
+        isLatest: false,
+        isAvailable: true,
+        releaseDate: new Date('2025-07-01'),
+        deprecationDate: null,
+      },
+    ],
+  },
+  {
+    modelName: 'Claude 3.5 Sonnet',
+    versions: [
+      {
+        version: '20241022',
+        isLatest: true,
+        isAvailable: true,
+        releaseDate: new Date('2024-10-22'),
+        deprecationDate: null,
+      },
+      {
+        version: '20240620',
+        isLatest: false,
+        isAvailable: true,
+        releaseDate: new Date('2024-06-20'),
+        deprecationDate: null,
+      },
+    ],
+  },
+  {
+    modelName: 'Claude 3.5 Haiku',
+    versions: [
+      {
+        version: '20241022',
+        isLatest: true,
+        isAvailable: true,
+        releaseDate: new Date('2024-10-22'),
+        deprecationDate: null,
+      },
+      {
+        version: '20240701',
+        isLatest: false,
+        isAvailable: true,
+        releaseDate: new Date('2024-07-01'),
+        deprecationDate: null,
+      },
+    ],
+  },
+  {
+    modelName: 'Gemini 2.5 Pro',
+    versions: [
+      {
+        version: '20250915',
+        isLatest: true,
+        isAvailable: true,
+        releaseDate: new Date('2025-09-15'),
+        deprecationDate: null,
+      },
+      {
+        version: '20250815',
+        isLatest: false,
+        isAvailable: true,
+        releaseDate: new Date('2025-08-15'),
+        deprecationDate: null,
+      },
+      {
+        version: '20250701',
+        isLatest: false,
+        isAvailable: true,
+        releaseDate: new Date('2025-07-01'),
+        deprecationDate: null,
+      },
+    ],
+  },
+  {
+    modelName: 'Gemini 2.5 Flash',
+    versions: [
+      {
+        version: '20250815',
+        isLatest: true,
+        isAvailable: true,
+        releaseDate: new Date('2025-08-15'),
+        deprecationDate: null,
+      },
+      {
+        version: '20250701',
+        isLatest: false,
+        isAvailable: true,
+        releaseDate: new Date('2025-07-01'),
         deprecationDate: null,
       },
     ],

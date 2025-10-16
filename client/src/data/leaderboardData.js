@@ -2,7 +2,7 @@
 
 // Define model families and their models
 export const modelFamilies = {
-  'GPT': ['GPT-4o', 'GPT-3.5 Turbo', 'O4 Mini'],
+  'GPT': ['GPT-4o', 'GPT-3.5 Turbo', 'GPT-4o Mini'],
   'Claude': ['Claude Opus 4.1', 'Claude Sonnet 4', 'Claude 3.5 Sonnet', 'Claude 3.5 Haiku'],
   'Gemini': ['Gemini 2.5 Pro', 'Gemini 2.5 Flash', 'Gemini 2.0 Flash', 'Gemma 2'],
   'DeepSeek': ['DeepSeek-V3', 'DeepSeek-V2.5'],
@@ -339,11 +339,11 @@ export const modelVersions = [
     A_mamh: 1.48
   },
   
-  // O4 Mini versions
+  // GPT-4o Mini versions
   {
-    id: 'o4mini-v1',
+    id: 'gpt4omini-v1',
     modelFamily: 'GPT',
-    model: 'O4 Mini',
+    model: 'GPT-4o Mini',
     version: '20250815',
     temperature: 0.7,
     top_p: 0.95,
