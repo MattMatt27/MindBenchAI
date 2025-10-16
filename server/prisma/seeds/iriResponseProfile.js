@@ -138,7 +138,10 @@ module.exports = async function seedIRIResponseProfile(prisma, options = {}) {
   // 3. Create mock answers for each model version
   let answerCount = 0;
   for (const [modelVersionKey, answers] of Object.entries(MOCK_IRI_ANSWERS)) {
-    const [modelName, versionStr] = modelVersionKey.split('-');
+    // Split on the last hyphen to handle model names like "GPT-4o"
+    const lastHyphenIndex = modelVersionKey.lastIndexOf('-');
+    const modelName = modelVersionKey.substring(0, lastHyphenIndex);
+    const versionStr = modelVersionKey.substring(lastHyphenIndex + 1);
     const modelRecord = models[modelName];
 
     if (!modelRecord) {
