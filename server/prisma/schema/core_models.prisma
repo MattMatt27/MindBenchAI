@@ -127,6 +127,7 @@ model EvaluationEntity {
   responseProfileAnswers ResponseProfileAnswer[]
   reviewAssignments      ProfileReviewAssignment[]
 
+  @@unique([entityType, modelVersionId, toolConfigurationId])
   @@index([entityType])
   @@index([modelVersionId])
   @@index([toolConfigurationId])
