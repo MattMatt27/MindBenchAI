@@ -12,6 +12,8 @@ import Register from "./components/Register";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import VerifyEmail from "./components/VerifyEmail";
+import HomePage from "./components/HomePage"
+import Resource from "./components/Resource"
 import "./styles/main.css";
 
 export default function App() {
@@ -20,7 +22,8 @@ export default function App() {
       <BrowserRouter>
         <NavBar />
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/" element={<HomePage />} />
           <Route path="/technical_profile" element={<TechnicalProfile />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/standard_test" element = {<StandardizeTest />}/>
@@ -31,6 +34,7 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/resource" element={<Resource />}/>
         </Routes>
       </BrowserRouter>
     </AuthProvider>

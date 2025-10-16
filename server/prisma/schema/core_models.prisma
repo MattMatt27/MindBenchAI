@@ -1,0 +1,152 @@
+model Model {
+  id            String    @id @default(uuid())
+  name          String    @unique
+  modelFamilyId String    @map("model_family_id")
+  developer     String
+  description   String?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  createdBy     String?   @map("created_by")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+  updatedBy     String?   @map("updated_by")
+
+  versions           ModelVersion[]
+  toolConfigurations ToolConfiguration[]
+  modelFamily        ModelFamily    @relation(fields: [modelFamilyId], references: [id])
+  createdByUser      User?          @relation("ModelCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser      User?          @relation("ModelUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@index([modelFamilyId])
+  @@index([developer])
+  @@index([name])
+  @@map("models")
+}
+
+model ModelVersion {
+  id              String    @id @default(uuid())
+  modelId         String    @map("model_id")
+  version         String
+  releaseDate     DateTime? @map("release_date") @db.Date
+  deprecationDate DateTime? @map("deprecation_date") @db.Date
+  isLatest        Boolean   @default(false) @map("is_latest")
+  isAvailable     Boolean   @default(true) @map("is_available")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  createdBy       String?   @map("created_by")
+  updatedAt       DateTime? @updatedAt @map("updated_at")
+  updatedBy       String?   @map("updated_by")
+
+  model               Model                     @relation(fields: [modelId], references: [id])
+  createdByUser       User?                     @relation("ModelVersionCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser       User?                     @relation("ModelVersionUpdatedBy", fields: [updatedBy], references: [id])
+  evaluationEntities  EvaluationEntity[]
+  benchmarkResults    BenchmarkResult[]
+  hyperparameterLinks ModelHyperparameterLink[]
+  scoreAggregates     BenchmarkScoreAggregate[]
+  bigFiveProfile      BigFiveProfile?
+
+  @@unique([modelId, version])
+  @@index([modelId])
+  @@index([version])
+  @@index([isLatest])
+  @@index([isAvailable])
+  @@map("model_versions")
+}
+
+model ModelFamily {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by")
+
+  models        Model[]
+  createdByUser User?   @relation("ModelFamilyCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?   @relation("ModelFamilyUpdatedBy", fields: [updatedBy], references: [id])
+
+  @@map("model_families")
+}
+
+model Tool {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  version   String?
+  developer String?
+  createdAt DateTime  @default(now()) @map("created_at")
+  createdBy String?   @map("created_by")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+  updatedBy String?   @map("updated_by")
+
+  createdByUser  User?               @relation("ToolCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser  User?               @relation("ToolUpdatedBy", fields: [updatedBy], references: [id])
+  configurations ToolConfiguration[]
+
+  @@index([developer])
+  @@map("tools")
+}
+
+model ToolConfiguration {
+  id                    String    @id @default(uuid())
+  toolId                String    @map("tool_id")
+  modelId               String    @map("model_id")
+  configurationName     String    @map("configuration_name")
+  configurationSettings Json?     @map("configuration_settings")
+  isActive              Boolean   @default(true) @map("is_active")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  createdBy             String?   @map("created_by")
+  updatedAt             DateTime? @updatedAt @map("updated_at")
+  updatedBy             String?   @map("updated_by")
+
+  tool               Tool               @relation(fields: [toolId], references: [id])
+  model              Model              @relation(fields: [modelId], references: [id])
+  createdByUser      User?              @relation("ToolConfigCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser      User?              @relation("ToolConfigUpdatedBy", fields: [updatedBy], references: [id])
+  evaluationEntities EvaluationEntity[]
+  benchmarkResults   BenchmarkResult[]
+
+  @@unique([toolId, modelId])
+  @@index([modelId])
+  @@index([isActive])
+  @@map("tool_configurations")
+}
+
+model EvaluationEntity {
+  id                  String     @id @default(uuid())
+  entityType          EntityType @map("entity_type")
+  modelVersionId      String?    @map("model_version_id")
+  toolConfigurationId String?    @map("tool_configuration_id")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  createdBy           String?    @map("created_by")
+  updatedAt           DateTime?  @updatedAt @map("updated_at")
+  updatedBy           String?    @map("updated_by")
+
+  modelVersion           ModelVersion?             @relation(fields: [modelVersionId], references: [id])
+  toolConfiguration      ToolConfiguration?        @relation(fields: [toolConfigurationId], references: [id])
+  createdByUser          User?                     @relation("EvaluationEntityCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser          User?                     @relation("EvaluationEntityUpdatedBy", fields: [updatedBy], references: [id])
+  techProfileAnswers     TechProfileAnswer[]
+  responseProfileAnswers ResponseProfileAnswer[]
+  reviewAssignments      ProfileReviewAssignment[]
+
+  @@index([entityType])
+  @@index([modelVersionId])
+  @@index([toolConfigurationId])
+  @@map("evaluation_entities")
+}
+
+model BigFiveProfile {
+  id              String    @id @default(uuid())
+  modelVersionId  String    @unique @map("model_version_id")
+  modelFamily     String?   @map("model_family")
+  openness        Int
+  conscientiousness Int
+  extraversion    Int
+  agreeableness   Int
+  neuroticism     Int
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime? @updatedAt @map("updated_at")
+
+  modelVersion ModelVersion @relation(fields: [modelVersionId], references: [id])
+
+  @@index([modelFamily])
+  @@map("big_five_profiles")
+}

@@ -1,5 +1,5 @@
 const { verifyAccessToken, extractTokenFromHeader } = require('../utils/auth');
-const { PrismaClient } = require('../../generated/prisma');
+const { PrismaClient } = require('../../prisma/generated/prisma');
 
 const prisma = new PrismaClient();
 
