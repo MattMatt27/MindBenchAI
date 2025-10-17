@@ -119,13 +119,13 @@ model EvaluationEntity {
   updatedAt           DateTime?  @updatedAt @map("updated_at")
   updatedBy           String?    @map("updated_by")
 
-  modelVersion           ModelVersion?             @relation(fields: [modelVersionId], references: [id])
-  toolConfiguration      ToolConfiguration?        @relation(fields: [toolConfigurationId], references: [id])
-  createdByUser          User?                     @relation("EvaluationEntityCreatedBy", fields: [createdBy], references: [id])
-  updatedByUser          User?                     @relation("EvaluationEntityUpdatedBy", fields: [updatedBy], references: [id])
-  techProfileAnswers     TechProfileAnswer[]
-  responseProfileAnswers ResponseProfileAnswer[]
-  reviewAssignments      ProfileReviewAssignment[]
+  modelVersion                 ModelVersion?                  @relation(fields: [modelVersionId], references: [id])
+  toolConfiguration            ToolConfiguration?             @relation(fields: [toolConfigurationId], references: [id])
+  createdByUser                User?                          @relation("EvaluationEntityCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser                User?                          @relation("EvaluationEntityUpdatedBy", fields: [updatedBy], references: [id])
+  techProfileAnswers           TechProfileAnswer[]
+  conversationalProfileAnswers ConversationalProfileAnswer[]
+  reviewAssignments            ProfileReviewAssignment[]
 
   @@unique([entityType, modelVersionId, toolConfigurationId])
   @@index([entityType])

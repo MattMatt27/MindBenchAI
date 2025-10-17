@@ -1,5 +1,5 @@
 // IRI (Interpersonal Reactivity Index) Test Definition and Mock Answers
-// This creates ResponseProfileTest, ResponseProfileQuestion, and ResponseProfileAnswer records
+// This creates ConversationalProfileTest, ConversationalProfileQuestion, and ConversationalProfileAnswer records
 
 const IRI_QUESTIONS = [
   { key: 'IRI_1', text: 'I daydream and fantasize, with some regularity, about things that might happen to me.', category: 'FS', order: 1, reversed: false },
@@ -61,16 +61,16 @@ const MOCK_IRI_ANSWERS = {
   },
 };
 
-module.exports = async function seedIRIResponseProfile(prisma, options = {}) {
+module.exports = async function seedIRIConversationalProfile(prisma, options = {}) {
   const { models = {}, modelVersions = {} } = options;
 
   // 1. Create the IRI test
-  let iriTest = await prisma.responseProfileTest.findFirst({
+  let iriTest = await prisma.conversationalProfileTest.findFirst({
     where: { name: 'Interpersonal Reactivity Index' },
   });
 
   if (iriTest) {
-    iriTest = await prisma.responseProfileTest.update({
+    iriTest = await prisma.conversationalProfileTest.update({
       where: { id: iriTest.id },
       data: {
         description: 'Measures empathy across four dimensions: Perspective Taking, Fantasy, Empathic Concern, and Personal Distress',
@@ -80,7 +80,7 @@ module.exports = async function seedIRIResponseProfile(prisma, options = {}) {
       },
     });
   } else {
-    iriTest = await prisma.responseProfileTest.create({
+    iriTest = await prisma.conversationalProfileTest.create({
       data: {
         name: 'Interpersonal Reactivity Index',
         description: 'Measures empathy across four dimensions: Perspective Taking, Fantasy, Empathic Concern, and Personal Distress',
@@ -97,7 +97,7 @@ module.exports = async function seedIRIResponseProfile(prisma, options = {}) {
   // 2. Create all 28 questions
   const questionRecords = {};
   for (const q of IRI_QUESTIONS) {
-    let question = await prisma.responseProfileQuestion.findFirst({
+    let question = await prisma.conversationalProfileQuestion.findFirst({
       where: {
         questionText: q.text,
         questionKey: q.key,
@@ -105,7 +105,7 @@ module.exports = async function seedIRIResponseProfile(prisma, options = {}) {
     });
 
     if (question) {
-      question = await prisma.responseProfileQuestion.update({
+      question = await prisma.conversationalProfileQuestion.update({
         where: { id: question.id },
         data: {
           testId: iriTest.id,
@@ -117,7 +117,7 @@ module.exports = async function seedIRIResponseProfile(prisma, options = {}) {
         },
       });
     } else {
-      question = await prisma.responseProfileQuestion.create({
+      question = await prisma.conversationalProfileQuestion.create({
         data: {
           testId: iriTest.id,
           questionType: 'NUMBER',
@@ -205,7 +205,7 @@ module.exports = async function seedIRIResponseProfile(prisma, options = {}) {
         const rawValue = subscaleAnswers[i];
 
         // Find or create the answer
-        let answer = await prisma.responseProfileAnswer.findFirst({
+        let answer = await prisma.conversationalProfileAnswer.findFirst({
           where: {
             questionId: questionRecord.id,
             evaluationEntityId: evaluationEntity.id,
@@ -213,7 +213,7 @@ module.exports = async function seedIRIResponseProfile(prisma, options = {}) {
         });
 
         if (answer) {
-          await prisma.responseProfileAnswer.update({
+          await prisma.conversationalProfileAnswer.update({
             where: { id: answer.id },
             data: {
               numericValue: rawValue,
@@ -223,7 +223,7 @@ module.exports = async function seedIRIResponseProfile(prisma, options = {}) {
             },
           });
         } else {
-          await prisma.responseProfileAnswer.create({
+          await prisma.conversationalProfileAnswer.create({
             data: {
               questionId: questionRecord.id,
               entityType: 'MODEL_VERSION',

@@ -3,7 +3,7 @@ const { PrismaClient } = require('./generated/prisma');
 const seedModels = require('./seeds/models');
 const seedTechProfiles = require('./seeds/techProfiles');
 const seedBigFive = require('./seeds/bigFive');
-const seedIRIResponseProfile = require('./seeds/iriResponseProfile');
+const seedIRIConversationalProfile = require('./seeds/iriConversationalProfile');
 // const seedUsers = require('./seeds/users');
 // const seedBenchmarking = require('./seeds/benchmarking');
 // const seedCommunity = require('./seeds/community');
@@ -26,7 +26,7 @@ async function main() {
     modelVersions: models.modelVersions,
   });
 
-  await seedIRIResponseProfile(prisma, {
+  await seedIRIConversationalProfile(prisma, {
     models: models.models,
     modelVersions: models.modelVersions,
   });

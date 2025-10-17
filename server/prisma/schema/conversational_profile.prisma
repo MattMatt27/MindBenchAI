@@ -1,4 +1,4 @@
-model ResponseProfileTest {
+model ConversationalProfileTest {
   id          String    @id @default(uuid())
   name        String    @unique
   description String?
@@ -11,12 +11,12 @@ model ResponseProfileTest {
   updatedAt   DateTime? @updatedAt @map("updated_at")
   updatedBy   String?   @map("updated_by")
 
-  questions ResponseProfileQuestion[]
+  questions ConversationalProfileQuestion[]
 
-  @@map("response_profile_test")
+  @@map("conversational_profile_test")
 }
 
-model ResponseProfileQuestion {
+model ConversationalProfileQuestion {
   id           String       @id @default(uuid())
   testId       String?      @map("test_id")
   questionType QuestionType @map("question_type")
@@ -31,16 +31,16 @@ model ResponseProfileQuestion {
   updatedAt    DateTime?    @updatedAt @map("updated_at")
   updatedBy    String?      @map("updated_by")
 
-  test          ResponseProfileTest?    @relation(fields: [testId], references: [id])
-  createdByUser User?                   @relation("ResponseQuestionCreatedBy", fields: [createdBy], references: [id])
-  updatedByUser User?                   @relation("ResponseQuestionUpdatedBy", fields: [updatedBy], references: [id])
-  answers       ResponseProfileAnswer[]
+  test          ConversationalProfileTest?    @relation(fields: [testId], references: [id])
+  createdByUser User?                         @relation("ConversationalQuestionCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                         @relation("ConversationalQuestionUpdatedBy", fields: [updatedBy], references: [id])
+  answers       ConversationalProfileAnswer[]
 
   @@unique([questionText, questionKey])
-  @@map("response_profile_questions")
+  @@map("conversational_profile_questions")
 }
 
-model ResponseProfileAnswer {
+model ConversationalProfileAnswer {
   id                 String     @id @default(uuid())
   questionId         String     @map("question_id")
   entityType         EntityType @map("entity_type")
@@ -59,17 +59,17 @@ model ResponseProfileAnswer {
   approvedAt         DateTime?  @map("approved_at")
   approvedBy         String?    @map("approved_by")
 
-  question         ResponseProfileQuestion  @relation(fields: [questionId], references: [id])
-  reviewer         User                     @relation("ResponseProfileReviewer", fields: [reviewerId], references: [id])
-  approver         User?                    @relation("ResponseProfileApprover", fields: [approvedBy], references: [id])
-  createdByUser    User?                    @relation("ResponseProfileCreatedBy", fields: [createdBy], references: [id])
-  reviewAssignment ProfileReviewAssignment? @relation(fields: [reviewAssignmentId], references: [id])
-  evaluationEntity EvaluationEntity         @relation(fields: [evaluationEntityId], references: [id])
+  question         ConversationalProfileQuestion @relation(fields: [questionId], references: [id])
+  reviewer         User                          @relation("ConversationalProfileReviewer", fields: [reviewerId], references: [id])
+  approver         User?                         @relation("ConversationalProfileApprover", fields: [approvedBy], references: [id])
+  createdByUser    User?                         @relation("ConversationalProfileCreatedBy", fields: [createdBy], references: [id])
+  reviewAssignment ProfileReviewAssignment?      @relation(fields: [reviewAssignmentId], references: [id])
+  evaluationEntity EvaluationEntity              @relation(fields: [evaluationEntityId], references: [id])
 
   @@unique([questionId, evaluationEntityId])
   @@index([questionId, isApproved, createdAt])
   @@index([evaluationEntityId])
   @@index([reviewAssignmentId])
   @@index([isApproved, createdAt])
-  @@map("response_profile_answers")
+  @@map("conversational_profile_answers")
 }
