@@ -258,8 +258,38 @@ export default function ConversationalProfile() {
 
   const radarData = React.useMemo(() => {
     if (chartRows.length === 0) return [];
+
+    // Sort traits by label length
+    const traitsWithLabels = currentTraits.map(trait => ({
+      trait,
+      label: TRAIT_LABELS[trait] || trait,
+      length: (TRAIT_LABELS[trait] || trait).length
+    }));
+    traitsWithLabels.sort((a, b) => b.length - a.length);
+
+    // Distribute labels optimally based on radar position
+    // With startAngle=90: index 0 = top (12 o'clock), index n/2 = bottom (6 o'clock)
+    // Top and bottom have the most vertical space for long labels
+    const optimizedOrder = new Array(currentTraits.length);
+
+    // Place longest labels at top and bottom
+    optimizedOrder[0] = traitsWithLabels[0].trait; // Top - longest
+    if (traitsWithLabels.length > 1) {
+      const bottomIndex = Math.floor(traitsWithLabels.length / 2);
+      optimizedOrder[bottomIndex] = traitsWithLabels[1].trait; // Bottom - 2nd longest
+    }
+
+    // Fill remaining positions with remaining labels (alternating pattern)
+    let remainingIdx = 2;
+    for (let i = 1; i < optimizedOrder.length; i++) {
+      if (!optimizedOrder[i]) {
+        optimizedOrder[i] = traitsWithLabels[remainingIdx].trait;
+        remainingIdx++;
+      }
+    }
+
     const allData = [];
-    currentTraits.forEach((trait) => {
+    optimizedOrder.forEach((trait) => {
       const d = { trait: TRAIT_LABELS[trait] || trait };
       chartRows.forEach((row) => {
         const key = `${row.model}-${row.actualVersion ?? row.versionLabel}`;
@@ -511,9 +541,23 @@ export default function ConversationalProfile() {
               {chartRows.length > 0 ? (
                 <div className="st-chart">
                   <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData} startAngle={90} endAngle={-270}>
+                    <RadarChart cx="50%" cy="50%" outerRadius="60%" data={radarData} startAngle={90} endAngle={-270}>
                       <PolarGrid gridType="polygon" />
-                      <PolarAngleAxis dataKey="trait" />
+                      <PolarAngleAxis
+                        dataKey="trait"
+                        tick={{ fontSize: 12 }}
+                        tickFormatter={(value) => {
+                          // Wrap long labels if needed
+                          if (value.length > 15) {
+                            const words = value.split(' ');
+                            if (words.length > 1) {
+                              const mid = Math.ceil(words.length / 2);
+                              return words.slice(0, mid).join(' ') + '\n' + words.slice(mid).join(' ');
+                            }
+                          }
+                          return value;
+                        }}
+                      />
                       <PolarRadiusAxis domain={[0, maxDomain]} />
                       {chartRows.map((row, index) => {
                         const key = `${row.model}-${row.actualVersion ?? row.versionLabel}`;
