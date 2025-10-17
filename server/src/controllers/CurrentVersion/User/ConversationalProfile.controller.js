@@ -150,6 +150,8 @@ const getAvailableTests = async (req, res, next) => {
         testType: true,
         version: true,
         isValidated: true,
+        scaleMin: true,
+        scaleMax: true,
       },
       orderBy: {
         name: 'asc',

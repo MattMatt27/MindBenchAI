@@ -77,6 +77,8 @@ module.exports = async function seedIRIConversationalProfile(prisma, options = {
         testType: 'empathy',
         isValidated: true,
         isPublic: true,
+        scaleMin: 0,
+        scaleMax: 28,
       },
     });
   } else {
@@ -88,6 +90,8 @@ module.exports = async function seedIRIConversationalProfile(prisma, options = {
         version: 1,
         isValidated: true,
         isPublic: true,
+        scaleMin: 0,
+        scaleMax: 28,
       },
     });
   }

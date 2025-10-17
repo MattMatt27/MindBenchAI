@@ -368,7 +368,19 @@ export default function ConversationalProfile() {
     return allData;
   }, [chartRows, currentTraits]);
 
-  const maxDomain = activeTest === "hexaco" ? 5 : 28;
+  const maxDomain = React.useMemo(() => {
+    const currentTest = availableTests.find(
+      (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
+    );
+    return currentTest?.scaleMax ?? 5; // Default to 5 if not found
+  }, [activeTest, availableTests]);
+
+  const minDomain = React.useMemo(() => {
+    const currentTest = availableTests.find(
+      (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
+    );
+    return currentTest?.scaleMin ?? 0; // Default to 0 if not found
+  }, [activeTest, availableTests]);
 
   React.useEffect(() => {
     if (selectedRow && !rows.some((r) => r.id === selectedRow.id)) {
@@ -635,7 +647,7 @@ export default function ConversationalProfile() {
                           return value;
                         }}
                       />
-                      <PolarRadiusAxis domain={[0, maxDomain]} />
+                      <PolarRadiusAxis domain={[minDomain, maxDomain]} />
                       {chartRows.map((row, index) => {
                         const key = `${row.model}-${row.actualVersion ?? row.versionLabel}`;
                         return (

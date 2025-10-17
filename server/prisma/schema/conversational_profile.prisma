@@ -6,6 +6,8 @@ model ConversationalProfileTest {
   version     Int       @default(1)
   isValidated Boolean   @default(false) @map("is_validated")
   isPublic    Boolean   @default(false) @map("is_public")
+  scaleMin    Int       @default(0) @map("scale_min")
+  scaleMax    Int       @default(5) @map("scale_max")
   createdAt   DateTime  @default(now()) @map("created_at")
   createdBy   String?   @map("created_by")
   updatedAt   DateTime? @updatedAt @map("updated_at")

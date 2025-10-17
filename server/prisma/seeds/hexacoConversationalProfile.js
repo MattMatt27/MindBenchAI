@@ -221,6 +221,8 @@ module.exports = async function seedHexacoConversationalProfile(prisma, options 
         testType: 'personality',
         isValidated: true,
         isPublic: true,
+        scaleMin: 1,
+        scaleMax: 5,
       },
     });
   } else {
@@ -232,6 +234,8 @@ module.exports = async function seedHexacoConversationalProfile(prisma, options 
         version: 1,
         isValidated: true,
         isPublic: true,
+        scaleMin: 1,
+        scaleMax: 5,
       },
     });
   }
