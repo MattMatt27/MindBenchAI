@@ -1,4 +1,4 @@
-- [ ] Finish landing page, add content, redo the current "home" page
+- [ ] Finish landing page, add content, redo the current "home" page, add "benchmark" to the navBar (drop down with 4 options)
 - [ ] Unified the table in these 3 pages (techprofile, leaderboard, profiletest) 
 - [ ] Redesign the page with some UI improvement
 - [ ] Redo resource page
