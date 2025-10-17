@@ -12,7 +12,22 @@ import {
 } from "recharts";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5001";
-const TRAITS = ["O", "C", "E", "A", "N"];
+const BIG5_TRAITS = ["O", "C", "E", "A", "N"];
+const IRI_TRAITS = ["PT", "FS", "EC", "PD"];
+
+const TRAIT_LABELS = {
+  // Big 5
+  O: "Openness",
+  C: "Conscientiousness",
+  E: "Extraversion",
+  A: "Agreeableness",
+  N: "Neuroticism",
+  // IRI
+  PT: "Perspective Taking",
+  FS: "Fantasy",
+  EC: "Empathic Concern",
+  PD: "Personal Distress",
+};
 
 export default function StandardizeTest() {
   const [activeTab, setActiveTab] = React.useState("models");
@@ -35,26 +50,49 @@ export default function StandardizeTest() {
     const fetchProfiles = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE}/api/current/big-five/profiles`);
+
+        const endpoint = activeTest === "big5"
+          ? `${API_BASE}/api/current/big-five/profiles`
+          : `${API_BASE}/api/current/iri/profiles`;
+
+        const res = await fetch(endpoint);
         if (!res.ok) {
-          throw new Error("Failed to load personality profiles");
+          throw new Error("Failed to load profiles");
         }
         const payload = await res.json();
-        const normalized = (payload.data ?? []).map((item) => ({
-          id: item.id,
-          modelVersionId: item.model_version_id ?? item.id,
-          modelId: item.model_id ?? null,
-          modelFamily: item.model_family ?? "Unknown",
-          model: item.model_name ?? "Unknown model",
-          version: item.version ?? "—",
-          isLatest: Boolean(item.is_latest),
-          releaseDate: item.release_date ?? null,
-          O: item.openness ?? 0,
-          C: item.conscientiousness ?? 0,
-          E: item.extraversion ?? 0,
-          A: item.agreeableness ?? 0,
-          N: item.neuroticism ?? 0,
-        }));
+
+        const normalized = (payload.data ?? []).map((item) => {
+          const base = {
+            id: item.id,
+            modelVersionId: item.model_version_id ?? item.id,
+            modelId: item.model_id ?? null,
+            modelFamily: item.model_family ?? "Unknown",
+            model: item.model_name ?? "Unknown model",
+            version: item.version ?? "—",
+            isLatest: Boolean(item.is_latest),
+            releaseDate: item.release_date ?? null,
+          };
+
+          if (activeTest === "big5") {
+            return {
+              ...base,
+              O: item.openness ?? 0,
+              C: item.conscientiousness ?? 0,
+              E: item.extraversion ?? 0,
+              A: item.agreeableness ?? 0,
+              N: item.neuroticism ?? 0,
+            };
+          } else if (activeTest === "iri") {
+            return {
+              ...base,
+              PT: item.perspective_taking ?? 0,
+              FS: item.fantasy ?? 0,
+              EC: item.empathic_concern ?? 0,
+              PD: item.personal_distress ?? 0,
+            };
+          }
+          return base;
+        });
 
         if (isMounted) {
           setProfiles(normalized);
@@ -73,7 +111,7 @@ export default function StandardizeTest() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [activeTest]);
 
   const allRows = React.useMemo(() => [...profiles], [profiles]);
   const modelFamilies = React.useMemo(() => {
@@ -107,6 +145,8 @@ export default function StandardizeTest() {
     setSelectedVersions(new Set());
   };
 
+  const currentTraits = activeTest === "big5" ? BIG5_TRAITS : IRI_TRAITS;
+
   const sortedMainRows = React.useMemo(() => {
     let filtered = [...allRows];
     if (modelFamilyFilter.length > 0) {
@@ -136,7 +176,7 @@ export default function StandardizeTest() {
       const mainRowId = `main-${key}`;
       const actualVersion = latest?.version ?? "—";
 
-      return {
+      const baseRow = {
         id: mainRowId,
         isMainRow: true,
         modelFamily: latest?.modelFamily ?? "Unknown",
@@ -146,21 +186,23 @@ export default function StandardizeTest() {
         actualVersion,
         modelVersionId: latest?.modelVersionId ?? latest?.id,
         isLatest: Boolean(latest?.isLatest),
-        O: latest?.O ?? 0,
-        C: latest?.C ?? 0,
-        E: latest?.E ?? 0,
-        A: latest?.A ?? 0,
-        N: latest?.N ?? 0,
         hasVersions: data.versions.length >= 1,
         versions: [...data.versions],
       };
+
+      // Add trait values based on active test
+      currentTraits.forEach(trait => {
+        baseRow[trait] = latest?.[trait] ?? 0;
+      });
+
+      return baseRow;
     });
     return mainRows.sort((a, b) => {
       const famCompare = String(a.modelFamily).localeCompare(String(b.modelFamily));
       if (famCompare !== 0) return famCompare;
       return String(a.model).localeCompare(String(b.model));
     });
-  }, [allRows, modelFamilyFilter]);
+  }, [allRows, modelFamilyFilter, activeTest, currentTraits]);
 
   const rows = React.useMemo(() => {
     const data = [];
@@ -176,7 +218,7 @@ export default function StandardizeTest() {
           const isSelected = selectedVersions.has(versionId);
           if (isExpanded || isSelected) {
             const versionLabel = v.version ?? "—";
-            data.push({
+            const versionRow = {
               id: versionId,
               isMainRow: false,
               parentId: mainRow.id,
@@ -186,20 +228,22 @@ export default function StandardizeTest() {
               displayVersion: v.isLatest ? "Latest" : versionLabel,
               actualVersion: v.version,
               isLatest: Boolean(v.isLatest),
-              O: v.O,
-              C: v.C,
-              E: v.E,
-              A: v.A,
-              N: v.N,
               vFirst: idx === 0,
               vLast: idx === versions.length - 1,
+            };
+
+            // Add trait values
+            currentTraits.forEach(trait => {
+              versionRow[trait] = v[trait];
             });
+
+            data.push(versionRow);
           }
         });
       }
     });
     return data;
-  }, [sortedMainRows, expandedModels, selectedVersions]);
+  }, [sortedMainRows, expandedModels, selectedVersions, currentTraits]);
 
   const chartRows = React.useMemo(() => {
     const selectedVersionRows = rows.filter((r) => !r.isMainRow && selectedVersions.has(r.id));
@@ -213,8 +257,8 @@ export default function StandardizeTest() {
   const radarData = React.useMemo(() => {
     if (chartRows.length === 0) return [];
     const allData = [];
-    ["O", "C", "E", "A", "N"].forEach((trait) => {
-      const d = { trait };
+    currentTraits.forEach((trait) => {
+      const d = { trait: TRAIT_LABELS[trait] || trait };
       chartRows.forEach((row) => {
         const key = `${row.model}-${row.actualVersion ?? row.versionLabel}`;
         d[key] = row[trait] ?? 0;
@@ -222,7 +266,9 @@ export default function StandardizeTest() {
       allData.push(d);
     });
     return allData;
-  }, [chartRows]);
+  }, [chartRows, currentTraits]);
+
+  const maxDomain = activeTest === "big5" ? 50 : 28;
 
   React.useEffect(() => {
     if (selectedRow && !rows.some((r) => r.id === selectedRow.id)) {
@@ -315,7 +361,7 @@ export default function StandardizeTest() {
         </div>
       )}
 
-      {activeTab === "models" && activeTest === "big5" && (
+      {activeTab === "models" && (activeTest === "big5" || activeTest === "iri") && (
         <div className="st-layout st-layout-no-sidebar">
           <div className="ui-table-wrap st-table">
             <table className="ui-table">
@@ -337,11 +383,9 @@ export default function StandardizeTest() {
                   </th>
                   <th>Model</th>
                   <th>Version</th>
-                  <th>Openness (O)</th>
-                  <th>Conscientiousness (C)</th>
-                  <th>Extraversion (E)</th>
-                  <th>Agreeableness (A)</th>
-                  <th>Neuroticism (N)</th>
+                  {currentTraits.map(trait => (
+                    <th key={trait}>{TRAIT_LABELS[trait]} ({trait})</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -417,17 +461,15 @@ export default function StandardizeTest() {
                           ? r.displayVersion ?? r.versionLabel ?? "—"
                           : r.versionLabel ?? "—"}
                       </td>
-                      <td>{r.O ?? "—"}</td>
-                      <td>{r.C ?? "—"}</td>
-                      <td>{r.E ?? "—"}</td>
-                      <td>{r.A ?? "—"}</td>
-                      <td>{r.N ?? "—"}</td>
+                      {currentTraits.map(trait => (
+                        <td key={trait}>{r[trait] ?? "—"}</td>
+                      ))}
                     </tr>
                   );
                 })}
                 {!rows.length && (
                   <tr>
-                    <td colSpan={9} style={{ textAlign: "center", height: 64 }}>No data</td>
+                    <td colSpan={4 + currentTraits.length} style={{ textAlign: "center", height: 64 }}>No data</td>
                   </tr>
                 )}
               </tbody>
@@ -470,7 +512,7 @@ export default function StandardizeTest() {
                     <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData} startAngle={90} endAngle={-270}>
                       <PolarGrid gridType="polygon" />
                       <PolarAngleAxis dataKey="trait" />
-                      <PolarRadiusAxis domain={[0, 50]} />
+                      <PolarRadiusAxis domain={[0, maxDomain]} />
                       {chartRows.map((row, index) => {
                         const key = `${row.model}-${row.actualVersion ?? row.versionLabel}`;
                         return (
@@ -553,13 +595,6 @@ export default function StandardizeTest() {
               </div>,
               document.body
             )}
-        </div>
-      )}
-
-      {activeTab === "models" && activeTest === "iri" && (
-        <div className="st-layout st-layout-no-sidebar" style={{ padding: "40px", textAlign: "center", color: "var(--muted)" }}>
-          <h3>Interpersonal Reactivity Index (IRI)</h3>
-          <p>Data coming soon...</p>
         </div>
       )}
 

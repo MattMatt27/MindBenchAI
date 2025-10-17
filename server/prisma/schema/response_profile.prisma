@@ -1,6 +1,6 @@
 model ResponseProfileTest {
   id          String    @id @default(uuid())
-  name        String
+  name        String    @unique
   description String?
   testType    String    @map("test_type")
   version     Int       @default(1)
@@ -66,6 +66,7 @@ model ResponseProfileAnswer {
   reviewAssignment ProfileReviewAssignment? @relation(fields: [reviewAssignmentId], references: [id])
   evaluationEntity EvaluationEntity         @relation(fields: [evaluationEntityId], references: [id])
 
+  @@unique([questionId, evaluationEntityId])
   @@index([questionId, isApproved, createdAt])
   @@index([evaluationEntityId])
   @@index([reviewAssignmentId])
