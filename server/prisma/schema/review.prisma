@@ -11,11 +11,11 @@ model ProfileReviewAssignment {
   completedAt        DateTime?    @map("completed_at")
   notes              String?
 
-  reviewer           User                    @relation("ReviewerAssignments", fields: [reviewerId], references: [id])
-  assigner           User?                   @relation("AssignedReviews", fields: [assignedBy], references: [id])
-  evaluationEntity   EvaluationEntity        @relation(fields: [evaluationEntityId], references: [id])
-  techProfileAnswers TechProfileAnswer[]
-  responseAnswers    ResponseProfileAnswer[]
+  reviewer                 User                           @relation("ReviewerAssignments", fields: [reviewerId], references: [id])
+  assigner                 User?                          @relation("AssignedReviews", fields: [assignedBy], references: [id])
+  evaluationEntity         EvaluationEntity               @relation(fields: [evaluationEntityId], references: [id])
+  techProfileAnswers       TechProfileAnswer[]
+  conversationalAnswers    ConversationalProfileAnswer[]
 
   @@unique([reviewerId, entityType, entityId])
   @@index([reviewerId, status])

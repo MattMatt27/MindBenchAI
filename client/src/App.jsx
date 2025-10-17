@@ -6,7 +6,7 @@ import TechnicalProfile from "./components/TechnicalProfile";
 import Resources from "./components/Resources"
 import Community from "./components/Community";
 import Leaderboard from "./components/Leaderboard";
-import StandardizeTest from "./components/StandardizeTest"
+import ConversationalProfile from "./components/ConversationalProfile"
 import Login from "./components/Login";
 import Register from "./components/Register";
 import ForgotPassword from "./components/ForgotPassword";
@@ -26,7 +26,7 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/technical_profile" element={<TechnicalProfile />} />
           <Route path="/leaderboard" element={<Leaderboard />} />
-          <Route path="/standard_test" element = {<StandardizeTest />}/>
+          <Route path="/conversational_profile" element = {<ConversationalProfile />}/>
           <Route path = "/resources" element={<Resources />} />
           <Route path = "/community" element ={<Community />} />
           <Route path="/login" element={<Login />} />
