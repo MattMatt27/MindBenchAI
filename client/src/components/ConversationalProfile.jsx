@@ -44,6 +44,47 @@ export default function ConversationalProfile() {
   const [profiles, setProfiles] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(null);
+  const [availableTests, setAvailableTests] = React.useState([]);
+  const [testsLoading, setTestsLoading] = React.useState(true);
+
+  // Fetch available tests on mount
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const fetchTests = async () => {
+      try {
+        setTestsLoading(true);
+        const res = await fetch(`${API_BASE}/api/current/conversational-profiles/tests`);
+        if (!res.ok) {
+          throw new Error("Failed to load tests");
+        }
+        const payload = await res.json();
+
+        if (isMounted) {
+          setAvailableTests(payload.data ?? []);
+          // Set the first test as active by default if no test is selected
+          if (payload.data && payload.data.length > 0 && activeTest === "hexaco") {
+            const firstTest = payload.data[0];
+            const testId = firstTest.name.toLowerCase().replace(/\s+/g, '-');
+            setActiveTest(testId);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading available tests:", err);
+        // If tests fail to load, fall back to showing no buttons
+        if (isMounted) {
+          setAvailableTests([]);
+        }
+      } finally {
+        if (isMounted) setTestsLoading(false);
+      }
+    };
+
+    fetchTests();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   React.useEffect(() => {
     let isMounted = true;
@@ -52,9 +93,23 @@ export default function ConversationalProfile() {
       try {
         setLoading(true);
 
-        const endpoint = activeTest === "hexaco"
-          ? `${API_BASE}/api/current/conversational-profiles/HEXACO%20Personality%20Inventory`
-          : `${API_BASE}/api/current/iri/profiles`;
+        // Find the matching test from availableTests
+        const currentTest = availableTests.find(
+          (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
+        );
+
+        if (!currentTest) {
+          // If test not found, skip loading
+          if (isMounted) {
+            setProfiles([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Use the actual test name for the API endpoint
+        const testName = encodeURIComponent(currentTest.name);
+        const endpoint = `${API_BASE}/api/current/conversational-profiles/${testName}`;
 
         const res = await fetch(endpoint);
         if (!res.ok) {
@@ -74,7 +129,8 @@ export default function ConversationalProfile() {
             releaseDate: item.release_date ?? null,
           };
 
-          if (activeTest === "hexaco") {
+          // Map test-specific fields based on test name
+          if (currentTest.name.includes("HEXACO")) {
             return {
               ...base,
               H: item.honesty_humility ?? 0,
@@ -84,7 +140,7 @@ export default function ConversationalProfile() {
               C: item.conscientiousness ?? 0,
               O: item.openness ?? 0,
             };
-          } else if (activeTest === "iri") {
+          } else if (currentTest.name.includes("IRI") || currentTest.name.includes("Interpersonal Reactivity")) {
             return {
               ...base,
               PT: item.perspective_taking ?? 0,
@@ -109,11 +165,13 @@ export default function ConversationalProfile() {
       }
     };
 
-    fetchProfiles();
+    if (availableTests.length > 0) {
+      fetchProfiles();
+    }
     return () => {
       isMounted = false;
     };
-  }, [activeTest]);
+  }, [activeTest, availableTests]);
 
   const allRows = React.useMemo(() => [...profiles], [profiles]);
   const modelFamilies = React.useMemo(() => {
@@ -147,7 +205,17 @@ export default function ConversationalProfile() {
     setSelectedVersions(new Set());
   };
 
-  const currentTraits = activeTest === "hexaco" ? HEXACO_TRAITS : IRI_TRAITS;
+  const currentTraits = React.useMemo(() => {
+    const currentTest = availableTests.find(
+      (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
+    );
+    if (currentTest?.name.includes("HEXACO")) {
+      return HEXACO_TRAITS;
+    } else if (currentTest?.name.includes("IRI") || currentTest?.name.includes("Interpersonal Reactivity")) {
+      return IRI_TRAITS;
+    }
+    return HEXACO_TRAITS; // Default fallback
+  }, [activeTest, availableTests]);
 
   const sortedMainRows = React.useMemo(() => {
     let filtered = [...allRows];
@@ -368,32 +436,41 @@ export default function ConversationalProfile() {
 
       {/* Test selection buttons */}
       {activeTab === "models" && (
-        <div style={{ padding: "16px", display: "flex", gap: "12px", background: "var(--bg)" }}>
-          <button
-            className={`st-btn ${activeTest === "hexaco" ? "st-btn-active" : ""}`}
-            onClick={() => setActiveTest("hexaco")}
-            type="button"
-          >
-            HEXACO Personality Inventory
-          </button>
-          <button
-            className={`st-btn ${activeTest === "iri" ? "st-btn-active" : ""}`}
-            onClick={() => setActiveTest("iri")}
-            type="button"
-          >
-            Interpersonal Reactivity Index (IRI)
-          </button>
-          <button
-            className={`st-btn ${activeTest === "csi" ? "st-btn-active" : ""}`}
-            onClick={() => setActiveTest("csi")}
-            type="button"
-          >
-            Communication Style Inventory (CSI)
-          </button>
+        <div style={{ padding: "16px", display: "flex", gap: "12px", background: "var(--bg)", flexWrap: "wrap" }}>
+          {testsLoading ? (
+            <div style={{ color: "var(--muted)" }}>Loading tests...</div>
+          ) : availableTests.length === 0 ? (
+            <div style={{ color: "var(--muted)" }}>No tests available</div>
+          ) : (
+            availableTests.map((test) => {
+              // Create a short ID from the test name for comparison
+              const testId = test.name.toLowerCase().replace(/\s+/g, '-');
+              const isActive = activeTest === testId || activeTest === test.name;
+
+              return (
+                <button
+                  key={test.id}
+                  className={`st-btn ${isActive ? "st-btn-active" : ""}`}
+                  onClick={() => setActiveTest(testId)}
+                  type="button"
+                  title={test.description || test.name}
+                >
+                  {test.name}
+                </button>
+              );
+            })
+          )}
         </div>
       )}
 
-      {activeTab === "models" && (activeTest === "hexaco" || activeTest === "iri") && (
+      {activeTab === "models" && (() => {
+        // Find the current test to determine if it has data
+        const currentTest = availableTests.find(
+          (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
+        );
+        // Show table if we have a test with HEXACO or IRI data
+        return currentTest && (currentTest.name.includes("HEXACO") || currentTest.name.includes("IRI") || currentTest.name.includes("Interpersonal Reactivity"));
+      })() && (
         <div className="st-layout st-layout-no-sidebar">
           <div className="ui-table-wrap st-table">
             <table className="ui-table">
@@ -644,9 +721,21 @@ export default function ConversationalProfile() {
         </div>
       )}
 
-      {activeTab === "models" && activeTest === "csi" && (
+      {activeTab === "models" && (() => {
+        // Find the current test to determine if it has data
+        const currentTest = availableTests.find(
+          (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
+        );
+        // Show "coming soon" for tests without data structure implemented
+        return currentTest && !(currentTest.name.includes("HEXACO") || currentTest.name.includes("IRI") || currentTest.name.includes("Interpersonal Reactivity"));
+      })() && (
         <div className="st-layout st-layout-no-sidebar" style={{ padding: "40px", textAlign: "center", color: "var(--muted)" }}>
-          <h3>Communication Style Inventory (CSI)</h3>
+          <h3>{(() => {
+            const currentTest = availableTests.find(
+              (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
+            );
+            return currentTest?.name || "Test";
+          })()}</h3>
           <p>Data coming soon...</p>
         </div>
       )}
