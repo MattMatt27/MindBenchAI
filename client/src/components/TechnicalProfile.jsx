@@ -89,33 +89,80 @@ export default function TechnicalProfile() {
     };
   }, []);
 
-  const rawProfiles = profilesByType[tabKey] ?? [];
-
-  const questionCatalog = useMemo(() => {
-    const map = new Map();
-
-    rawProfiles.forEach((profile) => {
-      Object.entries(profile.answers ?? {}).forEach(([key, answer]) => {
-        if (!answer) return;
-
-        const existing = map.get(key);
-        const displayOrder = answer.display_order ?? Number.MAX_SAFE_INTEGER;
-
-        if (!existing || displayOrder < existing.displayOrder) {
-          map.set(key, {
-            key,
-            category: answer.category ?? 'Other',
-            questionText: answer.question_text ?? key,
-            questionLabel: answer.question_label ?? answer.question_text ?? key,
-            questionType: (answer.question_type ?? answer.type ?? 'text').toLowerCase(),
-            displayOrder,
-          });
-        }
+  const rawProfiles = useMemo(() => {
+    const source = profilesByType[tabKey] ?? [];
+    if (tabKey === 'models') {
+      return [...source].sort((a, b) => {
+        const aDate = a.release_date ? new Date(a.release_date) : null;
+        const bDate = b.release_date ? new Date(b.release_date) : null;
+        if (aDate && bDate) return bDate - aDate;
+        if (aDate) return -1;
+        if (bDate) return 1;
+        return (b.version ?? '').localeCompare(a.version ?? '');
       });
-    });
+    }
+    return source;
+  }, [profilesByType, tabKey]);
 
-    return Array.from(map.values()).sort((a, b) => a.displayOrder - b.displayOrder);
-  }, [rawProfiles]);
+  const questionCatalogByTab = useMemo(() => {
+    const catalogMaps = {
+      tools: new Map(),
+      models: new Map(),
+    };
+
+    const registerQuestion = (targetTab, key, answer) => {
+      if (!key || !answer) return;
+
+      const map = catalogMaps[targetTab];
+      if (!map) return;
+
+      const existing = map.get(key);
+      const displayOrder = answer.display_order ?? Number.MAX_SAFE_INTEGER;
+
+      if (!existing || displayOrder < existing.displayOrder) {
+        map.set(key, {
+          key,
+          category: answer.category ?? 'Other',
+          questionText: answer.question_text ?? key,
+          questionLabel: answer.question_label ?? answer.question_text ?? key,
+          questionType: (answer.question_type ?? answer.type ?? 'text').toLowerCase(),
+          displayOrder,
+        });
+      }
+    };
+
+    const processProfiles = (profiles, defaultTab) => {
+      (profiles ?? []).forEach((profile) => {
+        Object.entries(profile.answers ?? {}).forEach(([key, answer]) => {
+          if (!answer) return;
+
+          const entityType = answer.entity_type ?? defaultTab;
+          const targets =
+            entityType === 'both'
+              ? ['tools', 'models']
+              : entityType === 'tool_configuration'
+              ? ['tools']
+              : entityType === 'base_model'
+              ? ['models']
+              : [defaultTab];
+
+          targets.forEach((tab) => registerQuestion(tab, key, answer));
+        });
+      });
+    };
+
+    processProfiles(profilesByType.tools, 'tools');
+    processProfiles(profilesByType.models, 'models');
+
+    return {
+      tools: Array.from(catalogMaps.tools.values()).sort((a, b) => a.displayOrder - b.displayOrder),
+      models: Array.from(catalogMaps.models.values()).sort(
+        (a, b) => a.displayOrder - b.displayOrder,
+      ),
+    };
+  }, [profilesByType]);
+
+  const questionCatalog = questionCatalogByTab[tabKey] ?? [];
 
   const categories = useMemo(() => {
     const unique = new Set(questionCatalog.map((q) => q.category));
@@ -151,7 +198,7 @@ export default function TechnicalProfile() {
           if (filters.code_generation && !profile.answers?.code_generation?.value) return false;
         }
 
-        return true;
+        return tabKey !== 'models' || profile.is_latest;
       });
   }, [rawProfiles, query, filters, tabKey]);
 
@@ -338,7 +385,7 @@ export default function TechnicalProfile() {
                   <th rowSpan="2">
                     {tabKey === 'tools' ? 'Base Model' : 'Developer'}
                   </th>
-                  {tabKey === 'models' && <th rowSpan="2">Version</th>}
+                  {tabKey === 'models' && <th rowSpan="2">Latest Version</th>}
                   {displayQuestions.map((question, index) => {
                     const colSpan = displayQuestions.filter(
                       (dq) => dq.category === question.category,

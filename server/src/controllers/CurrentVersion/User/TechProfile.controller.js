@@ -7,8 +7,12 @@ const ENTITY_TYPE_QUERY_MAP = {
   base_model: EntityType.MODEL_VERSION,
 };
 
-const toClientEntityType = (entityType) =>
-  entityType === EntityType.TOOL_CONFIGURATION ? 'tool_configuration' : 'base_model';
+const toClientEntityType = (entityType) => {
+  if (entityType === EntityType.TOOL_CONFIGURATION) return 'tool_configuration';
+  if (entityType === EntityType.MODEL_VERSION) return 'base_model';
+  if (entityType === EntityType.BOTH) return 'both';
+  return null;
+};
 
 const extractAnswerValue = (answer) => {
   const rawPayload = answer.answer ?? null;
@@ -114,6 +118,10 @@ const getTechProfileDisplay = async (req, res, next) => {
             name: baseModel?.name ?? null,
             developer: baseModel?.developer ?? null,
             version: modelVersion?.version ?? null,
+            release_date: modelVersion?.releaseDate
+              ? modelVersion.releaseDate.toISOString()
+              : null,
+            is_latest: Boolean(modelVersion?.isLatest),
             model_family: modelFamily?.name ?? null,
             big_five_profile: bigFiveProfile
               ? {
@@ -134,6 +142,8 @@ const getTechProfileDisplay = async (req, res, next) => {
         continue;
       }
 
+      const questionEntityType = toClientEntityType(question.entityType) ?? entityType;
+
       bucket.answers[question.questionKey] = {
         ...extractAnswerValue(answer),
         notes: answer.notes ?? null,
@@ -142,6 +152,7 @@ const getTechProfileDisplay = async (req, res, next) => {
         question_label: question.questionLabel ?? question.questionText,
         display_order: question.displayOrder,
         question_type: question.questionType.toLowerCase(),
+        entity_type: questionEntityType,
       };
     }
 

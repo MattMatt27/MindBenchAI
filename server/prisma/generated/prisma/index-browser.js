@@ -711,7 +711,8 @@ exports.AdversarialType = exports.$Enums.AdversarialType = {
 
 exports.EntityType = exports.$Enums.EntityType = {
   MODEL_VERSION: 'MODEL_VERSION',
-  TOOL_CONFIGURATION: 'TOOL_CONFIGURATION'
+  TOOL_CONFIGURATION: 'TOOL_CONFIGURATION',
+  BOTH: 'BOTH'
 };
 
 exports.ReasoningType = exports.$Enums.ReasoningType = {
