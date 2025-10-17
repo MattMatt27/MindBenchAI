@@ -2,6 +2,7 @@
 enum EntityType {
   MODEL_VERSION      @map("model_version")
   TOOL_CONFIGURATION @map("tool_configuration")
+  BOTH               @map("both")
 }
 
 enum QuestionType {

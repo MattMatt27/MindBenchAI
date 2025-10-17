@@ -29,6 +29,8 @@ async function main() {
     // researcherUser: users?.researcherUser,
     toolConfigurations: models.toolConfigurations,
     tools: models.tools,
+    models: models.models,
+    modelVersions: models.modelVersions,
   });
 
   // const benchmarking = await seedBenchmarking(prisma, {
