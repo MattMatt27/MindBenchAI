@@ -29,7 +29,7 @@ const TRAIT_LABELS = {
   PD: "Personal Distress",
 };
 
-export default function StandardizeTest() {
+export default function ConversationalProfile() {
   const [activeTab, setActiveTab] = React.useState("models");
   const [activeTest, setActiveTest] = React.useState("big5");
   const [expandedModels, setExpandedModels] = React.useState(() => new Set());
