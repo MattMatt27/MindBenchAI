@@ -4,9 +4,6 @@ const {
   getTechProfileDisplay,
 } = require('../../controllers/CurrentVersion/User/TechProfile.controller');
 const {
-  getBigFiveProfiles,
-} = require('../../controllers/CurrentVersion/User/BigFive.controller');
-const {
   getProfiles: getConversationalProfiles,
   getAvailableTests: getAvailableConversationalTests,
   getIRIProfiles,
@@ -15,7 +12,6 @@ const {
 const router = express.Router();
 
 router.get('/tech-profiles/display', optionalAuth, getTechProfileDisplay);
-router.get('/big-five/profiles', optionalAuth, getBigFiveProfiles);
 
 // Conversational Profile routes
 router.get('/conversational-profiles/tests', optionalAuth, getAvailableConversationalTests);

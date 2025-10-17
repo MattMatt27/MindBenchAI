@@ -4,13 +4,12 @@ const prisma = new PrismaClient();
 
 // Import scoring modules
 const iriScoring = require('../../../scoring/conversationalProfile/iri.scoring');
+const hexacoScoring = require('../../../scoring/conversationalProfile/hexaco.scoring');
 
 // Map test names to their scoring modules
 const SCORING_MODULES = {
   'Interpersonal Reactivity Index': iriScoring,
-  // Add more scoring modules here as they're created
-  // 'Big Five Inventory': bigFiveScoring,
-  // 'OCEAN Test': oceanScoring,
+  'HEXACO Personality Inventory': hexacoScoring,
 };
 
 /**

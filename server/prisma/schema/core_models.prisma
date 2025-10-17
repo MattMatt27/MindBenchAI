@@ -41,7 +41,6 @@ model ModelVersion {
   benchmarkResults    BenchmarkResult[]
   hyperparameterLinks ModelHyperparameterLink[]
   scoreAggregates     BenchmarkScoreAggregate[]
-  bigFiveProfile      BigFiveProfile?
 
   @@unique([modelId, version])
   @@index([modelId])
@@ -134,20 +133,3 @@ model EvaluationEntity {
   @@map("evaluation_entities")
 }
 
-model BigFiveProfile {
-  id              String    @id @default(uuid())
-  modelVersionId  String    @unique @map("model_version_id")
-  modelFamily     String?   @map("model_family")
-  openness        Int
-  conscientiousness Int
-  extraversion    Int
-  agreeableness   Int
-  neuroticism     Int
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime? @updatedAt @map("updated_at")
-
-  modelVersion ModelVersion @relation(fields: [modelVersionId], references: [id])
-
-  @@index([modelFamily])
-  @@map("big_five_profiles")
-}

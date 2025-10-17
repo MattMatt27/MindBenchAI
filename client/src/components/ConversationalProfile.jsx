@@ -12,16 +12,17 @@ import {
 } from "recharts";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5001";
-const BIG5_TRAITS = ["O", "C", "E", "A", "N"];
+const HEXACO_TRAITS = ["H", "E", "X", "A", "C", "O"];
 const IRI_TRAITS = ["PT", "FS", "EC", "PD"];
 
 const TRAIT_LABELS = {
-  // Big 5
-  O: "Openness",
-  C: "Conscientiousness",
-  E: "Extraversion",
+  // HEXACO
+  H: "Honesty-Humility",
+  E: "Emotionality",
+  X: "Extraversion",
   A: "Agreeableness",
-  N: "Neuroticism",
+  C: "Conscientiousness",
+  O: "Openness",
   // IRI
   PT: "Perspective Taking",
   FS: "Fantasy",
@@ -31,7 +32,7 @@ const TRAIT_LABELS = {
 
 export default function ConversationalProfile() {
   const [activeTab, setActiveTab] = React.useState("models");
-  const [activeTest, setActiveTest] = React.useState("big5");
+  const [activeTest, setActiveTest] = React.useState("hexaco");
   const [expandedModels, setExpandedModels] = React.useState(() => new Set());
   const [selectedRow, setSelectedRow] = React.useState(null);
   const [selectedVersions, setSelectedVersions] = React.useState(() => new Set());
@@ -51,8 +52,8 @@ export default function ConversationalProfile() {
       try {
         setLoading(true);
 
-        const endpoint = activeTest === "big5"
-          ? `${API_BASE}/api/current/big-five/profiles`
+        const endpoint = activeTest === "hexaco"
+          ? `${API_BASE}/api/current/conversational-profiles/HEXACO%20Personality%20Inventory`
           : `${API_BASE}/api/current/iri/profiles`;
 
         const res = await fetch(endpoint);
@@ -73,14 +74,15 @@ export default function ConversationalProfile() {
             releaseDate: item.release_date ?? null,
           };
 
-          if (activeTest === "big5") {
+          if (activeTest === "hexaco") {
             return {
               ...base,
-              O: item.openness ?? 0,
-              C: item.conscientiousness ?? 0,
-              E: item.extraversion ?? 0,
+              H: item.honesty_humility ?? 0,
+              E: item.emotionality ?? 0,
+              X: item.extraversion ?? 0,
               A: item.agreeableness ?? 0,
-              N: item.neuroticism ?? 0,
+              C: item.conscientiousness ?? 0,
+              O: item.openness ?? 0,
             };
           } else if (activeTest === "iri") {
             return {
@@ -145,7 +147,7 @@ export default function ConversationalProfile() {
     setSelectedVersions(new Set());
   };
 
-  const currentTraits = activeTest === "big5" ? BIG5_TRAITS : IRI_TRAITS;
+  const currentTraits = activeTest === "hexaco" ? HEXACO_TRAITS : IRI_TRAITS;
 
   const sortedMainRows = React.useMemo(() => {
     let filtered = [...allRows];
@@ -268,7 +270,7 @@ export default function ConversationalProfile() {
     return allData;
   }, [chartRows, currentTraits]);
 
-  const maxDomain = activeTest === "big5" ? 50 : 28;
+  const maxDomain = activeTest === "hexaco" ? 5 : 28;
 
   React.useEffect(() => {
     if (selectedRow && !rows.some((r) => r.id === selectedRow.id)) {
@@ -314,11 +316,11 @@ export default function ConversationalProfile() {
   };
 
   if (loading) {
-    return <div className="st-loading">Loading Big 5 profiles…</div>;
+    return <div className="st-loading">Loading profiles…</div>;
   }
 
   if (error) {
-    return <div className="st-error">Failed to load Big 5 profiles: {error}</div>;
+    return <div className="st-error">Failed to load profiles: {error}</div>;
   }
 
   return (
@@ -338,11 +340,11 @@ export default function ConversationalProfile() {
       {activeTab === "models" && (
         <div style={{ padding: "16px", display: "flex", gap: "12px", background: "var(--bg)" }}>
           <button
-            className={`st-btn ${activeTest === "big5" ? "st-btn-active" : ""}`}
-            onClick={() => setActiveTest("big5")}
+            className={`st-btn ${activeTest === "hexaco" ? "st-btn-active" : ""}`}
+            onClick={() => setActiveTest("hexaco")}
             type="button"
           >
-            Big 5 Personality Test
+            HEXACO Personality Inventory
           </button>
           <button
             className={`st-btn ${activeTest === "iri" ? "st-btn-active" : ""}`}
@@ -361,7 +363,7 @@ export default function ConversationalProfile() {
         </div>
       )}
 
-      {activeTab === "models" && (activeTest === "big5" || activeTest === "iri") && (
+      {activeTab === "models" && (activeTest === "hexaco" || activeTest === "iri") && (
         <div className="st-layout st-layout-no-sidebar">
           <div className="ui-table-wrap st-table">
             <table className="ui-table">

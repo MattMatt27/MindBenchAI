@@ -23,6 +23,7 @@ model ConversationalProfileQuestion {
   questionKey  String       @map("question_key")
   questionText String       @map("question_text")
   category     String
+  subcategory  String?
   displayOrder Int          @map("display_order")
   isActive     Boolean      @default(true) @map("is_active")
   isDisplayed  Boolean      @default(true) @map("is_displayed")
