@@ -4,10 +4,30 @@ Dashboard that allow users to view and compare current LLM models perform in men
 
 ## Installation
 
-To start the program run the following command from the client folder
+To start the program
+Navigate to the client folder and run:
 ```bash
 npm run dev
 ```
+\
+Navigate to the server folder and do the following steps:\
+Generate database:
+```bash
+npx prisma generate
+```
+Populate with data from seed file:
+```bash
+npx prisma db seed
+```
+<ins>Optional:</ins> View database
+```bash
+npx prisma studio
+```
+Start the server:
+```bash
+npm run dev
+```
+
 
 ## TODO
 - [ ] | Khai | Change techprofile from base model -> modelVersion (updates answer and point to modelVersion in seed value) -> update api routes naming -> bring over the drop down table
