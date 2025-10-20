@@ -10,9 +10,16 @@ npm run dev
 ```
 
 ## TODO
-- redo styling for leaderboard page to match with the rest
-- click whole row on leaderboard page not just at the front
-- info button for header
+- [ ] Change techprofile from base model -> modelVersion (updates answer and point to modelVersion in seed value) -> update api routes naming -> bring over the drop down table
+- [ ] Finish landing page, add content (make the count dynamic), redo the current "home" page, add "benchmark" to the navBar (drop down with 4 options)
+        so ideally the flow would be landing -> homepage -> 4 options
+- [ ] Unified the table in these 3 pages (techprofile, leaderboard, profiletest). One of the table is expand only on triangle where as other you can click whole row
+- [ ] Redesign the page with some UI improvement
+- [ ] Redo resource page and add api routes for resources
+- [ ] Develop the reasoning page
+- [ ] Add api routes for leaderboard
+- [ ] Add api routes for reasoning
+- [ ] Add api routes for community page
 
 ## Project Structure
 ```bash
