@@ -42,11 +42,11 @@ export default function TechnicalProfile() {
     code_generation: false,
   });
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [profilesByType, setProfilesByType] = useState({ tools: [], models: [] });
+  const [profilesByType, setProfilesByType] = useState({ tools: [], modelVersions: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const tabKey = activeTab === 'tools' ? 'tools' : 'models';
+  const tabKey = activeTab;
 
   useEffect(() => {
     let isMounted = true;
@@ -57,7 +57,7 @@ export default function TechnicalProfile() {
 
         const [toolsRes, modelsRes] = await Promise.all([
           fetch(`${API_BASE}/api/current/tech-profiles/display?entityType=tool_configuration`),
-          fetch(`${API_BASE}/api/current/tech-profiles/display?entityType=base_model`),
+          fetch(`${API_BASE}/api/current/tech-profiles/display?entityType=model_version`),
         ]);
 
         if (!toolsRes.ok || !modelsRes.ok) {
@@ -70,7 +70,7 @@ export default function TechnicalProfile() {
         if (isMounted) {
           setProfilesByType({
             tools: toolsData.data ?? [],
-            models: modelsData.data ?? [],
+            modelVersions: modelsData.data ?? [],
           });
           setError(null);
         }
@@ -91,7 +91,7 @@ export default function TechnicalProfile() {
 
   const rawProfiles = useMemo(() => {
     const source = profilesByType[tabKey] ?? [];
-    if (tabKey === 'models') {
+    if (tabKey === 'modelVersions') {
       return [...source].sort((a, b) => {
         const aDate = a.release_date ? new Date(a.release_date) : null;
         const bDate = b.release_date ? new Date(b.release_date) : null;
@@ -107,7 +107,7 @@ export default function TechnicalProfile() {
   const questionCatalogByTab = useMemo(() => {
     const catalogMaps = {
       tools: new Map(),
-      models: new Map(),
+      modelVersions: new Map(),
     };
 
     const registerQuestion = (targetTab, key, answer) => {
@@ -139,11 +139,11 @@ export default function TechnicalProfile() {
           const entityType = answer.entity_type ?? defaultTab;
           const targets =
             entityType === 'both'
-              ? ['tools', 'models']
+              ? ['tools', 'modelVersions']
               : entityType === 'tool_configuration'
               ? ['tools']
-              : entityType === 'base_model'
-              ? ['models']
+              : entityType === 'model_version'
+              ? ['modelVersions']
               : [defaultTab];
 
           targets.forEach((tab) => registerQuestion(tab, key, answer));
@@ -152,11 +152,11 @@ export default function TechnicalProfile() {
     };
 
     processProfiles(profilesByType.tools, 'tools');
-    processProfiles(profilesByType.models, 'models');
+    processProfiles(profilesByType.modelVersions, 'modelVersions');
 
     return {
       tools: Array.from(catalogMaps.tools.values()).sort((a, b) => a.displayOrder - b.displayOrder),
-      models: Array.from(catalogMaps.models.values()).sort(
+      modelVersions: Array.from(catalogMaps.modelVersions.values()).sort(
         (a, b) => a.displayOrder - b.displayOrder,
       ),
     };
@@ -198,7 +198,7 @@ export default function TechnicalProfile() {
           if (filters.code_generation && !profile.answers?.code_generation?.value) return false;
         }
 
-        return tabKey !== 'models' || profile.is_latest;
+        return true;
       });
   }, [rawProfiles, query, filters, tabKey]);
 
@@ -228,10 +228,10 @@ export default function TechnicalProfile() {
           Tools
         </button>
         <button
-          className={`g-tab-bttn ${tabKey === 'models' ? 'active' : ''}`}
-          onClick={() => setActiveTab('models')}
+          className={`g-tab-bttn ${tabKey === 'modelVersions' ? 'active' : ''}`}
+          onClick={() => setActiveTab('modelVersions')}
         >
-          Base Models
+          Model Versions
         </button>
       </div>
 
@@ -385,7 +385,7 @@ export default function TechnicalProfile() {
                   <th rowSpan="2">
                     {tabKey === 'tools' ? 'Base Model' : 'Developer'}
                   </th>
-                  {tabKey === 'models' && <th rowSpan="2">Latest Version</th>}
+                  {tabKey === 'modelVersions' && <th rowSpan="2">Latest Version</th>}
                   {displayQuestions.map((question, index) => {
                     const colSpan = displayQuestions.filter(
                       (dq) => dq.category === question.category,
@@ -453,7 +453,7 @@ export default function TechnicalProfile() {
                       <td>
                         {tabKey === 'tools' ? profile.base_model_name : profile.developer}
                       </td>
-                      {tabKey === 'models' && <td>{profile.version ?? '—'}</td>}
+                      {tabKey === 'modelVersions' && <td>{profile.version ?? '—'}</td>}
                       {displayQuestions.map((question) => {
                         const answer = profile.answers?.[question.key];
                         return (
