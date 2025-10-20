@@ -135,11 +135,3 @@ export const optionalAuth = async (req: Request, res: Response, next: NextFuncti
 
   next();
 };
-
-// CommonJS compatibility for mixed module system
-module.exports = {
-  authenticate,
-  authorize,
-  requireVerifiedEmail,
-  optionalAuth,
-};

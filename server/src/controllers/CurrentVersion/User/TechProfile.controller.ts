@@ -164,8 +164,3 @@ export const getTechProfileDisplay = async (
     next(error);
   }
 };
-
-// CommonJS compatibility for mixed module system
-module.exports = {
-  getTechProfileDisplay,
-};

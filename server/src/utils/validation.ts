@@ -56,13 +56,3 @@ export const validate = (schema: joi.ObjectSchema) => {
     next();
   };
 };
-
-// CommonJS compatibility for mixed module system
-module.exports = {
-  registerSchema,
-  loginSchema,
-  forgotPasswordSchema,
-  resetPasswordSchema,
-  verifyEmailSchema,
-  validate,
-};

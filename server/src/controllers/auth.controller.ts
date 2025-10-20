@@ -657,17 +657,3 @@ export const resetPassword = async (req: Request, res: Response): Promise<void> 
     });
   }
 };
-
-// CommonJS compatibility for mixed module system
-module.exports = {
-  register,
-  login,
-  refreshAccessToken,
-  logout,
-  logoutAll,
-  getCurrentUser,
-  verifyEmail,
-  resendVerification,
-  requestPasswordReset,
-  resetPassword,
-};

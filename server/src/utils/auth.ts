@@ -83,16 +83,3 @@ export const extractTokenFromHeader = (authHeader: string | undefined): string |
   }
   return authHeader.substring(7);
 };
-
-// CommonJS compatibility for mixed module system
-module.exports = {
-  hashPassword,
-  comparePassword,
-  generateAccessToken,
-  generateRefreshToken,
-  generateEmailToken,
-  generateResetToken,
-  verifyAccessToken,
-  verifyRefreshToken,
-  extractTokenFromHeader,
-};

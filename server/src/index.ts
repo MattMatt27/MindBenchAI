@@ -128,6 +128,3 @@ process.on('SIGTERM', () => {
 });
 
 export default app;
-
-// CommonJS compatibility for mixed module system
-module.exports = app;

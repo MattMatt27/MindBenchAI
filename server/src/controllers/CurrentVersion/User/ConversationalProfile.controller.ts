@@ -187,10 +187,3 @@ export const getIRIProfiles = (req: Request, res: Response, next: NextFunction):
   req.params.testName = 'Interpersonal Reactivity Index';
   return getProfiles(req, res, next);
 };
-
-// CommonJS compatibility for mixed module system
-module.exports = {
-  getProfiles,
-  getAvailableTests,
-  getIRIProfiles,
-};

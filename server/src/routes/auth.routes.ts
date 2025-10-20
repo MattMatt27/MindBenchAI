@@ -31,6 +31,3 @@ router.post('/logout-all', authenticate, authController.logoutAll);
 router.get('/me', authenticate, authController.getCurrentUser);
 
 export default router;
-
-// CommonJS compatibility for mixed module system
-module.exports = router;

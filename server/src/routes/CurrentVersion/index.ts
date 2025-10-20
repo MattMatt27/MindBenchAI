@@ -18,6 +18,3 @@ router.get('/conversational-profiles/:testName', optionalAuth, getConversational
 router.get('/iri/profiles', optionalAuth, getIRIProfiles);
 
 export default router;
-
-// CommonJS compatibility for mixed module system
-module.exports = router;
