@@ -1,0 +1,78 @@
+model ConversationalProfileTest {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  testType    String    @map("test_type")
+  version     Int       @default(1)
+  isValidated Boolean   @default(false) @map("is_validated")
+  isPublic    Boolean   @default(false) @map("is_public")
+  scaleMin    Int       @default(0) @map("scale_min")
+  scaleMax    Int       @default(5) @map("scale_max")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
+
+  questions ConversationalProfileQuestion[]
+
+  @@map("conversational_profile_test")
+}
+
+model ConversationalProfileQuestion {
+  id           String       @id @default(uuid())
+  testId       String?      @map("test_id")
+  questionType QuestionType @map("question_type")
+  questionKey  String       @map("question_key")
+  questionText String       @map("question_text")
+  category     String
+  subcategory  String?
+  displayOrder Int          @map("display_order")
+  isActive     Boolean      @default(true) @map("is_active")
+  isDisplayed  Boolean      @default(true) @map("is_displayed")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  createdBy    String?      @map("created_by")
+  updatedAt    DateTime?    @updatedAt @map("updated_at")
+  updatedBy    String?      @map("updated_by")
+
+  test          ConversationalProfileTest?    @relation(fields: [testId], references: [id])
+  createdByUser User?                         @relation("ConversationalQuestionCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                         @relation("ConversationalQuestionUpdatedBy", fields: [updatedBy], references: [id])
+  answers       ConversationalProfileAnswer[]
+
+  @@unique([questionText, questionKey])
+  @@map("conversational_profile_questions")
+}
+
+model ConversationalProfileAnswer {
+  id                 String     @id @default(uuid())
+  questionId         String     @map("question_id")
+  entityType         EntityType @map("entity_type")
+  entityId           String     @map("entity_id")
+  evaluationEntityId String     @map("evaluation_entity_id")
+  booleanValue       Boolean?   @map("boolean_value")
+  numericValue       Decimal?   @map("numeric_value")
+  textValue          String?    @map("text_value")
+  listValue          String?    @map("list_value")
+  notes              String?
+  reviewerId         String     @map("reviewer_id")
+  reviewAssignmentId String?    @map("review_assignment_id")
+  isApproved         Boolean    @default(false) @map("is_approved")
+  createdAt          DateTime   @default(now()) @map("created_at")
+  createdBy          String?    @map("created_by")
+  approvedAt         DateTime?  @map("approved_at")
+  approvedBy         String?    @map("approved_by")
+
+  question         ConversationalProfileQuestion @relation(fields: [questionId], references: [id])
+  reviewer         User                          @relation("ConversationalProfileReviewer", fields: [reviewerId], references: [id])
+  approver         User?                         @relation("ConversationalProfileApprover", fields: [approvedBy], references: [id])
+  createdByUser    User?                         @relation("ConversationalProfileCreatedBy", fields: [createdBy], references: [id])
+  reviewAssignment ProfileReviewAssignment?      @relation(fields: [reviewAssignmentId], references: [id])
+  evaluationEntity EvaluationEntity              @relation(fields: [evaluationEntityId], references: [id])
+
+  @@unique([questionId, evaluationEntityId])
+  @@index([questionId, isApproved, createdAt])
+  @@index([evaluationEntityId])
+  @@index([reviewAssignmentId])
+  @@index([isApproved, createdAt])
+  @@map("conversational_profile_answers")
+}
