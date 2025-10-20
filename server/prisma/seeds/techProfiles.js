@@ -253,12 +253,39 @@ const generateModelVersionAnswer = (question, baseValue, versionRecord, versionI
     }
     case QuestionType.TEXT:
     default: {
+      const key = question.questionKey ? question.questionKey.toLowerCase() : '';
+      const text = question.questionText ? question.questionText.toLowerCase() : '';
+      const isPricing = key.includes('price') || text.includes('price') || question.category?.toLowerCase() === 'pricing';
+
+      if (isPricing) {
+        const cadence = key.includes('annual') || text.includes('annual') ? 'year' : key.includes('monthly') || text.includes('monthly') ? 'month' : null;
+        const baseAmount =
+          typeof baseValue === 'string' && baseValue.trim().length > 0
+            ? Number(baseValue.replace(/[^0-9.]/g, ''))
+            : null;
+        let amount;
+        if (!Number.isNaN(baseAmount) && baseAmount !== null) {
+          amount =
+            versionIndex === 0
+              ? baseAmount
+              : baseAmount + (versionIndex % 2 === 0 ? Math.max(5, Math.round(baseAmount * 0.05)) : -Math.max(5, Math.round(baseAmount * 0.05)));
+        } else {
+          amount =
+            cadence === 'year'
+              ? randomNumberInRange(300, 3000)
+              : cadence === 'month'
+              ? randomNumberInRange(10, 250)
+              : randomNumberInRange(50, 500);
+        }
+        return formatCurrency(amount, cadence);
+      }
+
       if (typeof baseValue === 'string' && baseValue.trim().length > 0) {
         if (versionIndex === 0) return baseValue;
         return `${baseValue} (${versionLabel})`;
       }
 
-      return `${question.questionText} (${versionLabel})`;
+      return '-';
     }
   }
 };
@@ -304,7 +331,7 @@ const generateToolConfigurationAnswer = (question, baseValue, config, configInde
         return formatCurrency(amount, cadence);
       }
 
-      return `${question.questionText} (${configLabel} ${suffix})`;
+      return '-';
     }
   }
 };
