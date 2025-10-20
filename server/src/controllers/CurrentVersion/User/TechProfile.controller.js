@@ -71,7 +71,6 @@ const getTechProfileDisplay = async (req, res, next) => {
                     modelFamily: true,
                   },
                 },
-                bigFiveProfile: true,
               },
             },
           },
@@ -95,7 +94,6 @@ const getTechProfileDisplay = async (req, res, next) => {
       const modelFromToolConfig = toolConfiguration?.model;
       const baseModel = modelVersion?.model ?? modelFromToolConfig;
       const modelFamily = baseModel?.modelFamily ?? modelFromToolConfig?.modelFamily ?? null;
-      const bigFiveProfile = modelVersion?.bigFiveProfile ?? null;
 
       const profileId = toolConfiguration?.id || modelVersion?.id || answer.entityId;
 
@@ -123,15 +121,6 @@ const getTechProfileDisplay = async (req, res, next) => {
               : null,
             is_latest: Boolean(modelVersion?.isLatest),
             model_family: modelFamily?.name ?? null,
-            big_five_profile: bigFiveProfile
-              ? {
-                  openness: bigFiveProfile.openness,
-                  conscientiousness: bigFiveProfile.conscientiousness,
-                  extraversion: bigFiveProfile.extraversion,
-                  agreeableness: bigFiveProfile.agreeableness,
-                  neuroticism: bigFiveProfile.neuroticism,
-                }
-              : null,
             answers: {},
           });
         }
