@@ -2,10 +2,10 @@
   "name": "mindbenchai-server",
   "version": "1.0.0",
   "description": "MindBench.ai Backend Server",
-  "main": "src/index.js",
+  "main": "src/index.ts",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon --exec tsx src/index.js",
+    "start": "tsx src/index.ts",
+    "dev": "nodemon --exec tsx src/index.ts",
     "build": "tsc",
     "seed": "node prisma/seed.js",
     "prisma:generate": "prisma generate",
