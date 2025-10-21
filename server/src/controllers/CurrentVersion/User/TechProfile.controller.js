@@ -4,12 +4,13 @@ const prisma = new PrismaClient();
 
 const ENTITY_TYPE_QUERY_MAP = {
   tool_configuration: EntityType.TOOL_CONFIGURATION,
-  base_model: EntityType.MODEL_VERSION,
+  model_version: EntityType.MODEL_VERSION,
+  base_model: EntityType.MODEL_VERSION, // temporary alias for backwards compatibility
 };
 
 const toClientEntityType = (entityType) => {
   if (entityType === EntityType.TOOL_CONFIGURATION) return 'tool_configuration';
-  if (entityType === EntityType.MODEL_VERSION) return 'base_model';
+  if (entityType === EntityType.MODEL_VERSION) return 'model_version';
   if (entityType === EntityType.BOTH) return 'both';
   return null;
 };
