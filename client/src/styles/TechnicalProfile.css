@@ -320,3 +320,195 @@ thead .sticky-column {
   gap:10px;
   margin:0;
 }
+
+/* Expandable rows and dropdown menu styles (from StandardizeTest.css) */
+.st-row {
+  cursor: pointer;
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+.st-row:hover {
+  background: var(--panel-2);
+}
+.st-row.selected {
+  background: #e0f2fe;
+}
+
+.st-row-main {
+  background: var(--panel);
+}
+
+.st-row-version {
+  background: #f8fafc;
+  border-left: 3px solid #e5e7eb;
+}
+
+.st-row-version:hover {
+  background: #f1f5f9;
+}
+
+.st-row-version.selected {
+  background: #e0f2fe;
+}
+
+.st-row-version.selected:hover {
+  background: #dbeafe;
+}
+
+.st-btn {
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  background: var(--panel);
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.st-btn:hover {
+  background: var(--panel-2);
+}
+.st-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.st-btn-ghost {
+  background: var(--panel);
+  color: var(--text);
+}
+.st-btn-active {
+  background: #2563eb;
+  color: white;
+  border-color: #2563eb;
+}
+.st-btn-active:hover {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+.st-th-menu {
+  position: relative;
+  padding: 0 !important;
+  text-align: left;
+}
+.st-th-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 12px;
+  background: transparent;
+  border: 0;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  text-align: left;
+}
+.st-th-trigger:hover {
+  background: var(--panel);
+  border-radius: 8px;
+}
+
+/* Model Versions table - first column (arrow) styling */
+.technical-profiles-table tbody tr td:first-child {
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+  padding: 4px !important;
+  text-align: center !important;
+}
+
+/* Override for thead first column when it exists (model versions tab) */
+.technical-profiles-table thead tr th:first-child:empty {
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+  padding: 4px !important;
+}
+.st-th-caret {
+  font-size: 12px;
+  opacity: 0.75;
+  transition: transform 0.15s ease;
+}
+.st-th-menu.open .st-th-caret {
+  transform: rotate(180deg);
+}
+
+.st-hmenu {
+  min-width: 260px;
+  max-width: 360px;
+  max-height: 60vh;
+  overflow: auto;
+  background: var(--panel);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.12);
+  padding: 6px;
+  z-index: 1000;
+}
+.st-hmenu-fixed {
+  position: fixed;
+}
+.st-hmenu-header {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 6px 8px 8px 8px;
+  text-align: center;
+  font-weight: 600;
+}
+.st-hmenu-sep {
+  height: 1px;
+  background: var(--border-strong);
+  margin: 6px 0;
+}
+.st-hmenu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.st-hmenu-item:hover {
+  background: var(--panel-2);
+}
+.st-hmenu-item.active {
+  background: #e0f2fe;
+}
+
+.st-hmenu-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.st-hmenu-checkbox input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.st-expander {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+
+.st-expander.open {
+  transform: rotate(90deg);
+}
+
+.st-checkbox-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.st-checkbox-cell input[type="checkbox"] {
+  cursor: pointer;
+}

@@ -18,11 +18,31 @@
   padding: 0 20px;
 }
 
+/* Left side: Brand + Dropdowns */
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+/* Right side: Resources, Community, Auth */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
 .navbar-brand {
   font-size: 20px;
   font-weight: 700;
-  padding: 16px 0;
+  padding: 16px 20px;
   color: white;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.navbar-brand:hover {
+  background: #333333;
 }
 
 .navbar-menu {
@@ -54,6 +74,75 @@
   color: white;
   background: #333333;
   border-bottom-color: #3b82f6;
+}
+
+/* Dropdown Menus */
+.navbar-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.navbar-dropdown-trigger {
+  padding: 16px 20px;
+  color: #d1d5db;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: block;
+  user-select: none;
+}
+
+.navbar-dropdown-trigger::after {
+  content: ' ▾';
+  font-size: 0.75em;
+}
+
+.navbar-dropdown:hover .navbar-dropdown-trigger {
+  background: #333333;
+  color: white;
+}
+
+.navbar-dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #1a1a1a;
+  min-width: 180px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  border: 1px solid #333333;
+  z-index: 1000;
+}
+
+.navbar-dropdown:hover .navbar-dropdown-menu {
+  display: block;
+}
+
+.navbar-dropdown-item {
+  display: block;
+  padding: 12px 20px;
+  color: #d1d5db;
+  text-decoration: none;
+  transition: all 0.2s;
+  border-left: 3px solid transparent;
+}
+
+.navbar-dropdown-item:hover {
+  background: #333333;
+  color: white;
+  border-left-color: #3b82f6;
+}
+
+.navbar-dropdown-item.active {
+  background: #2a2a2a;
+  color: white;
+  border-left-color: #3b82f6;
+}
+
+.navbar-dropdown-item-disabled {
+  color: #6b7280;
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.5;
 }
 
 /* Authentication Section */
@@ -149,6 +238,48 @@
 @media (max-width: 768px) {
   .navbar-container {
     padding: 0 1rem;
+    flex-wrap: wrap;
+  }
+
+  .navbar-left {
+    order: 1;
+    flex: 1 0 100%;
+  }
+
+  .navbar-right {
+    order: 2;
+    flex: 1 0 100%;
+    justify-content: space-between;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-top: 1px solid #333333;
+  }
+
+  .navbar-brand {
+    font-size: 18px;
+    padding: 12px 16px;
+  }
+
+  .navbar-dropdown-trigger {
+    padding: 12px 16px;
+    font-size: 0.875rem;
+  }
+
+  .navbar-dropdown-menu {
+    min-width: 150px;
+  }
+
+  .navbar-dropdown-item {
+    padding: 10px 16px;
+    font-size: 0.875rem;
+  }
+
+  .navbar-menu {
+    font-size: 0.875rem;
+  }
+
+  .navbar-item {
+    padding: 12px 16px;
   }
 
   .user-info {

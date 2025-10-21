@@ -1,3 +1,4 @@
+import {useNavigate} from "react-router-dom";
 import "../styles/HomePage.css";
 
 const stats = [
@@ -75,6 +76,7 @@ const features = [
 ];
 
 export default function HomePage() {
+  const navigate = useNavigate();
   return (
     <div className="dashboard-home-page">
       <section className="hero">
@@ -86,8 +88,18 @@ export default function HomePage() {
           Discover technical capabilities, performance metrics, and communication dynamics across the AI landscape.
         </p>
         <div className="hero-actions">
-          <button className="primary-button">View Benchmarks</button>
-          <button className="secondary-button">Learn More</button>
+          <button 
+            className="primary-button"
+            onClick = {() => navigate("/home")}
+          >
+            View Benchmarks
+          </button>
+          <button 
+            className="secondary-button"
+            onClick = {() => navigate("/resources")}
+          >
+            Learn More
+          </button>
         </div>
         <div className="hero-stats">
           {stats.map((item) => (

@@ -61,17 +61,17 @@ export const techProfileQuestions = [
   { id: 9, entity_type: "tool_configuration", question_key: "therapeutic_techniques", question_text: "Therapeutic Techniques", category: "Mental Health Features", question_type: "list", display_order: 9, is_displayed: true },
   { id: 10, entity_type: "tool_configuration", question_key: "hipaa_compliant", question_text: "HIPAA Compliant", category: "Privacy & Security", question_type: "boolean", display_order: 10, is_displayed: true },
   { id: 11, entity_type: "tool_configuration", question_key: "data_retention_days", question_text: "Data Retention (days)", category: "Privacy & Security", question_type: "number", display_order: 11, is_displayed: true },
-  { id: 101, entity_type: "base_model", question_key: "parameters_billions", question_text: "Parameters (B)", category: "Model Architecture", question_type: "number", display_order: 1, is_displayed: true },
-  { id: 102, entity_type: "base_model", question_key: "context_window", question_text: "Context Window", category: "Model Architecture", question_type: "number", display_order: 2, is_displayed: true },
-  { id: 103, entity_type: "base_model", question_key: "training_data_cutoff", question_text: "Training Data Cutoff", category: "Model Architecture", question_type: "text", display_order: 3, is_displayed: true },
-  { id: 104, entity_type: "base_model", question_key: "multimodal", question_text: "Multimodal", category: "Model Architecture", question_type: "boolean", display_order: 4, is_displayed: true },
-  { id: 105, entity_type: "base_model", question_key: "mmlu_score", question_text: "MMLU Score", category: "Performance Metrics", question_type: "number", display_order: 5, is_displayed: true },
-  { id: 106, entity_type: "base_model", question_key: "humaneval_score", question_text: "HumanEval Score", category: "Performance Metrics", question_type: "number", display_order: 6, is_displayed: true },
-  { id: 107, entity_type: "base_model", question_key: "chatbot_arena_elo", question_text: "Chatbot Arena ELO", category: "Performance Metrics", question_type: "number", display_order: 7, is_displayed: true },
-  { id: 108, entity_type: "base_model", question_key: "code_generation", question_text: "Code Generation", category: "Capabilities", question_type: "boolean", display_order: 8, is_displayed: true },
-  { id: 109, entity_type: "base_model", question_key: "function_calling", question_text: "Function Calling", category: "Capabilities", question_type: "boolean", display_order: 9, is_displayed: true },
-  { id: 110, entity_type: "base_model", question_key: "open_source", question_text: "Open Source", category: "Safety & Licensing", question_type: "boolean", display_order: 10, is_displayed: true },
-  { id: 111, entity_type: "base_model", question_key: "commercial_use", question_text: "Commercial Use", category: "Safety & Licensing", question_type: "boolean", display_order: 11, is_displayed: true }
+  { id: 101, entity_type: "model_version", question_key: "parameters_billions", question_text: "Parameters (B)", category: "Model Architecture", question_type: "number", display_order: 1, is_displayed: true },
+  { id: 102, entity_type: "model_version", question_key: "context_window", question_text: "Context Window", category: "Model Architecture", question_type: "number", display_order: 2, is_displayed: true },
+  { id: 103, entity_type: "model_version", question_key: "training_data_cutoff", question_text: "Training Data Cutoff", category: "Model Architecture", question_type: "text", display_order: 3, is_displayed: true },
+  { id: 104, entity_type: "model_version", question_key: "multimodal", question_text: "Multimodal", category: "Model Architecture", question_type: "boolean", display_order: 4, is_displayed: true },
+  { id: 105, entity_type: "model_version", question_key: "mmlu_score", question_text: "MMLU Score", category: "Performance Metrics", question_type: "number", display_order: 5, is_displayed: true },
+  { id: 106, entity_type: "model_version", question_key: "humaneval_score", question_text: "HumanEval Score", category: "Performance Metrics", question_type: "number", display_order: 6, is_displayed: true },
+  { id: 107, entity_type: "model_version", question_key: "chatbot_arena_elo", question_text: "Chatbot Arena ELO", category: "Performance Metrics", question_type: "number", display_order: 7, is_displayed: true },
+  { id: 108, entity_type: "model_version", question_key: "code_generation", question_text: "Code Generation", category: "Capabilities", question_type: "boolean", display_order: 8, is_displayed: true },
+  { id: 109, entity_type: "model_version", question_key: "function_calling", question_text: "Function Calling", category: "Capabilities", question_type: "boolean", display_order: 9, is_displayed: true },
+  { id: 110, entity_type: "model_version", question_key: "open_source", question_text: "Open Source", category: "Safety & Licensing", question_type: "boolean", display_order: 10, is_displayed: true },
+  { id: 111, entity_type: "model_version", question_key: "commercial_use", question_text: "Commercial Use", category: "Safety & Licensing", question_type: "boolean", display_order: 11, is_displayed: true }
 ];
 
 const toolConfigurationsLocal = toolConfigurations;
@@ -96,17 +96,17 @@ toolConfigurationsLocal.forEach(config => {
 const baseModelAnswers = [];
 baseModels.forEach(model => {
   baseModelAnswers.push(
-    { entity_type: "base_model", entity_id: model.id, question_id: 101, numeric_value: model.id === 1 ? 1760 : model.id === 2 ? 2000 : model.id === 3 ? 1800 : model.id === 4 ? 405 : model.id === 5 ? 34 : model.id === 6 ? 671 : model.id === 7 ? 176 : model.id === 8 ? 104 : model.id === 9 ? 14 : model.id === 10 ? 72 : model.id === 11 ? 27 : 30, is_approved: true },
-    { entity_type: "base_model", entity_id: model.id, question_id: 102, numeric_value: model.id === 1 ? 128000 : model.id === 2 ? 200000 : model.id === 3 ? 1000000 : model.id === 4 ? 128000 : model.id === 5 ? 32000 : model.id === 6 ? 200000 : model.id === 7 ? 64000 : model.id === 8 ? 200000 : model.id === 9 ? 128000 : model.id === 10 ? 131072 : model.id === 11 ? 1000000 : 65536, is_approved: true },
-    { entity_type: "base_model", entity_id: model.id, question_id: 103, text_value: model.id <= 3 ? "November 2023" : model.id <= 6 ? "April 2024" : model.id <= 9 ? "December 2023" : "June 2024", is_approved: true },
-    { entity_type: "base_model", entity_id: model.id, question_id: 104, boolean_value: model.id % 2 === 1 || model.id <= 3, is_approved: true },
-    { entity_type: "base_model", entity_id: model.id, question_id: 105, numeric_value: model.id === 1 ? 86.4 : model.id === 2 ? 88.5 : model.id === 3 ? 90.1 : model.id === 4 ? 86.1 : model.id === 5 ? 78.2 : model.id === 6 ? 87.3 : model.id === 7 ? 85.9 : model.id === 8 ? 84.2 : model.id === 9 ? 79.5 : model.id === 10 ? 83.3 : model.id === 11 ? 81.0 : 76.4, is_approved: true },
-    { entity_type: "base_model", entity_id: model.id, question_id: 106, numeric_value: model.id === 1 ? 67.0 : model.id === 2 ? 92.0 : model.id === 3 ? 74.4 : model.id === 4 ? 81.7 : model.id === 5 ? 56.1 : model.id === 6 ? 63.8 : model.id === 7 ? 61.0 : model.id === 8 ? 65.5 : model.id === 9 ? 52.3 : model.id === 10 ? 58.9 : model.id === 11 ? 60.4 : 48.1, is_approved: true },
-    { entity_type: "base_model", entity_id: model.id, question_id: 107, numeric_value: model.id === 1 ? 1260 : model.id === 2 ? 1271 : model.id === 3 ? 1255 : model.id === 4 ? 1250 : model.id === 5 ? 1180 : model.id === 6 ? 1242 : model.id === 7 ? 1215 : model.id === 8 ? 1208 : model.id === 9 ? 1119 : model.id === 10 ? 1195 : model.id === 11 ? 1178 : 1114, is_approved: true },
-    { entity_type: "base_model", entity_id: model.id, question_id: 108, boolean_value: true, is_approved: true },
-    { entity_type: "base_model", entity_id: model.id, question_id: 109, boolean_value: model.id <= 8, is_approved: true },
-    { entity_type: "base_model", entity_id: model.id, question_id: 110, boolean_value: model.id >= 4 && model.id !== 8, is_approved: true },
-    { entity_type: "base_model", entity_id: model.id, question_id: 111, boolean_value: model.id !== 4 || model.id >= 5, is_approved: true }
+    { entity_type: "model_version", entity_id: model.id, question_id: 101, numeric_value: model.id === 1 ? 1760 : model.id === 2 ? 2000 : model.id === 3 ? 1800 : model.id === 4 ? 405 : model.id === 5 ? 34 : model.id === 6 ? 671 : model.id === 7 ? 176 : model.id === 8 ? 104 : model.id === 9 ? 14 : model.id === 10 ? 72 : model.id === 11 ? 27 : 30, is_approved: true },
+    { entity_type: "model_version", entity_id: model.id, question_id: 102, numeric_value: model.id === 1 ? 128000 : model.id === 2 ? 200000 : model.id === 3 ? 1000000 : model.id === 4 ? 128000 : model.id === 5 ? 32000 : model.id === 6 ? 200000 : model.id === 7 ? 64000 : model.id === 8 ? 200000 : model.id === 9 ? 128000 : model.id === 10 ? 131072 : model.id === 11 ? 1000000 : 65536, is_approved: true },
+    { entity_type: "model_version", entity_id: model.id, question_id: 103, text_value: model.id <= 3 ? "November 2023" : model.id <= 6 ? "April 2024" : model.id <= 9 ? "December 2023" : "June 2024", is_approved: true },
+    { entity_type: "model_version", entity_id: model.id, question_id: 104, boolean_value: model.id % 2 === 1 || model.id <= 3, is_approved: true },
+    { entity_type: "model_version", entity_id: model.id, question_id: 105, numeric_value: model.id === 1 ? 86.4 : model.id === 2 ? 88.5 : model.id === 3 ? 90.1 : model.id === 4 ? 86.1 : model.id === 5 ? 78.2 : model.id === 6 ? 87.3 : model.id === 7 ? 85.9 : model.id === 8 ? 84.2 : model.id === 9 ? 79.5 : model.id === 10 ? 83.3 : model.id === 11 ? 81.0 : 76.4, is_approved: true },
+    { entity_type: "model_version", entity_id: model.id, question_id: 106, numeric_value: model.id === 1 ? 67.0 : model.id === 2 ? 92.0 : model.id === 3 ? 74.4 : model.id === 4 ? 81.7 : model.id === 5 ? 56.1 : model.id === 6 ? 63.8 : model.id === 7 ? 61.0 : model.id === 8 ? 65.5 : model.id === 9 ? 52.3 : model.id === 10 ? 58.9 : model.id === 11 ? 60.4 : 48.1, is_approved: true },
+    { entity_type: "model_version", entity_id: model.id, question_id: 107, numeric_value: model.id === 1 ? 1260 : model.id === 2 ? 1271 : model.id === 3 ? 1255 : model.id === 4 ? 1250 : model.id === 5 ? 1180 : model.id === 6 ? 1242 : model.id === 7 ? 1215 : model.id === 8 ? 1208 : model.id === 9 ? 1119 : model.id === 10 ? 1195 : model.id === 11 ? 1178 : 1114, is_approved: true },
+    { entity_type: "model_version", entity_id: model.id, question_id: 108, boolean_value: true, is_approved: true },
+    { entity_type: "model_version", entity_id: model.id, question_id: 109, boolean_value: model.id <= 8, is_approved: true },
+    { entity_type: "model_version", entity_id: model.id, question_id: 110, boolean_value: model.id >= 4 && model.id !== 8, is_approved: true },
+    { entity_type: "model_version", entity_id: model.id, question_id: 111, boolean_value: model.id !== 4 || model.id >= 5, is_approved: true }
   );
 });
 
@@ -139,7 +139,7 @@ export function getTechProfileDisplay(entityType = null) {
           list_value: answer.list_value,
           evidence_url: answer.evidence_url
         };
-      } else if (answer.entity_type === "base_model") {
+      } else if (answer.entity_type === "model_version") {
         const model = baseModels.find(bm => bm.id === answer.entity_id);
         return {
           entity_type: answer.entity_type,
