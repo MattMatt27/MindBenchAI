@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import '../styles/TechnicalProfile.css';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001';
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
 
 function Dot({ on }) {
   return <span className={`dot ${on ? 'on' : 'off'}`} aria-label={on ? 'yes' : 'no'} />;
@@ -65,8 +65,8 @@ export default function TechnicalProfile() {
         setLoading(true);
 
         const [toolsRes, modelsRes] = await Promise.all([
-          fetch(`${API_BASE}/api/current/tech-profiles/display?entityType=tool_configuration`),
-          fetch(`${API_BASE}/api/current/tech-profiles/display?entityType=model_version`),
+          fetch(`${API_BASE}/current/tech-profiles/display?entityType=tool_configuration`),
+          fetch(`${API_BASE}/current/tech-profiles/display?entityType=model_version`),
         ]);
 
         if (!toolsRes.ok || !modelsRes.ok) {

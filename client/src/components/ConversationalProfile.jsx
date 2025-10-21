@@ -11,7 +11,7 @@ import {
   ResponsiveContainer
 } from "recharts";
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5001";
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5001/api";
 const HEXACO_TRAITS = ["H", "E", "X", "A", "C", "O"];
 const IRI_TRAITS = ["PT", "FS", "EC", "PD"];
 
@@ -54,7 +54,7 @@ export default function ConversationalProfile() {
     const fetchTests = async () => {
       try {
         setTestsLoading(true);
-        const res = await fetch(`${API_BASE}/api/current/conversational-profiles/tests`);
+        const res = await fetch(`${API_BASE}/current/conversational-profiles/tests`);
         if (!res.ok) {
           throw new Error("Failed to load tests");
         }
@@ -109,7 +109,7 @@ export default function ConversationalProfile() {
 
         // Use the actual test name for the API endpoint
         const testName = encodeURIComponent(currentTest.name);
-        const endpoint = `${API_BASE}/api/current/conversational-profiles/${testName}`;
+        const endpoint = `${API_BASE}/current/conversational-profiles/${testName}`;
 
         const res = await fetch(endpoint);
         if (!res.ok) {

@@ -15,6 +15,9 @@ node_modules
 /generated/prisma
 prisma/generated/*
 
+# TypeScript build output
+dist/
+
 # Security keys and certificates
 *.key
 *.pem

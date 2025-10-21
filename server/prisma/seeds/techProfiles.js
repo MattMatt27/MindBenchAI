@@ -281,152 +281,6 @@ const MODEL_ANSWERS = {
   },
 };
 
-const randomBoolean = () => Math.random() < 0.5;
-const randomNumberInRange = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-const formatCurrency = (amount, cadence) => {
-  const formatted = amount.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-  if (!cadence) return `$${formatted}`;
-  return cadence === 'month' ? `$${formatted}/month` : `$${formatted}/year`;
-};
-
-const normalizeListValue = (value) => {
-  if (Array.isArray(value)) return value;
-  if (typeof value === 'string') {
-    return value
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-  return [];
-};
-
-const generateModelVersionAnswer = (question, baseValue, versionRecord, versionIndex) => {
-  const versionLabel = versionRecord.version ? `v${versionRecord.version}` : `version-${versionRecord.id}`;
-
-  switch (question.questionType) {
-    case QuestionType.BOOLEAN: {
-      if (typeof baseValue === 'boolean') {
-        if (versionIndex === 0) return baseValue;
-        return versionIndex % 2 === 0 ? baseValue : !baseValue;
-      }
-
-      if (typeof baseValue === 'string') {
-        const normalized = baseValue.trim().toLowerCase();
-        if (['true', 'yes', '1'].includes(normalized)) return versionIndex % 2 === 0;
-        if (['false', 'no', '0'].includes(normalized)) return versionIndex % 2 !== 0;
-      }
-
-      return randomBoolean();
-    }
-    case QuestionType.NUMBER: {
-      const baseNumber = Number(baseValue);
-      if (!Number.isNaN(baseNumber)) {
-        if (versionIndex === 0) return baseNumber;
-        const variance = Math.max(1, Math.round(baseNumber * 0.05));
-        return baseNumber + (versionIndex % 2 === 0 ? variance : -variance);
-      }
-      return Math.round(Math.random() * 100);
-    }
-    case QuestionType.LIST: {
-      const baseList = normalizeListValue(baseValue);
-      if (versionIndex === 0 && baseList.length > 0) return baseList;
-
-      const extras = [
-        `${question.questionKey.replace(/_/g, ' ')} insights`,
-        `Additional ${question.category}`,
-        `Variant ${versionIndex + 1}`,
-      ];
-
-      const nextList = baseList.length > 0 ? [...baseList] : [`${question.questionKey} ${versionLabel}`];
-      nextList.push(extras[versionIndex % extras.length]);
-
-      return Array.from(new Set(nextList));
-    }
-    case QuestionType.TEXT:
-    default: {
-      const key = question.questionKey ? question.questionKey.toLowerCase() : '';
-      const text = question.questionText ? question.questionText.toLowerCase() : '';
-      const isPricing = key.includes('price') || text.includes('price') || question.category?.toLowerCase() === 'pricing';
-
-      if (isPricing) {
-        const cadence = key.includes('annual') || text.includes('annual') ? 'year' : key.includes('monthly') || text.includes('monthly') ? 'month' : null;
-        const baseAmount =
-          typeof baseValue === 'string' && baseValue.trim().length > 0
-            ? Number(baseValue.replace(/[^0-9.]/g, ''))
-            : null;
-        let amount;
-        if (!Number.isNaN(baseAmount) && baseAmount !== null) {
-          amount =
-            versionIndex === 0
-              ? baseAmount
-              : baseAmount + (versionIndex % 2 === 0 ? Math.max(5, Math.round(baseAmount * 0.05)) : -Math.max(5, Math.round(baseAmount * 0.05)));
-        } else {
-          amount =
-            cadence === 'year'
-              ? randomNumberInRange(300, 3000)
-              : cadence === 'month'
-              ? randomNumberInRange(10, 250)
-              : randomNumberInRange(50, 500);
-        }
-        return formatCurrency(amount, cadence);
-      }
-
-      if (typeof baseValue === 'string' && baseValue.trim().length > 0) {
-        if (versionIndex === 0) return baseValue;
-        return `${baseValue} (${versionLabel})`;
-      }
-
-      return '-';
-    }
-  }
-};
-
-const generateToolConfigurationAnswer = (question, baseValue, config, configIndex) => {
-  const configLabel = config.configurationName || `config-${config.id}`;
-
-  switch (question.questionType) {
-    case QuestionType.BOOLEAN: {
-      if (typeof baseValue === 'boolean') return baseValue;
-      if (typeof baseValue === 'string') {
-        const normalized = baseValue.trim().toLowerCase();
-        if (['true', 'yes', '1'].includes(normalized)) return true;
-        if (['false', 'no', '0'].includes(normalized)) return false;
-      }
-      return randomBoolean();
-    }
-    case QuestionType.NUMBER: {
-      const baseNumber = Number(baseValue);
-      if (!Number.isNaN(baseNumber)) return baseNumber;
-      return Math.max(1, Math.round(Math.random() * 100));
-    }
-    case QuestionType.LIST: {
-      const baseList = normalizeListValue(baseValue);
-      if (baseList.length > 0) return baseList;
-      return [`${question.questionKey.replace(/_/g, ' ')} (${configLabel})`];
-    }
-    case QuestionType.TEXT:
-    default: {
-      if (baseValue !== undefined && baseValue !== null) return String(baseValue);
-      const suffix = configIndex !== undefined ? `#${configIndex + 1}` : config.id;
-
-      const key = question.questionKey ? question.questionKey.toLowerCase() : '';
-      const text = question.questionText ? question.questionText.toLowerCase() : '';
-      const isPricing = key.includes('price') || text.includes('price') || question.category?.toLowerCase() === 'pricing';
-      if (isPricing) {
-        const cadence = key.includes('annual') || text.includes('annual') ? 'year' : key.includes('monthly') || text.includes('monthly') ? 'month' : null;
-        const amount = cadence === 'year'
-          ? randomNumberInRange(300, 3000)
-          : cadence === 'month'
-          ? randomNumberInRange(10, 250)
-          : randomNumberInRange(50, 500);
-        return formatCurrency(amount, cadence);
-      }
-
-      return '-';
-    }
-  }
-};
-
 module.exports = async function seedTechProfiles(prisma, options = {}) {
   const {
     researcherUser,
@@ -470,7 +324,6 @@ module.exports = async function seedTechProfiles(prisma, options = {}) {
     questions.push(record);
   }
 
-  let configIndex = 0;
   for (const configsByModel of Object.values(toolConfigurations)) {
     if (!configsByModel) continue;
 
@@ -479,6 +332,7 @@ module.exports = async function seedTechProfiles(prisma, options = {}) {
 
       const configName = config.configurationName;
       const answerMap = configName ? TOOL_ANSWERS[configName] : null;
+      if (!answerMap) continue;
 
       let evaluationEntity = await prisma.evaluationEntity.findFirst({
         where: { toolConfigurationId: config.id },
@@ -495,20 +349,13 @@ module.exports = async function seedTechProfiles(prisma, options = {}) {
 
       for (const question of questions) {
         const key = question.questionKey;
-        const baseValue = answerMap ? answerMap[key] : undefined;
-        const rawValue = generateToolConfigurationAnswer(question, baseValue, config, configIndex);
+        const rawValue = answerMap[key];
+        if (rawValue === undefined) continue;
 
-        let payload;
-        if (question.questionType === QuestionType.BOOLEAN) {
-          payload = { value: Boolean(rawValue), type: 'BOOLEAN' };
-        } else if (question.questionType === QuestionType.NUMBER) {
-          payload = { value: Number(rawValue), type: 'NUMBER' };
-        } else if (question.questionType === QuestionType.LIST) {
-          const listValue = Array.isArray(rawValue) ? rawValue : normalizeListValue(rawValue);
-          payload = { value: listValue, type: 'LIST' };
-        } else {
-          payload = { value: String(rawValue), type: 'TEXT' };
-        }
+        const payload =
+          question.questionType === QuestionType.BOOLEAN
+            ? { value: Boolean(rawValue), type: 'BOOLEAN' }
+            : { value: String(rawValue), type: 'TEXT' };
 
         const existing = await prisma.techProfileAnswer.findFirst({
           where: {
@@ -542,7 +389,6 @@ module.exports = async function seedTechProfiles(prisma, options = {}) {
         }
       }
       console.log('Seeded tech profile answers for tool configuration:', config.id);
-      configIndex += 1;
     }
   }
 
@@ -552,6 +398,7 @@ module.exports = async function seedTechProfiles(prisma, options = {}) {
 
     const versionsForModel = modelVersions[modelRecord.id] ?? {};
     const answerMap = MODEL_ANSWERS[modelRecord.name];
+    if (!answerMap) continue;
 
     // prefer latest versions first
     const versionEntries = Object.values(versionsForModel ?? {}).sort((a, b) => {
@@ -560,7 +407,6 @@ module.exports = async function seedTechProfiles(prisma, options = {}) {
       return String(b.version).localeCompare(String(a.version));
     });
 
-    let versionIndex = 0;
     for (const versionRecord of versionEntries) {
       if (!versionRecord) continue;
 
@@ -579,20 +425,13 @@ module.exports = async function seedTechProfiles(prisma, options = {}) {
 
       for (const question of questions) {
         const key = question.questionKey;
-        const baseValue = answerMap ? answerMap[key] : undefined;
-        const rawValue = generateModelVersionAnswer(question, baseValue, versionRecord, versionIndex);
+        const rawValue = answerMap[key];
+        if (rawValue === undefined) continue;
 
-        let payload;
-        if (question.questionType === QuestionType.BOOLEAN) {
-          payload = { value: Boolean(rawValue), type: 'BOOLEAN' };
-        } else if (question.questionType === QuestionType.NUMBER) {
-          payload = { value: Number(rawValue), type: 'NUMBER' };
-        } else if (question.questionType === QuestionType.LIST) {
-          const listValue = Array.isArray(rawValue) ? rawValue : normalizeListValue(rawValue);
-          payload = { value: listValue, type: 'LIST' };
-        } else {
-          payload = { value: String(rawValue), type: 'TEXT' };
-        }
+        const payload =
+          question.questionType === QuestionType.BOOLEAN
+            ? { value: Boolean(rawValue), type: 'BOOLEAN' }
+            : { value: String(rawValue), type: 'TEXT' };
 
         const existing = await prisma.techProfileAnswer.findFirst({
           where: {
@@ -628,7 +467,6 @@ module.exports = async function seedTechProfiles(prisma, options = {}) {
       }
 
       console.log('Seeded tech profile answers for model version:', versionRecord.id, versionRecord.version);
-      versionIndex += 1;
     }
   }
 };

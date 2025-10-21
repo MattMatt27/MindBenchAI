@@ -4,7 +4,7 @@ const seedModels = require('./seeds/models');
 const seedTechProfiles = require('./seeds/techProfiles');
 const seedIRIConversationalProfile = require('./seeds/iriConversationalProfile');
 const seedHexacoConversationalProfile = require('./seeds/hexacoConversationalProfile');
-// const seedUsers = require('./seeds/users');
+const seedUsers = require('./seeds/users');
 // const seedBenchmarking = require('./seeds/benchmarking');
 // const seedCommunity = require('./seeds/community');
 // const seedExperiments = require('./seeds/experiments');
@@ -18,7 +18,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting database seed...');
 
-  // const users = await seedUsers(prisma);
+  const users = await seedUsers(prisma);
   const models = await seedModels(prisma);
 
   await seedIRIConversationalProfile(prisma, {
