@@ -47,3 +47,40 @@ enum AdversarialType {
   CONTEXT_CONFUSION  @map("context_confusion")
   PREMISE_DISTORTION @map("premise_distortion")
 }
+
+enum BenchmarkType {
+  MULTIPLE_CHOICE @map("multiple_choice")
+  OPEN_ENDED      @map("open_ended")
+  CONVERSATION    @map("conversation")
+  MIXED           @map("mixed")
+  OTHER           @map("other")
+}
+
+enum UpdateCategory {
+  FEATURE      @map("feature")
+  BUG_FIX      @map("bug_fix")
+  IMPROVEMENT  @map("improvement")
+  ANNOUNCEMENT @map("announcement")
+  RESEARCH     @map("research")
+  COMMUNITY    @map("community")
+}
+
+enum SuggestionStatus {
+  OPEN_VOTE    @map("open_vote")
+  UNDER_REVIEW @map("under_review")
+  PLANNED      @map("planned")
+  IN_PROGRESS  @map("in_progress")
+  COMPLETED    @map("completed")
+  DECLINED     @map("declined")
+  DUPLICATE    @map("duplicate")
+}
+
+enum SuggestionCategory {
+  FEATURE       @map("feature")
+  BENCHMARK     @map("benchmark")
+  MODEL         @map("model")
+  UI_UX         @map("ui_ux")
+  DOCUMENTATION @map("documentation")
+  BUG           @map("bug")
+  OTHER         @map("other")
+}

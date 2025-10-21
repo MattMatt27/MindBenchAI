@@ -65,15 +65,16 @@ model User {
   tagsUpdated            BenchmarkTag[]                @relation("BenchmarkTagUpdatedBy")
 
   // Community
-  updatesCreated     Update[]         @relation("UpdateCreatedBy")
-  updatesUpdated     Update[]         @relation("UpdateUpdatedBy")
-  updateReactions    UpdateReaction[]
-  suggestionsCreated Suggestion[]     @relation("SuggestionCreatedBy")
-  suggestionsUpdated Suggestion[]     @relation("SuggestionUpdatedBy")
-  suggestionVotes    SuggestionVote[]
-  teamMemberProfile  TeamMember?      @relation("TeamMemberUser")
-  teamMembersCreated TeamMember[]     @relation("TeamMemberCreatedBy")
-  teamMembersUpdated TeamMember[]     @relation("TeamMemberUpdatedBy")
+  updatesCreated      Update[]         @relation("UpdateCreatedBy")
+  updatesUpdated      Update[]         @relation("UpdateUpdatedBy")
+  updateReactions     UpdateReaction[]
+  suggestionsCreated  Suggestion[]     @relation("SuggestionCreatedBy")
+  suggestionsUpdated  Suggestion[]     @relation("SuggestionUpdatedBy")
+  suggestionsReviewed Suggestion[]     @relation("SuggestionReviewer")
+  suggestionVotes     SuggestionVote[]
+  teamMemberProfile   TeamMember?      @relation("TeamMemberUser")
+  teamMembersCreated  TeamMember[]     @relation("TeamMemberCreatedBy")
+  teamMembersUpdated  TeamMember[]     @relation("TeamMemberUpdatedBy")
 
   // Auth & Expertise
   sessions             UserSession[]
@@ -90,6 +91,16 @@ model User {
   reasoningEntriesUpdated ReasoningEntry[] @relation("ReasoningEntryUpdatedBy")
   systemConfigsCreated    SystemConfig[]   @relation("SystemConfigCreatedBy")
   systemConfigsUpdated    SystemConfig[]   @relation("SystemConfigUpdatedBy")
+
+  // Resources
+  resourceBenchmarksCreated ResourceBenchmark[] @relation("ResourceBenchmarkCreatedBy")
+  resourceBenchmarksUpdated ResourceBenchmark[] @relation("ResourceBenchmarkUpdatedBy")
+  resourceArticlesCreated   ResourceArticle[]   @relation("ResourceArticleCreatedBy")
+  resourceArticlesUpdated   ResourceArticle[]   @relation("ResourceArticleUpdatedBy")
+  resourcePapersCreated     ResourcePaper[]     @relation("ResourcePaperCreatedBy")
+  resourcePapersUpdated     ResourcePaper[]     @relation("ResourcePaperUpdatedBy")
+  resourceTagsCreated       ResourceTag[]       @relation("ResourceTagCreatedBy")
+  resourceTagsUpdated       ResourceTag[]       @relation("ResourceTagUpdatedBy")
 
   @@index([email])
   @@index([username])
