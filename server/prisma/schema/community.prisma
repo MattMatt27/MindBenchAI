@@ -1,32 +1,39 @@
 model Update {
-  id          String    @id @default(uuid())
-  date        DateTime  @db.Date
-  title       String
-  tag         String
-  note        String?
-  imageUrl    String?   @map("image_url")
-  isPublished Boolean   @default(true) @map("is_published")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  createdBy   String?   @map("created_by")
-  updatedAt   DateTime? @updatedAt @map("updated_at")
-  updatedBy   String?   @map("updated_by")
+  id               String         @id @default(uuid())
+  date             DateTime       @db.Date
+  title            String
+  category         UpdateCategory
+  note             String?        @db.Text
+  imageUrl         String?        @map("image_url")
+  imageStoragePath String?        @map("image_storage_path")
+  isPublished      Boolean        @default(true) @map("is_published")
+  isFeatured       Boolean        @default(false) @map("is_featured")
+  publishedAt      DateTime?      @map("published_at")
+  slug             String?        @unique
+  createdAt        DateTime       @default(now()) @map("created_at")
+  createdBy        String?        @map("created_by")
+  updatedAt        DateTime?      @updatedAt @map("updated_at")
+  updatedBy        String?        @map("updated_by")
 
   createdByUser User?            @relation("UpdateCreatedBy", fields: [createdBy], references: [id])
   updatedByUser User?            @relation("UpdateUpdatedBy", fields: [updatedBy], references: [id])
   reactions     UpdateReaction[]
 
   @@index([date])
-  @@index([tag])
+  @@index([category])
   @@index([isPublished])
+  @@index([isFeatured])
+  @@index([publishedAt])
   @@map("updates")
 }
 
 model UpdateReaction {
-  id        String   @id @default(uuid())
-  updateId  String   @map("update_id")
-  userId    String   @map("user_id")
-  emojiType String   @map("emoji_type")
-  createdAt DateTime @default(now()) @map("created_at")
+  id        String    @id @default(uuid())
+  updateId  String    @map("update_id")
+  userId    String    @map("user_id")
+  emojiType String    @map("emoji_type")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
 
   update Update @relation(fields: [updateId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
@@ -38,25 +45,38 @@ model UpdateReaction {
 }
 
 model Suggestion {
-  id          String    @id @default(uuid())
-  title       String
-  description String?
-  status      String    @default("open_vote")
-  voteCount   Int       @default(0) @map("vote_count")
-  isVisible   Boolean   @default(true) @map("is_visible")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  createdBy   String?   @map("created_by")
-  updatedAt   DateTime? @updatedAt @map("updated_at")
-  updatedBy   String?   @map("updated_by")
+  id              String              @id @default(uuid())
+  title           String
+  description     String?             @db.Text
+  category        SuggestionCategory?
+  status          SuggestionStatus    @default(OPEN_VOTE)
+  priority        Int?
+  voteCount       Int                 @default(0) @map("vote_count")
+  isVisible       Boolean             @default(true) @map("is_visible")
+  reviewedBy      String?             @map("reviewed_by")
+  reviewedAt      DateTime?           @map("reviewed_at")
+  implementedAt   DateTime?           @map("implemented_at")
+  closedAt        DateTime?           @map("closed_at")
+  closedReason    String?             @map("closed_reason")
+  relatedIssueUrl String?             @map("related_issue_url")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  createdBy       String?             @map("created_by")
+  updatedAt       DateTime?           @updatedAt @map("updated_at")
+  updatedBy       String?             @map("updated_by")
 
   createdByUser User?            @relation("SuggestionCreatedBy", fields: [createdBy], references: [id])
   updatedByUser User?            @relation("SuggestionUpdatedBy", fields: [updatedBy], references: [id])
+  reviewer      User?            @relation("SuggestionReviewer", fields: [reviewedBy], references: [id])
   votes         SuggestionVote[]
 
+  @@index([category])
   @@index([status])
+  @@index([priority])
   @@index([voteCount])
   @@index([isVisible])
   @@index([createdAt])
+  @@index([reviewedAt])
+  @@index([implementedAt])
   @@map("suggestions")
 }
 
@@ -78,24 +98,31 @@ model SuggestionVote {
 }
 
 model TeamMember {
-  id           String    @id @default(uuid())
-  userId       String    @unique @map("user_id")
-  displayName  String    @map("display_name")
-  role         String
-  bio          String?
-  avatarUrl    String?   @map("avatar_url")
-  displayOrder Int?      @map("display_order")
-  isActive     Boolean   @default(true) @map("is_active")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  createdBy    String?   @map("created_by")
-  updatedAt    DateTime? @updatedAt @map("updated_at")
-  updatedBy    String?   @map("updated_by")
+  id               String    @id @default(uuid())
+  userId           String    @unique @map("user_id")
+  displayName      String    @map("display_name")
+  role             String
+  bio              String?   @db.Text
+  avatarUrl        String?   @map("avatar_url")
+  imageStoragePath String?   @map("image_storage_path")
+  sortOrder        Int?      @map("sort_order")
+  startDate        DateTime? @map("start_date") @db.Date
+  endDate          DateTime? @map("end_date") @db.Date
+  socialLinks      Json?     @map("social_links")
+  expertise        Json?
+  isActive         Boolean   @default(true) @map("is_active")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  createdBy        String?   @map("created_by")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+  updatedBy        String?   @map("updated_by")
 
   user          User  @relation("TeamMemberUser", fields: [userId], references: [id])
   createdByUser User? @relation("TeamMemberCreatedBy", fields: [createdBy], references: [id])
   updatedByUser User? @relation("TeamMemberUpdatedBy", fields: [updatedBy], references: [id])
 
   @@index([isActive])
-  @@index([displayOrder])
+  @@index([sortOrder])
+  @@index([startDate])
+  @@index([endDate])
   @@map("team_members")
 }
