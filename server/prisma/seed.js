@@ -4,6 +4,7 @@ const seedModels = require('./seeds/models');
 const seedTechProfiles = require('./seeds/techProfiles');
 const seedIRIConversationalProfile = require('./seeds/iriConversationalProfile');
 const seedHexacoConversationalProfile = require('./seeds/hexacoConversationalProfile');
+const seedCSIConversationalProfile = require('./seeds/csiConversationalProfile');
 const seedUsers = require('./seeds/users');
 // const seedBenchmarking = require('./seeds/benchmarking');
 // const seedCommunity = require('./seeds/community');
@@ -27,6 +28,11 @@ async function main() {
   });
 
   await seedHexacoConversationalProfile(prisma, {
+    models: models.models,
+    modelVersions: models.modelVersions,
+  });
+
+  await seedCSIConversationalProfile(prisma, {
     models: models.models,
     modelVersions: models.modelVersions,
   });
@@ -77,7 +83,7 @@ async function main() {
   //   benchmarking,
   // });
 
-  console.log('Database seed completed successfully (core models + tech profiles).');
+  console.log('Database seed completed successfully (core models, conversational profiles [IRI, HEXACO, CSI], and tech profiles).');
 }
 
 main()
