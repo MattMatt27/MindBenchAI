@@ -1,21 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '../../../../prisma/generated/prisma';
 import type { AnswerWithQuestion } from '../../../types/api';
+import * as iriScoring from '../../../scoring/conversationalProfile/iri.scoring';
+import * as hexacoScoring from '../../../scoring/conversationalProfile/hexaco.scoring';
 
 const prisma = new PrismaClient();
 
-// Import scoring modules
-const iriScoring = require('../../../scoring/conversationalProfile/iri.scoring');
-const hexacoScoring = require('../../../scoring/conversationalProfile/hexaco.scoring');
-
-// Scoring module interface
+// Scoring module interface - accepts any object with number/null values
 interface ScoringModule {
-  calculateScores: (answers: AnswerWithQuestion[]) => Record<string, number | null>;
+  calculateScores: (answers: AnswerWithQuestion[]) => { [key: string]: number | null | undefined } | Record<string, any>;
   testName: string;
 }
 
 // Map test names to their scoring modules
-const SCORING_MODULES: Record<string, ScoringModule> = {
+const SCORING_MODULES: Record<string, any> = {
   'Interpersonal Reactivity Index': iriScoring,
   'HEXACO Personality Inventory': hexacoScoring,
 };
