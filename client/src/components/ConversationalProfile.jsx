@@ -468,7 +468,7 @@ export default function ConversationalProfile() {
 
       {/* Test selection buttons */}
       {activeTab === "models" && (
-        <div style={{ padding: "16px", display: "flex", gap: "12px", background: "var(--bg)", flexWrap: "wrap" }}>
+        <div style={{ paddingTop: "16px", paddingLeft: "16px", paddingRight: "16px", display: "flex", gap: "12px", background: "var(--bg)", flexWrap: "wrap" }}>
           {testsLoading ? (
             <div style={{ color: "var(--muted)" }}>Loading tests...</div>
           ) : availableTests.length === 0 ? (
