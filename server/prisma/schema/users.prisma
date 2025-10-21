@@ -91,6 +91,16 @@ model User {
   systemConfigsCreated    SystemConfig[]   @relation("SystemConfigCreatedBy")
   systemConfigsUpdated    SystemConfig[]   @relation("SystemConfigUpdatedBy")
 
+  // Resources
+  resourceBenchmarksCreated ResourceBenchmark[] @relation("ResourceBenchmarkCreatedBy")
+  resourceBenchmarksUpdated ResourceBenchmark[] @relation("ResourceBenchmarkUpdatedBy")
+  resourceArticlesCreated   ResourceArticle[]   @relation("ResourceArticleCreatedBy")
+  resourceArticlesUpdated   ResourceArticle[]   @relation("ResourceArticleUpdatedBy")
+  resourcePapersCreated     ResourcePaper[]     @relation("ResourcePaperCreatedBy")
+  resourcePapersUpdated     ResourcePaper[]     @relation("ResourcePaperUpdatedBy")
+  resourceTagsCreated       ResourceTag[]       @relation("ResourceTagCreatedBy")
+  resourceTagsUpdated       ResourceTag[]       @relation("ResourceTagUpdatedBy")
+
   @@index([email])
   @@index([username])
   @@index([role])

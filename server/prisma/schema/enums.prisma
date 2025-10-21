@@ -47,3 +47,11 @@ enum AdversarialType {
   CONTEXT_CONFUSION  @map("context_confusion")
   PREMISE_DISTORTION @map("premise_distortion")
 }
+
+enum BenchmarkType {
+  MULTIPLE_CHOICE @map("multiple_choice")
+  OPEN_ENDED      @map("open_ended")
+  CONVERSATION    @map("conversation")
+  MIXED           @map("mixed")
+  OTHER           @map("other")
+}

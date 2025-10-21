@@ -1,0 +1,180 @@
+// ==================== RESOURCE MODELS ====================
+// External resources for the Resources page: benchmarks, articles, and papers
+
+model ResourceBenchmark {
+  id               String        @id @default(uuid())
+  name             String
+  description      String?       @db.Text
+  benchmarkType    BenchmarkType @map("benchmark_type")
+  format           String?       @db.Text
+  imageUrl         String?       @map("image_url")
+  imageStoragePath String?       @map("image_storage_path")
+  links            Json?
+  firstReleased    DateTime?     @map("first_released") @db.Date
+  organization     String?
+  language         String?       @default("en")
+  questionCount    Int?          @map("question_count")
+  isActive         Boolean       @default(true) @map("is_active")
+  isFeatured       Boolean       @default(false) @map("is_featured")
+  metadata         Json?
+  createdAt        DateTime      @default(now()) @map("created_at")
+  createdBy        String?       @map("created_by")
+  updatedAt        DateTime?     @updatedAt @map("updated_at")
+  updatedBy        String?       @map("updated_by")
+
+  createdByUser User?                        @relation("ResourceBenchmarkCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                        @relation("ResourceBenchmarkUpdatedBy", fields: [updatedBy], references: [id])
+  tags          ResourceBenchmarkTagLink[]
+
+  @@index([benchmarkType])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([firstReleased])
+  @@map("resource_benchmarks")
+}
+
+model ResourceArticle {
+  id               String    @id @default(uuid())
+  title            String
+  author           String?
+  publicationDate  DateTime? @map("publication_date") @db.Date
+  publisher        String?
+  url              String
+  summary          String?   @db.Text
+  imageUrl         String?   @map("image_url")
+  imageStoragePath String?   @map("image_storage_path")
+  articleType      String?   @map("article_type")
+  language         String?   @default("en")
+  readTimeMinutes  Int?      @map("read_time_minutes")
+  isPublished      Boolean   @default(false) @map("is_published")
+  isFeatured       Boolean   @default(false) @map("is_featured")
+  publishedAt      DateTime? @map("published_at")
+  metadata         Json?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  createdBy        String?   @map("created_by")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+  updatedBy        String?   @map("updated_by")
+
+  createdByUser User?                    @relation("ResourceArticleCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                    @relation("ResourceArticleUpdatedBy", fields: [updatedBy], references: [id])
+  tags          ResourceArticleTagLink[]
+
+  @@index([publicationDate])
+  @@index([publisher])
+  @@index([articleType])
+  @@index([isPublished])
+  @@index([isFeatured])
+  @@index([publishedAt])
+  @@map("resource_articles")
+}
+
+model ResourcePaper {
+  id               String    @id @default(uuid())
+  title            String
+  authors          Json
+  publicationDate  DateTime? @map("publication_date") @db.Date
+  publication      String?
+  venue            String?
+  arxivId          String?   @map("arxiv_id")
+  doi              String?
+  url              String?
+  pdfUrl           String?   @map("pdf_url")
+  abstract         String?   @db.Text
+  imageUrl         String?   @map("image_url")
+  imageStoragePath String?   @map("image_storage_path")
+  citationCount    Int?      @map("citation_count")
+  paperType        String?   @map("paper_type")
+  isPreprint       Boolean   @default(false) @map("is_preprint")
+  isPeerReviewed   Boolean   @default(false) @map("is_peer_reviewed")
+  isPublished      Boolean   @default(false) @map("is_published")
+  isFeatured       Boolean   @default(false) @map("is_featured")
+  citation         Json?
+  metadata         Json?
+  createdAt        DateTime  @default(now()) @map("created_at")
+  createdBy        String?   @map("created_by")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
+  updatedBy        String?   @map("updated_by")
+
+  createdByUser User?                  @relation("ResourcePaperCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                  @relation("ResourcePaperUpdatedBy", fields: [updatedBy], references: [id])
+  tags          ResourcePaperTagLink[]
+
+  @@index([arxivId])
+  @@index([doi])
+  @@index([publicationDate])
+  @@index([paperType])
+  @@index([isPreprint])
+  @@index([isPeerReviewed])
+  @@index([isPublished])
+  @@index([isFeatured])
+  @@map("resource_papers")
+}
+
+model ResourceTag {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  category    String?
+  color       String?
+  icon        String?
+  sortOrder   Int?      @map("sort_order")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  createdBy   String?   @map("created_by")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  updatedBy   String?   @map("updated_by")
+
+  createdByUser User?                      @relation("ResourceTagCreatedBy", fields: [createdBy], references: [id])
+  updatedByUser User?                      @relation("ResourceTagUpdatedBy", fields: [updatedBy], references: [id])
+  benchmarks    ResourceBenchmarkTagLink[]
+  articles      ResourceArticleTagLink[]
+  papers        ResourcePaperTagLink[]
+
+  @@index([category])
+  @@index([isActive])
+  @@index([sortOrder])
+  @@map("resource_tags")
+}
+
+model ResourceBenchmarkTagLink {
+  id          String @id @default(uuid())
+  benchmarkId String @map("benchmark_id")
+  tagId       String @map("tag_id")
+
+  benchmark ResourceBenchmark @relation(fields: [benchmarkId], references: [id], onDelete: Cascade)
+  tag       ResourceTag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([benchmarkId, tagId])
+  @@index([benchmarkId])
+  @@index([tagId])
+  @@map("resource_benchmark_tag_link")
+}
+
+model ResourceArticleTagLink {
+  id        String @id @default(uuid())
+  articleId String @map("article_id")
+  tagId     String @map("tag_id")
+
+  article ResourceArticle @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  tag     ResourceTag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, tagId])
+  @@index([articleId])
+  @@index([tagId])
+  @@map("resource_article_tag_link")
+}
+
+model ResourcePaperTagLink {
+  id      String @id @default(uuid())
+  paperId String @map("paper_id")
+  tagId   String @map("tag_id")
+
+  paper ResourcePaper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  tag   ResourceTag   @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([paperId, tagId])
+  @@index([paperId])
+  @@index([tagId])
+  @@map("resource_paper_tag_link")
+}
