@@ -3,6 +3,7 @@ import { PrismaClient } from '../../../../prisma/generated/prisma';
 import type { AnswerWithQuestion } from '../../../types/api';
 import * as iriScoring from '../../../scoring/conversationalProfile/iri.scoring';
 import * as hexacoScoring from '../../../scoring/conversationalProfile/hexaco.scoring';
+import * as csiScoring from '../../../scoring/conversationalProfile/csi.scoring';
 
 const prisma = new PrismaClient();
 
@@ -16,6 +17,7 @@ interface ScoringModule {
 const SCORING_MODULES: Record<string, any> = {
   'Interpersonal Reactivity Index': iriScoring,
   'HEXACO Personality Inventory': hexacoScoring,
+  'Communication Styles Inventory': csiScoring,
 };
 
 /**

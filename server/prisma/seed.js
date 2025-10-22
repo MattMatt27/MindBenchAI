@@ -4,6 +4,7 @@ const seedModels = require('./seeds/models');
 const seedTechProfiles = require('./seeds/techProfiles');
 const seedIRIConversationalProfile = require('./seeds/iriConversationalProfile');
 const seedHexacoConversationalProfile = require('./seeds/hexacoConversationalProfile');
+const seedCSIConversationalProfile = require('./seeds/csiConversationalProfile');
 const seedUsers = require('./seeds/users');
 const seedResources = require('./seeds/resources');
 const seedCommunity = require('./seeds/community');
@@ -28,6 +29,11 @@ async function main() {
   });
 
   await seedHexacoConversationalProfile(prisma, {
+    models: models.models,
+    modelVersions: models.modelVersions,
+  });
+
+  await seedCSIConversationalProfile(prisma, {
     models: models.models,
     modelVersions: models.modelVersions,
   });

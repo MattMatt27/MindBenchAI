@@ -52,6 +52,29 @@ export interface IRISubscale {
 
 export type IRISubscales = Record<string, IRISubscale>;
 
+// CSI (Communication Styles Inventory) Scoring Types
+export interface CSIScores {
+  expressiveness: number | null;
+  preciseness: number | null;
+  verbal_aggressiveness: number | null;
+  questioningness: number | null;
+  emotionality: number | null;
+  impression_manipulativeness: number | null;
+  facets?: Record<string, number | null>;
+}
+
+export interface CSIFacetConfig {
+  questions: string[];
+  reversed: string[];
+}
+
+export interface CSIDomainConfig {
+  name: string;
+  facets: Record<string, CSIFacetConfig>;
+}
+
+export type CSIDomains = Record<string, CSIDomainConfig>;
+
 // Auth Types
 export interface AuthTokens {
   accessToken: string;

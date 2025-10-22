@@ -14,6 +14,7 @@ import {
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5001/api";
 const HEXACO_TRAITS = ["H", "E", "X", "A", "C", "O"];
 const IRI_TRAITS = ["PT", "FS", "EC", "PD"];
+const CSI_TRAITS = ["EXP", "PRE", "VAG", "QUE", "EMO", "IMP"];
 
 const TRAIT_LABELS = {
   // HEXACO
@@ -28,6 +29,13 @@ const TRAIT_LABELS = {
   FS: "Fantasy",
   EC: "Empathic Concern",
   PD: "Personal Distress",
+  // CSI
+  EXP: "Expressiveness",
+  PRE: "Preciseness",
+  VAG: "Verbal Aggressiveness",
+  QUE: "Questioningness",
+  EMO: "Emotionality",
+  IMP: "Impression Manipulativeness",
 };
 
 export default function ConversationalProfile() {
@@ -148,6 +156,16 @@ export default function ConversationalProfile() {
               EC: item.empathic_concern ?? 0,
               PD: item.personal_distress ?? 0,
             };
+          } else if (currentTest.name.includes("CSI") || currentTest.name.includes("Communication Styles")) {
+            return {
+              ...base,
+              EXP: item.expressiveness ?? 0,
+              PRE: item.preciseness ?? 0,
+              VAG: item.verbal_aggressiveness ?? 0,
+              QUE: item.questioningness ?? 0,
+              EMO: item.emotionality ?? 0,
+              IMP: item.impression_manipulativeness ?? 0,
+            };
           }
           return base;
         });
@@ -213,6 +231,8 @@ export default function ConversationalProfile() {
       return HEXACO_TRAITS;
     } else if (currentTest?.name.includes("IRI") || currentTest?.name.includes("Interpersonal Reactivity")) {
       return IRI_TRAITS;
+    } else if (currentTest?.name.includes("CSI") || currentTest?.name.includes("Communication Styles")) {
+      return CSI_TRAITS;
     }
     return HEXACO_TRAITS; // Default fallback
   }, [activeTest, availableTests]);
@@ -448,7 +468,7 @@ export default function ConversationalProfile() {
 
       {/* Test selection buttons */}
       {activeTab === "models" && (
-        <div style={{ padding: "16px", display: "flex", gap: "12px", background: "var(--bg)", flexWrap: "wrap" }}>
+        <div style={{ paddingTop: "16px", paddingLeft: "16px", paddingRight: "16px", display: "flex", gap: "12px", background: "var(--bg)", flexWrap: "wrap" }}>
           {testsLoading ? (
             <div style={{ color: "var(--muted)" }}>Loading tests...</div>
           ) : availableTests.length === 0 ? (
@@ -480,8 +500,8 @@ export default function ConversationalProfile() {
         const currentTest = availableTests.find(
           (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
         );
-        // Show table if we have a test with HEXACO or IRI data
-        return currentTest && (currentTest.name.includes("HEXACO") || currentTest.name.includes("IRI") || currentTest.name.includes("Interpersonal Reactivity"));
+        // Show table if we have a test with HEXACO, IRI, or CSI data
+        return currentTest && (currentTest.name.includes("HEXACO") || currentTest.name.includes("IRI") || currentTest.name.includes("Interpersonal Reactivity") || currentTest.name.includes("CSI") || currentTest.name.includes("Communication Styles"));
       })() && (
         <div className="st-layout st-layout-no-sidebar">
           <div className="ui-table-wrap st-table">
@@ -739,7 +759,7 @@ export default function ConversationalProfile() {
           (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
         );
         // Show "coming soon" for tests without data structure implemented
-        return currentTest && !(currentTest.name.includes("HEXACO") || currentTest.name.includes("IRI") || currentTest.name.includes("Interpersonal Reactivity"));
+        return currentTest && !(currentTest.name.includes("HEXACO") || currentTest.name.includes("IRI") || currentTest.name.includes("Interpersonal Reactivity") || currentTest.name.includes("CSI") || currentTest.name.includes("Communication Styles"));
       })() && (
         <div className="st-layout st-layout-no-sidebar" style={{ padding: "40px", textAlign: "center", color: "var(--muted)" }}>
           <h3>{(() => {
