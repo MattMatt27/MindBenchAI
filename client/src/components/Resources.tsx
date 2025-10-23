@@ -1,11 +1,23 @@
-import React, { useState } from "react";
+import { useState, ChangeEvent } from "react";
 import "../styles/Resources.css";
 
-export default function Resources() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+interface BenchmarkStudy {
+  id: string;
+  name: string;
+  fullName: string;
+  year: string;
+  authors: string;
+  organization: string;
+  summary: string;
+  link: string;
+  category: string;
+}
 
-  const benchmarkStudies = [
+export default function Resources() {
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+
+  const benchmarkStudies: BenchmarkStudy[] = [
     {
       id: '1',
       name: 'CounselBench',
@@ -119,7 +131,7 @@ export default function Resources() {
     return matchesSearch && matchesCategory;
   });
 
-  const getCategoryColor = (category) => {
+  const getCategoryColor = (category: string): string => {
     switch (category) {
       case "Mental Health":
         return "category-mental-health";
@@ -157,13 +169,13 @@ export default function Resources() {
               type="text"
               placeholder="Search studies..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               className="resources-search-input"
             />
           </div>
           <select
             value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
+            onChange={(e: ChangeEvent<HTMLSelectElement>) => setCategoryFilter(e.target.value)}
             className="resources-category-select"
           >
             <option value="all">All Categories</option>

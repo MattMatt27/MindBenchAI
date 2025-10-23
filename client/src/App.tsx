@@ -13,7 +13,6 @@ import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import VerifyEmail from "./components/VerifyEmail";
 import HomePage from "./components/HomePage"
-
 import "./styles/main.css";
 
 export default function App() {

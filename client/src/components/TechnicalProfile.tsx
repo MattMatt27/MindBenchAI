@@ -1,14 +1,24 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState, useRef, ChangeEvent, MouseEvent } from 'react';
 import { createPortal } from 'react-dom';
+import type { ApiResponse, TechProfile, TechProfileAnswer } from '../types/api';
+import type { FilterState, QuestionDefinition } from '../types/components';
 import '../styles/TechnicalProfile.css';
 
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
 
-function Dot({ on }) {
+interface DotProps {
+  on: boolean;
+}
+
+function Dot({ on }: DotProps) {
   return <span className={`dot ${on ? 'on' : 'off'}`} aria-label={on ? 'yes' : 'no'} />;
 }
 
-function ValueDisplay({ answer }) {
+interface ValueDisplayProps {
+  answer: TechProfileAnswer | undefined;
+}
+
+function ValueDisplay({ answer }: ValueDisplayProps) {
   if (!answer) return <span>—</span>;
 
   const type = (answer.type ?? '').toLowerCase();
@@ -25,10 +35,52 @@ function ValueDisplay({ answer }) {
   return <span>{value ?? '—'}</span>;
 }
 
+interface ProfilesByType {
+  tools: TechProfile[];
+  modelVersions: TechProfile[];
+}
+
+interface MenuPosition {
+  left: number;
+  top: number;
+}
+
+interface GroupedModelVersion {
+  id: string;
+  isMainRow: true;
+  modelFamily: string;
+  model: string;
+  version: string;
+  displayVersion: string;
+  isLatest: boolean;
+  hasVersions: boolean;
+  versions: TechProfile[];
+  answers: Record<string, TechProfileAnswer>;
+  originalProfile: TechProfile;
+}
+
+interface VersionRow {
+  id: string;
+  isMainRow: false;
+  isVersionRow: true;
+  parentId: string;
+  modelFamily: string;
+  model: string;
+  version: string;
+  displayVersion: string;
+  isLatest: boolean;
+  answers: Record<string, TechProfileAnswer>;
+  originalProfile: TechProfile;
+  vFirst: boolean;
+  vLast: boolean;
+}
+
+type FlattenedRow = GroupedModelVersion | VersionRow;
+
 export default function TechnicalProfile() {
-  const [activeTab, setActiveTab] = useState('tools');
-  const [query, setQuery] = useState('');
-  const [filters, setFilters] = useState({
+  const [activeTab, setActiveTab] = useState<'tools' | 'modelVersions'>('tools');
+  const [query, setQuery] = useState<string>('');
+  const [filters, setFilters] = useState<FilterState>({
     android_support: false,
     ios_support: false,
     web_support: false,
@@ -36,31 +88,29 @@ export default function TechnicalProfile() {
     crisis_detection: false,
     mood_tracking: false,
     hipaa_compliant: false,
-    // placeholders for future base-model filters
     multimodal: false,
     open_source: false,
     function_calling: false,
     code_generation: false,
   });
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [profilesByType, setProfilesByType] = useState({ tools: [], modelVersions: [] });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [profilesByType, setProfilesByType] = useState<ProfilesByType>({ tools: [], modelVersions: [] });
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Model Versions tab - expandable rows state
-  const [expandedModels, setExpandedModels] = useState(() => new Set());
-  const [modelFamilyFilter, setModelFamilyFilter] = useState([]);
-  const [mfMenuOpen, setMfMenuOpen] = useState(false);
-  const [mfMenuPos, setMfMenuPos] = useState({ left: 0, top: 0 });
-  const mfBtnRef = useRef(null);
-  const mfMenuRef = useRef(null);
+  const [expandedModels, setExpandedModels] = useState<Set<string>>(() => new Set());
+  const [modelFamilyFilter, setModelFamilyFilter] = useState<string[]>([]);
+  const [mfMenuOpen, setMfMenuOpen] = useState<boolean>(false);
+  const [mfMenuPos, setMfMenuPos] = useState<MenuPosition>({ left: 0, top: 0 });
+  const mfBtnRef = useRef<HTMLButtonElement | null>(null);
+  const mfMenuRef = useRef<HTMLDivElement | null>(null);
 
   const tabKey = activeTab;
 
   useEffect(() => {
     let isMounted = true;
 
-    async function fetchProfiles() {
+    async function fetchProfiles(): Promise<void> {
       try {
         setLoading(true);
 
@@ -73,8 +123,8 @@ export default function TechnicalProfile() {
           throw new Error('Failed to load technical profiles');
         }
 
-        const toolsData = await toolsRes.json();
-        const modelsData = await modelsRes.json();
+        const toolsData: ApiResponse<TechProfile[]> = await toolsRes.json();
+        const modelsData: ApiResponse<TechProfile[]> = await modelsRes.json();
 
         if (isMounted) {
           setProfilesByType({
@@ -85,7 +135,7 @@ export default function TechnicalProfile() {
         }
       } catch (err) {
         if (isMounted) {
-          setError(err.message ?? 'Unable to load technical profiles');
+          setError(err instanceof Error ? err.message : 'Unable to load technical profiles');
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -98,13 +148,13 @@ export default function TechnicalProfile() {
     };
   }, []);
 
-  const rawProfiles = useMemo(() => {
+  const rawProfiles = useMemo<TechProfile[]>(() => {
     const source = profilesByType[tabKey] ?? [];
     if (tabKey === 'modelVersions') {
       return [...source].sort((a, b) => {
         const aDate = a.release_date ? new Date(a.release_date) : null;
         const bDate = b.release_date ? new Date(b.release_date) : null;
-        if (aDate && bDate) return bDate - aDate;
+        if (aDate && bDate) return bDate.getTime() - aDate.getTime();
         if (aDate) return -1;
         if (bDate) return 1;
         return (b.version ?? '').localeCompare(a.version ?? '');
@@ -113,20 +163,17 @@ export default function TechnicalProfile() {
     return source;
   }, [profilesByType, tabKey]);
 
-  // Extract model families for the filter dropdown
-  const modelFamilies = useMemo(() => {
+  const modelFamilies = useMemo<string[]>(() => {
     if (tabKey !== 'modelVersions') return [];
     const families = rawProfiles.map(p => p.model_family ?? p.developer ?? 'Unknown');
     return Array.from(new Set(families)).filter(Boolean).sort((a, b) => a.localeCompare(b));
   }, [rawProfiles, tabKey]);
 
-  // Group model versions by Family + Model for expandable rows
-  const groupedModelVersions = useMemo(() => {
+  const groupedModelVersions = useMemo<GroupedModelVersion[]>(() => {
     if (tabKey !== 'modelVersions') return [];
 
     let filtered = [...rawProfiles];
 
-    // Apply model family filter
     if (modelFamilyFilter.length > 0) {
       filtered = filtered.filter(p => {
         const family = p.model_family ?? p.developer ?? 'Unknown';
@@ -134,7 +181,6 @@ export default function TechnicalProfile() {
       });
     }
 
-    // Apply search query
     const term = query.toLowerCase();
     if (term) {
       filtered = filtered.filter(p => {
@@ -145,8 +191,7 @@ export default function TechnicalProfile() {
       });
     }
 
-    // Apply filters
-    if (filters.multimodal && filtered.some(() => true)) {
+    if (filters.multimodal) {
       filtered = filtered.filter(p => p.answers?.multimodal?.value);
     }
     if (filters.open_source) {
@@ -159,8 +204,7 @@ export default function TechnicalProfile() {
       filtered = filtered.filter(p => p.answers?.code_generation?.value);
     }
 
-    // Group by family and model
-    const modelMap = {};
+    const modelMap: Record<string, { latest: TechProfile | null; versions: TechProfile[] }> = {};
     filtered.forEach(v => {
       const family = v.model_family ?? v.developer ?? 'Unknown';
       const modelName = v.name ?? 'Unknown';
@@ -172,7 +216,6 @@ export default function TechnicalProfile() {
 
       modelMap[key].versions.push(v);
 
-      // Determine latest version
       const candidate = modelMap[key].latest;
       if (!candidate || v.is_latest ||
           (!candidate.is_latest && String(v.version ?? '').localeCompare(String(candidate.version ?? '')) > 0)) {
@@ -180,8 +223,7 @@ export default function TechnicalProfile() {
       }
     });
 
-    // Create main rows
-    const mainRows = Object.entries(modelMap).map(([key, data]) => {
+    const mainRows: GroupedModelVersion[] = Object.entries(modelMap).map(([key, data]) => {
       const latest = data.latest ?? data.versions[0];
       const mainRowId = `main-${key}`;
 
@@ -209,13 +251,13 @@ export default function TechnicalProfile() {
     });
   }, [rawProfiles, tabKey, modelFamilyFilter, query, filters]);
 
-  const questionCatalogByTab = useMemo(() => {
-    const catalogMaps = {
+  const questionCatalogByTab = useMemo<Record<string, QuestionDefinition[]>>(() => {
+    const catalogMaps: Record<string, Map<string, QuestionDefinition>> = {
       tools: new Map(),
       modelVersions: new Map(),
     };
 
-    const registerQuestion = (targetTab, key, answer) => {
+    const registerQuestion = (targetTab: string, key: string, answer: TechProfileAnswer): void => {
       if (!key || !answer) return;
 
       const map = catalogMaps[targetTab];
@@ -236,7 +278,7 @@ export default function TechnicalProfile() {
       }
     };
 
-    const processProfiles = (profiles, defaultTab) => {
+    const processProfiles = (profiles: TechProfile[], defaultTab: string): void => {
       (profiles ?? []).forEach((profile) => {
         Object.entries(profile.answers ?? {}).forEach(([key, answer]) => {
           if (!answer) return;
@@ -269,12 +311,12 @@ export default function TechnicalProfile() {
 
   const questionCatalog = questionCatalogByTab[tabKey] ?? [];
 
-  const categories = useMemo(() => {
+  const categories = useMemo<string[]>(() => {
     const unique = new Set(questionCatalog.map((q) => q.category));
     return ['all', ...unique];
   }, [questionCatalog]);
 
-  const filteredProfiles = useMemo(() => {
+  const filteredProfiles = useMemo<TechProfile[]>(() => {
     const term = query.toLowerCase();
 
     return rawProfiles
@@ -307,15 +349,14 @@ export default function TechnicalProfile() {
       });
   }, [rawProfiles, query, filters, tabKey]);
 
-  const displayQuestions = useMemo(() => {
+  const displayQuestions = useMemo<QuestionDefinition[]>(() => {
     return questionCatalog.filter((q) => selectedCategory === 'all' || q.category === selectedCategory);
   }, [questionCatalog, selectedCategory]);
 
-  // Flatten grouped model versions for rendering (with expanded versions)
-  const flattenedModelVersionRows = useMemo(() => {
+  const flattenedModelVersionRows = useMemo<FlattenedRow[]>(() => {
     if (tabKey !== 'modelVersions') return [];
 
-    const rows = [];
+    const rows: FlattenedRow[] = [];
     groupedModelVersions.forEach(mainRow => {
       rows.push(mainRow);
 
@@ -329,7 +370,7 @@ export default function TechnicalProfile() {
             modelFamily: v.model_family ?? v.developer ?? 'Unknown',
             model: v.name ?? 'Unknown',
             version: v.version ?? '—',
-            displayVersion: v.version ?? '—', // Always show actual version in dropdown
+            displayVersion: v.version ?? '—',
             isLatest: Boolean(v.is_latest),
             answers: v.answers ?? {},
             originalProfile: v,
@@ -343,11 +384,11 @@ export default function TechnicalProfile() {
     return rows;
   }, [groupedModelVersions, expandedModels, tabKey]);
 
-  const toggleFilter = (key) => {
+  const toggleFilter = (key: keyof FilterState): void => {
     setFilters((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const toggleRow = (id) => {
+  const toggleRow = (id: string): void => {
     setExpandedModels((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -355,7 +396,7 @@ export default function TechnicalProfile() {
     });
   };
 
-  const openMfMenu = () => {
+  const openMfMenu = (): void => {
     const el = mfBtnRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -363,26 +404,27 @@ export default function TechnicalProfile() {
     setMfMenuOpen((v) => !v);
   };
 
-  // Close dropdown menu on outside click
   useEffect(() => {
     if (!mfMenuOpen) return;
 
-    const onDocClick = (e) => {
-      const withinBtn = mfBtnRef.current && mfBtnRef.current.contains(e.target);
-      const withinMenu = mfMenuRef.current && mfMenuRef.current.contains(e.target);
+    const onDocClick = (e: Event): void => {
+      const withinBtn = mfBtnRef.current && mfBtnRef.current.contains(e.target as Node);
+      const withinMenu = mfMenuRef.current && mfMenuRef.current.contains(e.target as Node);
       if (!withinBtn && !withinMenu) setMfMenuOpen(false);
     };
-    const onKey = (e) => e.key === 'Escape' && setMfMenuOpen(false);
-    const onScroll = () => setMfMenuOpen(false);
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') setMfMenuOpen(false);
+    };
+    const onScroll = (): void => setMfMenuOpen(false);
 
     document.addEventListener('click', onDocClick);
-    document.addEventListener('keydown', onKey);
-    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('keydown', onKey as any);
+    window.addEventListener('scroll', onScroll, { passive: true } as AddEventListenerOptions);
     window.addEventListener('resize', onScroll);
 
     return () => {
       document.removeEventListener('click', onDocClick);
-      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keydown', onKey as any);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
@@ -418,7 +460,7 @@ export default function TechnicalProfile() {
           <div className="search-island">
             <input
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
               placeholder={
                 tabKey === 'tools'
                   ? 'Search by tool, model, or configuration name'
@@ -435,9 +477,9 @@ export default function TechnicalProfile() {
               <div className="filter-group">
                 <div className="filter-heading">Platforms</div>
                 {[
-                  { key: 'android_support', label: 'Android' },
-                  { key: 'ios_support', label: 'iOS' },
-                  { key: 'web_support', label: 'Web' },
+                  { key: 'android_support' as keyof FilterState, label: 'Android' },
+                  { key: 'ios_support' as keyof FilterState, label: 'iOS' },
+                  { key: 'web_support' as keyof FilterState, label: 'Web' },
                 ].map(({ key, label }) => (
                   <label key={key} className="filter-item">
                     <input
@@ -465,8 +507,8 @@ export default function TechnicalProfile() {
               <div className="filter-group">
                 <div className="filter-heading">Mental Health</div>
                 {[
-                  { key: 'crisis_detection', label: 'Crisis detection' },
-                  { key: 'mood_tracking', label: 'Mood tracking' },
+                  { key: 'crisis_detection' as keyof FilterState, label: 'Crisis detection' },
+                  { key: 'mood_tracking' as keyof FilterState, label: 'Mood tracking' },
                 ].map(({ key, label }) => (
                   <label key={key} className="filter-item">
                     <input
@@ -508,8 +550,8 @@ export default function TechnicalProfile() {
               <div className="filter-group">
                 <div className="filter-heading">Capabilities</div>
                 {[
-                  { key: 'function_calling', label: 'Function calling' },
-                  { key: 'code_generation', label: 'Code generation' },
+                  { key: 'function_calling' as keyof FilterState, label: 'Function calling' },
+                  { key: 'code_generation' as keyof FilterState, label: 'Code generation' },
                 ].map(({ key, label }) => (
                   <label key={key} className="filter-item">
                     <input
@@ -541,7 +583,7 @@ export default function TechnicalProfile() {
             <select
               className="category-select"
               value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
+              onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedCategory(e.target.value)}
             >
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
@@ -557,8 +599,8 @@ export default function TechnicalProfile() {
             <table className="technical-profiles-table">
               <thead>
                 <tr>
-                  {tabKey === 'modelVersions' && <th rowSpan="2" style={{ width: 30 }}></th>}
-                  <th rowSpan="2" className={tabKey === 'modelVersions' ? 'st-th-menu' : 'sticky-column'}>
+                  {tabKey === 'modelVersions' && <th rowSpan={2} style={{ width: 30 }}></th>}
+                  <th rowSpan={2} className={tabKey === 'modelVersions' ? 'st-th-menu' : 'sticky-column'}>
                     {tabKey === 'modelVersions' ? (
                       <button
                         ref={mfBtnRef}
@@ -575,10 +617,10 @@ export default function TechnicalProfile() {
                       'Configuration'
                     )}
                   </th>
-                  <th rowSpan="2" className={tabKey === 'modelVersions' ? '' : ''}>
+                  <th rowSpan={2} className={tabKey === 'modelVersions' ? '' : ''}>
                     {tabKey === 'tools' ? 'Base Model' : 'Model'}
                   </th>
-                  {tabKey === 'modelVersions' && <th rowSpan="2">Version</th>}
+                  {tabKey === 'modelVersions' && <th rowSpan={2}>Version</th>}
                   {displayQuestions.map((question, index) => {
                     const colSpan = displayQuestions.filter(
                       (dq) => dq.category === question.category,
@@ -602,7 +644,7 @@ export default function TechnicalProfile() {
                     if (!firstInCategory) return null;
 
                     return (
-                      <th key={question.key} rowSpan="2" className="question-header">
+                      <th key={question.key} rowSpan={2} className="question-header">
                         {question.questionLabel}
                       </th>
                     );
@@ -659,13 +701,13 @@ export default function TechnicalProfile() {
 
                 {tabKey === 'modelVersions' && flattenedModelVersionRows.map((row) => {
                   const isMainRow = row.isMainRow;
-                  const isVersionRow = row.isVersionRow;
+                  const isVersionRow = !isMainRow;
                   const isOpen = isMainRow && expandedModels.has(row.id);
 
                   return (
                     <tr
                       key={row.id}
-                      className={`${isVersionRow ? 'st-row-version' : 'st-row-main'} ${isOpen ? 'open' : ''} ${row.vFirst ? 'st-vfirst' : ''} ${row.vLast ? 'st-vlast' : ''}`}
+                      className={`${isVersionRow ? 'st-row-version' : 'st-row-main'} ${isOpen ? 'open' : ''} ${!isMainRow && row.vFirst ? 'st-vfirst' : ''} ${!isMainRow && row.vLast ? 'st-vlast' : ''}`}
                       onClick={() => {
                         if (isMainRow && row.hasVersions) {
                           toggleRow(row.id);
@@ -677,7 +719,7 @@ export default function TechnicalProfile() {
                         {isMainRow && row.hasVersions ? (
                           <button
                             className={`st-expander ${expandedModels.has(row.id) ? 'open' : ''}`}
-                            onClick={(e) => {
+                            onClick={(e: MouseEvent<HTMLButtonElement>) => {
                               e.stopPropagation();
                               toggleRow(row.id);
                             }}
@@ -720,7 +762,6 @@ export default function TechnicalProfile() {
             )}
           </div>
 
-          {/* Filter actions for model versions */}
           {tabKey === 'modelVersions' && modelFamilyFilter.length > 0 && (
             <div style={{ marginTop: '12px' }}>
               <button
@@ -735,7 +776,6 @@ export default function TechnicalProfile() {
         </main>
       </div>
 
-      {/* Family filter dropdown menu (portal) */}
       {tabKey === 'modelVersions' && mfMenuOpen && createPortal(
         <div
           ref={mfMenuRef}
@@ -769,7 +809,7 @@ export default function TechnicalProfile() {
               <input
                 type="checkbox"
                 checked={modelFamilyFilter.includes(mf)}
-                onChange={(e) => {
+                onChange={(e: ChangeEvent<HTMLInputElement>) => {
                   if (e.target.checked) {
                     setModelFamilyFilter([...modelFamilyFilter, mf]);
                   } else {

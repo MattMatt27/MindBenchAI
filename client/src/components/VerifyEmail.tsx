@@ -1,15 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, MouseEvent } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import type { ApiResponse } from '../types/api';
 import '../styles/Auth.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
+type VerificationStatus = 'verifying' | 'success' | 'error';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [status, setStatus] = useState('verifying'); // 'verifying', 'success', 'error'
-  const [message, setMessage] = useState('');
-  const [resending, setResending] = useState(false);
+  const [status, setStatus] = useState<VerificationStatus>('verifying');
+  const [message, setMessage] = useState<string>('');
+  const [resending, setResending] = useState<boolean>(false);
 
   const token = searchParams.get('token');
 
@@ -22,7 +25,7 @@ export default function VerifyEmail() {
     }
   }, [token]);
 
-  const verifyEmail = async (verificationToken) => {
+  const verifyEmail = async (verificationToken: string): Promise<void> => {
     try {
       const response = await fetch(`${API_URL}/auth/verify-email`, {
         method: 'POST',
@@ -32,7 +35,7 @@ export default function VerifyEmail() {
         body: JSON.stringify({ token: verificationToken }),
       });
 
-      const data = await response.json();
+      const data: ApiResponse<unknown> = await response.json();
 
       if (data.success) {
         setStatus('success');
@@ -50,7 +53,9 @@ export default function VerifyEmail() {
     }
   };
 
-  const resendVerification = async () => {
+  const resendVerification = async (e: MouseEvent<HTMLButtonElement>): Promise<void> => {
+    e.preventDefault();
+
     const email = prompt('Please enter your email address to resend verification:');
     if (!email) return;
 
@@ -65,7 +70,7 @@ export default function VerifyEmail() {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
+      const data: ApiResponse<unknown> = await response.json();
 
       if (data.success) {
         alert('Verification email sent! Please check your inbox.');

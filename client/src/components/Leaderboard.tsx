@@ -1,28 +1,91 @@
 import "../styles/Leaderboard.css";
-import React from "react";
+import { useState, useMemo, useRef, useEffect, MouseEvent, KeyboardEvent } from "react";
+import type { ChangeEvent } from "react";
 import {
   useReactTable,
   getCoreRowModel,
-  getSortedRowModel,
   getFilteredRowModel,
   flexRender,
+  ColumnDef,
+  SortingState,
+  ColumnFiltersState,
+  Row,
 } from "@tanstack/react-table";
-import { 
-  getLatestVersions, 
-  modelVersions, 
+import {
+  getLatestVersions,
+  modelVersions,
   filterVersions,
   systemPrompts,
   messagePrompts,
-  modelFamilies 
+  modelFamilies
 } from "../data/leaderboardData";
 
-function InfoBubble({ title, content }) {
-  const [open, setOpen] = React.useState(false);
-  const wrapRef = React.useRef(null);
+interface InfoBubbleProps {
+  title: string;
+  content: string;
+}
 
-  React.useEffect(() => {
-    function handleDocClick(e) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) {
+interface ModelVersion {
+  id: string;
+  modelFamily: string;
+  model: string;
+  version: string;
+  SIRI_2: number;
+  A_pharm: number;
+  A_mamh: number;
+  temperature?: number;
+  top_p?: number;
+  system_prompt_id?: string;
+  message_prompt_id?: string;
+}
+
+interface MainRow {
+  id: string;
+  isMainRow: true;
+  modelFamily: string;
+  model: string;
+  version: string;
+  actualVersion: string;
+  SIRI_2: number;
+  A_pharm: number;
+  A_mamh: number;
+  hasVersions: boolean;
+  versions: ModelVersion[];
+}
+
+interface VersionRow {
+  id: string;
+  isMainRow: false;
+  parentId: string;
+  modelFamily: string;
+  model: string;
+  version: string;
+  SIRI_2: number;
+  A_pharm: number;
+  A_mamh: number;
+  temperature?: number;
+  top_p?: number;
+  system_prompt_id?: string;
+  message_prompt_id?: string;
+}
+
+type TableRow = MainRow | VersionRow;
+
+interface FilterParams {
+  temperature?: number;
+  top_p?: number;
+  system_prompt_id?: string;
+  message_prompt_id?: string;
+  modelFamilies?: string[];
+}
+
+function InfoBubble({ title, content }: InfoBubbleProps) {
+  const [open, setOpen] = useState<boolean>(false);
+  const wrapRef = useRef<HTMLSpanElement | null>(null);
+
+  useEffect(() => {
+    function handleDocClick(e: Event): void {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     }
@@ -38,11 +101,11 @@ function InfoBubble({ title, content }) {
         tabIndex={0}
         aria-label={`${title} details`}
         aria-expanded={open}
-        onClick={(e) => {
+        onClick={(e: MouseEvent) => {
           e.stopPropagation();
           setOpen((v) => !v);
         }}
-        onKeyDown={(e) => {
+        onKeyDown={(e: KeyboardEvent) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
             setOpen((v) => !v);
@@ -62,20 +125,20 @@ function InfoBubble({ title, content }) {
 }
 
 export default function Leaderboard() {
-  const [activeTab, setActiveTab] = React.useState("models");
-  const [sorting, setSorting] = React.useState([]);
-  const [columnFilters, setColumnFilters] = React.useState([]);
-  const [globalFilter, setGlobalFilter] = React.useState("");
-  const [expandedModels, setExpandedModels] = React.useState(() => new Set());
-  const [selectedVersions, setSelectedVersions] = React.useState(() => new Set());
+  const [activeTab, setActiveTab] = useState<string>("models");
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = useState<string>("");
+  const [expandedModels, setExpandedModels] = useState<Set<string>>(() => new Set());
+  const [selectedVersions, setSelectedVersions] = useState<Set<string>>(() => new Set());
 
-  const [temperatureFilter, setTemperatureFilter] = React.useState("");
-  const [topPFilter, setTopPFilter] = React.useState("");
-  const [systemPromptFilter, setSystemPromptFilter] = React.useState("");
-  const [messagePromptFilter, setMessagePromptFilter] = React.useState("");
-  const [modelFamilyFilter, setModelFamilyFilter] = React.useState([]);
+  const [temperatureFilter, setTemperatureFilter] = useState<string>("");
+  const [topPFilter, setTopPFilter] = useState<string>("");
+  const [systemPromptFilter, setSystemPromptFilter] = useState<string>("");
+  const [messagePromptFilter, setMessagePromptFilter] = useState<string>("");
+  const [modelFamilyFilter, setModelFamilyFilter] = useState<string[]>([]);
 
-  const toggleVersion = (versionId) => {
+  const toggleVersion = (versionId: string): void => {
     setSelectedVersions((prev) => {
       const next = new Set(prev);
       next.has(versionId) ? next.delete(versionId) : next.add(versionId);
@@ -83,28 +146,25 @@ export default function Leaderboard() {
     });
   };
 
-  const clearAllSelected = () => setSelectedVersions(new Set());
+  const clearAllSelected = (): void => setSelectedVersions(new Set());
 
-  // Get sorted main rows data
-  const sortedMainRows = React.useMemo(() => {
-    const filters = {
+  const sortedMainRows = useMemo<MainRow[]>(() => {
+    const filters: FilterParams = {
       temperature: temperatureFilter ? parseFloat(temperatureFilter) : undefined,
       top_p: topPFilter ? parseFloat(topPFilter) : undefined,
       system_prompt_id: systemPromptFilter || undefined,
       message_prompt_id: messagePromptFilter || undefined,
       modelFamilies: modelFamilyFilter.length > 0 ? modelFamilyFilter : undefined,
     };
-    
-    let filtered = filterVersions(modelVersions, filters);
-    
-    // Apply model family filter
+
+    let filtered = filterVersions(modelVersions as ModelVersion[], filters);
+
     if (filters.modelFamilies) {
-      filtered = filtered.filter(v => filters.modelFamilies.includes(v.modelFamily));
+      filtered = filtered.filter(v => filters.modelFamilies!.includes(v.modelFamily));
     }
 
-    const modelMap = {};
-    
-    // Group by model
+    const modelMap: Record<string, { latest: ModelVersion | null; versions: ModelVersion[] }> = {};
+
     filtered.forEach(v => {
       const key = `${v.modelFamily}-${v.model}`;
       if (!modelMap[key]) {
@@ -113,18 +173,17 @@ export default function Leaderboard() {
           versions: []
         };
       }
-      
-      if (!modelMap[key].latest || v.version > modelMap[key].latest.version) {
+
+      if (!modelMap[key].latest || v.version > modelMap[key].latest!.version) {
         modelMap[key].latest = v;
       }
       modelMap[key].versions.push(v);
     });
-    
-    // Create main rows only
-    const mainRows = Object.entries(modelMap).map(([key, data]) => {
-      const latest = data.latest;
+
+    const mainRows: MainRow[] = Object.entries(modelMap).map(([key, data]) => {
+      const latest = data.latest!;
       const mainRowId = `main-${key}`;
-      
+
       return {
         id: mainRowId,
         isMainRow: true,
@@ -139,33 +198,32 @@ export default function Leaderboard() {
         versions: data.versions
       };
     });
-    
-    // Apply sorting to main rows only
+
     if (sorting.length > 0) {
       const { id: sortColumn, desc } = sorting[0];
       mainRows.sort((a, b) => {
-        const aVal = a[sortColumn];
-        const bVal = b[sortColumn];
-        
+        const aVal = a[sortColumn as keyof MainRow];
+        const bVal = b[sortColumn as keyof MainRow];
+
         if (typeof aVal === "number" && typeof bVal === "number") {
           return desc ? bVal - aVal : aVal - bVal;
         }
-        
+
         const aStr = String(aVal || "").toLowerCase();
         const bStr = String(bVal || "").toLowerCase();
         return desc ? bStr.localeCompare(aStr) : aStr.localeCompare(bStr);
       });
     }
-    
+
     return mainRows;
   }, [temperatureFilter, topPFilter, systemPromptFilter, messagePromptFilter, modelFamilyFilter, sorting]);
 
-  const data = React.useMemo(() => {
-    const rows = [];
-    
+  const data = useMemo<TableRow[]>(() => {
+    const rows: TableRow[] = [];
+
     sortedMainRows.forEach(mainRow => {
       rows.push(mainRow);
-      
+
       if (expandedModels.has(mainRow.id) && mainRow.hasVersions) {
         mainRow.versions
           .sort((a, b) => b.version.localeCompare(a.version))
@@ -188,11 +246,11 @@ export default function Leaderboard() {
           });
       }
     });
-    
+
     return rows;
   }, [sortedMainRows, expandedModels]);
 
-  const toggleRow = (id) => {
+  const toggleRow = (id: string): void => {
     setExpandedModels((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -200,7 +258,7 @@ export default function Leaderboard() {
     });
   };
 
-  const columns = React.useMemo(
+  const columns = useMemo<ColumnDef<TableRow>[]>(
     () => [
       {
         id: "expander",
@@ -210,7 +268,6 @@ export default function Leaderboard() {
         enableColumnFilter: false,
         cell: ({ row }) => {
           if (!row.original.isMainRow) {
-            // Version row - show checkbox
             const isSelected = selectedVersions.has(row.original.id);
             return (
               <div className="lb-checkbox-cell">
@@ -223,16 +280,16 @@ export default function Leaderboard() {
               </div>
             );
           }
- 
+
           if (!row.original.hasVersions) return null;
-          
+
           const isOpen = expandedModels.has(row.original.id);
           return (
             <button
               className={`lb-expander ${isOpen ? "open" : ""}`}
               aria-label={isOpen ? "Collapse row" : "Expand row"}
               aria-expanded={isOpen}
-              onClick={(e) => {
+              onClick={(e: MouseEvent<HTMLButtonElement>) => {
                 e.stopPropagation();
                 toggleRow(row.original.id);
               }}
@@ -243,19 +300,19 @@ export default function Leaderboard() {
           );
         },
       },
-      { 
-        accessorKey: "modelFamily", 
-        header: () => "Model Family", 
+      {
+        accessorKey: "modelFamily",
+        header: () => "Model Family",
         cell: (info) => info.getValue()
       },
-      { 
-        accessorKey: "model", 
-        header: () => "Model", 
+      {
+        accessorKey: "model",
+        header: () => "Model",
         cell: (info) => info.getValue()
       },
-      { 
-        accessorKey: "version", 
-        header: () => "Version", 
+      {
+        accessorKey: "version",
+        header: () => "Version",
         cell: (info) => info.getValue(),
         size: 100
       },
@@ -271,7 +328,7 @@ export default function Leaderboard() {
           </div>
         ),
         cell: ({ getValue }) => {
-          const v = getValue();
+          const v = getValue() as number;
           return typeof v === "number" ? v.toFixed(3) : v;
         },
       },
@@ -287,7 +344,7 @@ export default function Leaderboard() {
           </div>
         ),
         cell: ({ getValue }) => {
-          const v = getValue();
+          const v = getValue() as number;
           return typeof v === "number" ? v.toFixed(3) : v;
         },
       },
@@ -303,7 +360,7 @@ export default function Leaderboard() {
           </div>
         ),
         cell: ({ getValue }) => {
-          const v = getValue();
+          const v = getValue() as number;
           return typeof v === "number" ? v.toFixed(3) : v;
         },
       },
@@ -311,7 +368,7 @@ export default function Leaderboard() {
     [expandedModels, selectedVersions]
   );
 
-  const table = useReactTable({
+  const table = useReactTable<TableRow>({
     data,
     columns,
     state: { sorting, columnFilters, globalFilter },
@@ -332,9 +389,8 @@ export default function Leaderboard() {
     },
   });
 
-  // Build comparison rows from selected version ids
-  const comparisonRows = React.useMemo(
-    () => modelVersions.filter((v) => selectedVersions.has(v.id)),
+  const comparisonRows = useMemo<ModelVersion[]>(
+    () => (modelVersions as ModelVersion[]).filter((v) => selectedVersions.has(v.id)),
     [selectedVersions]
   );
 
@@ -366,7 +422,7 @@ export default function Leaderboard() {
                 <input
                   className="lb-search-input"
                   value={globalFilter ?? ""}
-                  onChange={(e) => setGlobalFilter(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setGlobalFilter(e.target.value)}
                   placeholder="Search..."
                 />
               </div>
@@ -383,7 +439,7 @@ export default function Leaderboard() {
                       <input
                         type="checkbox"
                         checked={modelFamilyFilter.includes(family)}
-                        onChange={(e) => {
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => {
                           if (e.target.checked) {
                             setModelFamilyFilter(prev => [...prev, family]);
                           } else {
@@ -398,7 +454,7 @@ export default function Leaderboard() {
               </div>
 
               <h3 className="lb-filter-title">Experiment Parameters</h3>
-              
+
               <div className="lb-filter-group">
                 <label className="lb-filter-heading" htmlFor="temperatureFilter">
                   Temperature
@@ -407,7 +463,7 @@ export default function Leaderboard() {
                   id="temperatureFilter"
                   className="lb-select"
                   value={temperatureFilter}
-                  onChange={(e) => setTemperatureFilter(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setTemperatureFilter(e.target.value)}
                 >
                   <option value="">All</option>
                   <option value="0.3">0.3</option>
@@ -425,7 +481,7 @@ export default function Leaderboard() {
                   id="topPFilter"
                   className="lb-select"
                   value={topPFilter}
-                  onChange={(e) => setTopPFilter(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setTopPFilter(e.target.value)}
                 >
                   <option value="">All</option>
                   <option value="0.9">0.9</option>
@@ -442,7 +498,7 @@ export default function Leaderboard() {
                   id="systemPromptFilter"
                   className="lb-select"
                   value={systemPromptFilter}
-                  onChange={(e) => setSystemPromptFilter(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setSystemPromptFilter(e.target.value)}
                 >
                   <option value="">All</option>
                   {systemPrompts.map(p => (
@@ -464,7 +520,7 @@ export default function Leaderboard() {
                   id="messagePromptFilter"
                   className="lb-select"
                   value={messagePromptFilter}
-                  onChange={(e) => setMessagePromptFilter(e.target.value)}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setMessagePromptFilter(e.target.value)}
                 >
                   <option value="">All</option>
                   {messagePrompts.map(p => (
@@ -514,9 +570,9 @@ export default function Leaderboard() {
                     const isMainRow = row.original.isMainRow;
                     const isVersionRow = !isMainRow;
                     const isSelected = isVersionRow && selectedVersions.has(row.original.id);
-                    
+
                     return (
-                      <tr 
+                      <tr
                         key={row.id}
                         className={`
                           ${isMainRow ? 'lb-main-row' : 'lb-version-row'}
@@ -544,7 +600,6 @@ export default function Leaderboard() {
       )}
 
       {activeTab === "versions" && (
-        /* NOTE: apply the 'no-sidebar' variant so the comparison table spans full width */
         <div className="lb-layout no-sidebar">
           <div className="lb-comparison-content">
             <div className="lb-comparison-header">

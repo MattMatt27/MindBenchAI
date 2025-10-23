@@ -1,19 +1,32 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent, ChangeEvent } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
+import type { ApiResponse } from '../types/api';
 import '../styles/Auth.css';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+
+interface FormData {
+  password: string;
+  confirmPassword: string;
+}
+
+interface FormErrors {
+  password?: string;
+  confirmPassword?: string;
+  submit?: string;
+  token?: string;
+}
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     password: '',
     confirmPassword: '',
   });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [loading, setLoading] = useState<boolean>(false);
+  const [success, setSuccess] = useState<boolean>(false);
 
   const token = searchParams.get('token');
 
@@ -23,14 +36,14 @@ export default function ResetPassword() {
     }
   }, [token]);
 
-  const handleChange = (e) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
     // Clear error when user starts typing
-    if (errors[name]) {
+    if (errors[name as keyof FormErrors]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
@@ -38,8 +51,8 @@ export default function ResetPassword() {
     }
   };
 
-  const validateForm = () => {
-    const newErrors = {};
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
@@ -59,7 +72,7 @@ export default function ResetPassword() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
 
     if (!token) {
@@ -85,7 +98,7 @@ export default function ResetPassword() {
         }),
       });
 
-      const data = await response.json();
+      const data: ApiResponse<unknown> = await response.json();
 
       if (data.success) {
         setSuccess(true);

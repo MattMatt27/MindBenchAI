@@ -1,7 +1,7 @@
-// src/components/StandardizeTest.jsx
-import "../styles/StandardizeTest.css";
-import React from "react";
+import "../styles/ConversationalProfile.css";
+import React, { useState, useEffect, useMemo, useRef, KeyboardEvent, ChangeEvent } from "react";
 import { createPortal } from "react-dom";
+import type { ApiResponse, ConversationalTest } from "../types/api";
 import {
   Radar,
   RadarChart,
@@ -12,11 +12,12 @@ import {
 } from "recharts";
 
 const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:5001/api";
-const HEXACO_TRAITS = ["H", "E", "X", "A", "C", "O"];
-const IRI_TRAITS = ["PT", "FS", "EC", "PD"];
-const CSI_TRAITS = ["EXP", "PRE", "VAG", "QUE", "EMO", "IMP"];
+const HEXACO_TRAITS = ["H", "E", "X", "A", "C", "O"] as const;
+const IRI_TRAITS = ["PT", "FS", "EC", "PD"] as const;
+const CSI_TRAITS = ["EXP", "PRE", "VAG", "QUE", "EMO", "IMP"] as const;
 
-const TRAIT_LABELS = {
+
+const TRAIT_LABELS: Record<string, string> = {
   // HEXACO
   H: "Honesty-Humility",
   E: "Emotionality",
@@ -38,35 +39,129 @@ const TRAIT_LABELS = {
   IMP: "Impression Manipulativeness",
 };
 
+interface ProfileResponse {
+  id: string;
+  model_version_id?: string;
+  model_id?: string | null;
+  model_family?: string | null;
+  model_name?: string | null;
+  version?: string | null;
+  is_latest?: boolean;
+  release_date?: string | null;
+  // HEXACO traits
+  honesty_humility?: number | null;
+  emotionality?: number | null;
+  extraversion?: number | null;
+  agreeableness?: number | null;
+  conscientiousness?: number | null;
+  openness?: number | null;
+  // IRI traits
+  perspective_taking?: number | null;
+  fantasy?: number | null;
+  empathic_concern?: number | null;
+  personal_distress?: number | null;
+  // CSI traits
+  expressiveness?: number | null;
+  preciseness?: number | null;
+  verbal_aggressiveness?: number | null;
+  questioningness?: number | null;
+  impression_manipulativeness?: number | null;
+}
+
+interface NormalizedProfile {
+  id: string;
+  modelVersionId: string;
+  modelId: string | null;
+  modelFamily: string;
+  model: string;
+  version: string;
+  isLatest: boolean;
+  releaseDate: string | null;
+}
+
+// Allow dynamic trait properties on NormalizedProfile
+type NormalizedProfileWithTraits = NormalizedProfile & {
+  [key: string]: string | number | boolean | null | undefined;
+};
+
+interface MainRow {
+  id: string;
+  modelVersionId: string;
+  modelId: string | null;
+  modelFamily: string;
+  model: string;
+  version: string;
+  isLatest: boolean;
+  releaseDate: string | null;
+  isMainRow: true;
+  versionLabel: string;
+  displayVersion: string;
+  actualVersion: string;
+  hasVersions: boolean;
+  versions: NormalizedProfileWithTraits[];
+  [key: string]: string | number | boolean | null | NormalizedProfileWithTraits[] | undefined;
+}
+
+interface VersionRow {
+  id: string;
+  modelVersionId: string;
+  modelId: string | null;
+  modelFamily: string;
+  model: string;
+  version: string;
+  isLatest: boolean;
+  releaseDate: string | null;
+  isMainRow: false;
+  parentId: string;
+  versionLabel: string;
+  displayVersion: string;
+  actualVersion: string;
+  vFirst: boolean;
+  vLast: boolean;
+  [key: string]: string | number | boolean | null | undefined;
+}
+
+type TableRow = MainRow | VersionRow;
+
+interface RadarDataPoint {
+  trait: string;
+  [key: string]: string | number;
+}
+
+interface MenuPosition {
+  left: number;
+  top: number;
+}
+
 export default function ConversationalProfile() {
-  const [activeTab, setActiveTab] = React.useState("models");
-  const [activeTest, setActiveTest] = React.useState("hexaco");
-  const [expandedModels, setExpandedModels] = React.useState(() => new Set());
-  const [selectedRow, setSelectedRow] = React.useState(null);
-  const [selectedVersions, setSelectedVersions] = React.useState(() => new Set());
-  const [modelFamilyFilter, setModelFamilyFilter] = React.useState([]);
-  const [mfMenuOpen, setMfMenuOpen] = React.useState(false);
-  const [mfMenuPos, setMfMenuPos] = React.useState({ left: 0, top: 0 });
-  const mfBtnRef = React.useRef(null);
-  const mfMenuRef = React.useRef(null);
-  const [profiles, setProfiles] = React.useState([]);
-  const [loading, setLoading] = React.useState(true);
-  const [error, setError] = React.useState(null);
-  const [availableTests, setAvailableTests] = React.useState([]);
-  const [testsLoading, setTestsLoading] = React.useState(true);
+  const [activeTab, setActiveTab] = useState<string>("models");
+  const [activeTest, setActiveTest] = useState<string>("hexaco");
+  const [expandedModels, setExpandedModels] = useState<Set<string>>(() => new Set());
+  const [selectedRow, setSelectedRow] = useState<TableRow | null>(null);
+  const [selectedVersions, setSelectedVersions] = useState<Set<string>>(() => new Set());
+  const [modelFamilyFilter, setModelFamilyFilter] = useState<string[]>([]);
+  const [mfMenuOpen, setMfMenuOpen] = useState<boolean>(false);
+  const [mfMenuPos, setMfMenuPos] = useState<MenuPosition>({ left: 0, top: 0 });
+  const mfBtnRef = useRef<HTMLButtonElement | null>(null);
+  const mfMenuRef = useRef<HTMLDivElement | null>(null);
+  const [profiles, setProfiles] = useState<NormalizedProfileWithTraits[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [availableTests, setAvailableTests] = useState<ConversationalTest[]>([]);
+  const [testsLoading, setTestsLoading] = useState<boolean>(true);
 
   // Fetch available tests on mount
-  React.useEffect(() => {
+  useEffect(() => {
     let isMounted = true;
 
-    const fetchTests = async () => {
+    const fetchTests = async (): Promise<void> => {
       try {
         setTestsLoading(true);
         const res = await fetch(`${API_BASE}/current/conversational-profiles/tests`);
         if (!res.ok) {
           throw new Error("Failed to load tests");
         }
-        const payload = await res.json();
+        const payload: ApiResponse<ConversationalTest[]> = await res.json();
 
         if (isMounted) {
           setAvailableTests(payload.data ?? []);
@@ -94,10 +189,10 @@ export default function ConversationalProfile() {
     };
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     let isMounted = true;
 
-    const fetchProfiles = async () => {
+    const fetchProfiles = async (): Promise<void> => {
       try {
         setLoading(true);
 
@@ -123,10 +218,10 @@ export default function ConversationalProfile() {
         if (!res.ok) {
           throw new Error("Failed to load profiles");
         }
-        const payload = await res.json();
+        const payload: ApiResponse<ProfileResponse[]> = await res.json();
 
-        const normalized = (payload.data ?? []).map((item) => {
-          const base = {
+        const normalized: NormalizedProfileWithTraits[] = (payload.data ?? []).map((item) => {
+          const base: NormalizedProfileWithTraits = {
             id: item.id,
             modelVersionId: item.model_version_id ?? item.id,
             modelId: item.model_id ?? null,
@@ -176,7 +271,7 @@ export default function ConversationalProfile() {
         }
       } catch (err) {
         if (isMounted) {
-          setError(err.message ?? "Unable to load data");
+          setError(err instanceof Error ? err.message : "Unable to load data");
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -191,14 +286,14 @@ export default function ConversationalProfile() {
     };
   }, [activeTest, availableTests]);
 
-  const allRows = React.useMemo(() => [...profiles], [profiles]);
-  const modelFamilies = React.useMemo(() => {
+  const allRows = useMemo(() => [...profiles], [profiles]);
+  const modelFamilies = useMemo(() => {
     return Array.from(
       new Set(allRows.map((row) => row.modelFamily).filter(Boolean)),
-    ).sort((a, b) => a.localeCompare(b));
+    ).sort((a, b) => String(a).localeCompare(String(b)));
   }, [allRows]);
 
-  const selectRow = (rowData) => {
+  const selectRow = (rowData: TableRow): void => {
     if (!rowData.isMainRow) {
       toggleVersion(rowData.id);
       return;
@@ -210,7 +305,7 @@ export default function ConversationalProfile() {
     }
   };
 
-  const toggleVersion = (versionId) => {
+  const toggleVersion = (versionId: string): void => {
     setSelectedVersions((prev) => {
       const next = new Set(prev);
       next.has(versionId) ? next.delete(versionId) : next.add(versionId);
@@ -218,12 +313,12 @@ export default function ConversationalProfile() {
     });
   };
 
-  const clearSelection = () => {
+  const clearSelection = (): void => {
     setSelectedRow(null);
     setSelectedVersions(new Set());
   };
 
-  const currentTraits = React.useMemo(() => {
+  const currentTraits = useMemo<readonly string[]>(() => {
     const currentTest = availableTests.find(
       (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
     );
@@ -237,12 +332,12 @@ export default function ConversationalProfile() {
     return HEXACO_TRAITS; // Default fallback
   }, [activeTest, availableTests]);
 
-  const sortedMainRows = React.useMemo(() => {
+  const sortedMainRows = useMemo<MainRow[]>(() => {
     let filtered = [...allRows];
     if (modelFamilyFilter.length > 0) {
-      filtered = filtered.filter((r) => modelFamilyFilter.includes(r.modelFamily));
+      filtered = filtered.filter((r) => modelFamilyFilter.includes(String(r.modelFamily)));
     }
-    const modelMap = {};
+    const modelMap: Record<string, { latest: NormalizedProfileWithTraits | null; versions: NormalizedProfileWithTraits[] }> = {};
     filtered.forEach((v) => {
       const family = v.modelFamily ?? "Unknown";
       const model = v.model ?? "Unknown model";
@@ -261,21 +356,24 @@ export default function ConversationalProfile() {
         modelMap[key].latest = v;
       }
     });
-    const mainRows = Object.entries(modelMap).map(([key, data]) => {
+    const mainRows: MainRow[] = Object.entries(modelMap).map(([key, data]) => {
       const latest = data.latest ?? data.versions[0];
       const mainRowId = `main-${key}`;
       const actualVersion = latest?.version ?? "—";
 
-      const baseRow = {
+      const baseRow: MainRow = {
         id: mainRowId,
         isMainRow: true,
         modelFamily: latest?.modelFamily ?? "Unknown",
         model: latest?.model ?? "Unknown model",
-        versionLabel: actualVersion,
-        displayVersion: latest?.isLatest ? "Latest" : actualVersion,
-        actualVersion,
-        modelVersionId: latest?.modelVersionId ?? latest?.id,
+        versionLabel: String(actualVersion),
+        displayVersion: latest?.isLatest ? "Latest" : String(actualVersion),
+        actualVersion: String(actualVersion),
+        modelVersionId: latest?.modelVersionId ?? latest?.id ?? "",
+        modelId: latest?.modelId ?? null,
+        version: latest?.version ?? "—",
         isLatest: Boolean(latest?.isLatest),
+        releaseDate: latest?.releaseDate ?? null,
         hasVersions: data.versions.length >= 1,
         versions: [...data.versions],
       };
@@ -292,10 +390,10 @@ export default function ConversationalProfile() {
       if (famCompare !== 0) return famCompare;
       return String(a.model).localeCompare(String(b.model));
     });
-  }, [allRows, modelFamilyFilter, activeTest, currentTraits]);
+  }, [allRows, modelFamilyFilter, currentTraits]);
 
-  const rows = React.useMemo(() => {
-    const data = [];
+  const rows = useMemo<TableRow[]>(() => {
+    const data: TableRow[] = [];
     sortedMainRows.forEach((mainRow) => {
       data.push(mainRow);
       if (mainRow.hasVersions) {
@@ -308,16 +406,20 @@ export default function ConversationalProfile() {
           const isSelected = selectedVersions.has(versionId);
           if (isExpanded || isSelected) {
             const versionLabel = v.version ?? "—";
-            const versionRow = {
+            const versionRow: VersionRow = {
               id: versionId,
               isMainRow: false,
               parentId: mainRow.id,
-              modelFamily: v.modelFamily,
-              model: v.model,
-              versionLabel,
-              displayVersion: v.isLatest ? "Latest" : versionLabel,
-              actualVersion: v.version,
+              modelFamily: String(v.modelFamily),
+              model: String(v.model),
+              modelId: v.modelId,
+              modelVersionId: v.modelVersionId,
+              version: String(v.version),
+              versionLabel: String(versionLabel),
+              displayVersion: v.isLatest ? "Latest" : String(versionLabel),
+              actualVersion: String(v.version),
               isLatest: Boolean(v.isLatest),
+              releaseDate: v.releaseDate,
               vFirst: idx === 0,
               vLast: idx === versions.length - 1,
             };
@@ -335,8 +437,8 @@ export default function ConversationalProfile() {
     return data;
   }, [sortedMainRows, expandedModels, selectedVersions, currentTraits]);
 
-  const chartRows = React.useMemo(() => {
-    const selectedVersionRows = rows.filter((r) => !r.isMainRow && selectedVersions.has(r.id));
+  const chartRows = useMemo(() => {
+    const selectedVersionRows = rows.filter((r): r is VersionRow => !r.isMainRow && selectedVersions.has(r.id));
     if (selectedVersionRows.length > 0) return selectedVersionRows;
     if (selectedRow) return [selectedRow];
     return [];
@@ -344,7 +446,7 @@ export default function ConversationalProfile() {
 
   const chartColors = ["#64748b", "#ef4444", "#f59e0b", "#10b981", "#8b5cf6", "#f97316", "#06b6d4", "#84cc16"];
 
-  const radarData = React.useMemo(() => {
+  const radarData = useMemo<RadarDataPoint[]>(() => {
     if (chartRows.length === 0) return [];
 
     // Sort traits by label length
@@ -356,18 +458,16 @@ export default function ConversationalProfile() {
     traitsWithLabels.sort((a, b) => b.length - a.length);
 
     // Distribute labels optimally based on radar position
-    // With startAngle=90: index 0 = top (12 o'clock), index n/2 = bottom (6 o'clock)
-    // Top and bottom have the most vertical space for long labels
-    const optimizedOrder = new Array(currentTraits.length);
+    const optimizedOrder: string[] = new Array(currentTraits.length);
 
     // Place longest labels at top and bottom
-    optimizedOrder[0] = traitsWithLabels[0].trait; // Top - longest
+    optimizedOrder[0] = traitsWithLabels[0].trait;
     if (traitsWithLabels.length > 1) {
       const bottomIndex = Math.floor(traitsWithLabels.length / 2);
-      optimizedOrder[bottomIndex] = traitsWithLabels[1].trait; // Bottom - 2nd longest
+      optimizedOrder[bottomIndex] = traitsWithLabels[1].trait;
     }
 
-    // Fill remaining positions with remaining labels (alternating pattern)
+    // Fill remaining positions with remaining labels
     let remainingIdx = 2;
     for (let i = 1; i < optimizedOrder.length; i++) {
       if (!optimizedOrder[i]) {
@@ -376,60 +476,62 @@ export default function ConversationalProfile() {
       }
     }
 
-    const allData = [];
+    const allData: RadarDataPoint[] = [];
     optimizedOrder.forEach((trait) => {
-      const d = { trait: TRAIT_LABELS[trait] || trait };
+      const d: RadarDataPoint = { trait: TRAIT_LABELS[trait] || trait };
       chartRows.forEach((row) => {
         const key = `${row.model}-${row.actualVersion ?? row.versionLabel}`;
-        d[key] = row[trait] ?? 0;
+        d[key] = Number(row[trait] ?? 0);
       });
       allData.push(d);
     });
     return allData;
   }, [chartRows, currentTraits]);
 
-  const maxDomain = React.useMemo(() => {
+  const maxDomain = useMemo(() => {
     const currentTest = availableTests.find(
       (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
     );
-    return currentTest?.scaleMax ?? 5; // Default to 5 if not found
+    return currentTest?.scaleMax ?? 5;
   }, [activeTest, availableTests]);
 
-  const minDomain = React.useMemo(() => {
+  const minDomain = useMemo(() => {
     const currentTest = availableTests.find(
       (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
     );
-    return currentTest?.scaleMin ?? 0; // Default to 0 if not found
+    return currentTest?.scaleMin ?? 0;
   }, [activeTest, availableTests]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedRow && !rows.some((r) => r.id === selectedRow.id)) {
       clearSelection();
     }
   }, [rows, selectedRow]);
 
-  React.useEffect(() => {
-    const onDocClick = (e) => {
+  useEffect(() => {
+    const onDocClick = (e: Event): void => {
       if (!mfMenuOpen) return;
-      const withinBtn = mfBtnRef.current && mfBtnRef.current.contains(e.target);
-      const withinMenu = mfMenuRef.current && mfMenuRef.current.contains(e.target);
+      const withinBtn = mfBtnRef.current && mfBtnRef.current.contains(e.target as Node);
+      const withinMenu = mfMenuRef.current && mfMenuRef.current.contains(e.target as Node);
       if (!withinBtn && !withinMenu) setMfMenuOpen(false);
     };
-    const onKey = (e) => e.key === "Escape" && setMfMenuOpen(false);
-    const onScroll = () => setMfMenuOpen(false);
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key === "Escape") setMfMenuOpen(false);
+    };
+    const onScroll = (): void => setMfMenuOpen(false);
     document.addEventListener("click", onDocClick);
-    document.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("keydown", onKey as any);
+    window.addEventListener("scroll", onScroll, { passive: true } as AddEventListenerOptions);
     window.addEventListener("resize", onScroll);
     return () => {
       document.removeEventListener("click", onDocClick);
-      document.removeEventListener("keydown", onKey);
+      document.removeEventListener("keydown", onKey as any);
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
   }, [mfMenuOpen]);
 
-  const toggleRow = (id) => {
+  const toggleRow = (id: string): void => {
     setExpandedModels((prev) => {
       const next = new Set(prev);
       next.has(id) ? next.delete(id) : next.add(id);
@@ -437,7 +539,7 @@ export default function ConversationalProfile() {
     });
   };
 
-  const openMfMenu = () => {
+  const openMfMenu = (): void => {
     const el = mfBtnRef.current;
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -475,7 +577,6 @@ export default function ConversationalProfile() {
             <div style={{ color: "var(--muted)" }}>No tests available</div>
           ) : (
             availableTests.map((test) => {
-              // Create a short ID from the test name for comparison
               const testId = test.name.toLowerCase().replace(/\s+/g, '-');
               const isActive = activeTest === testId || activeTest === test.name;
 
@@ -496,11 +597,9 @@ export default function ConversationalProfile() {
       )}
 
       {activeTab === "models" && (() => {
-        // Find the current test to determine if it has data
         const currentTest = availableTests.find(
           (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
         );
-        // Show table if we have a test with HEXACO, IRI, or CSI data
         return currentTest && (currentTest.name.includes("HEXACO") || currentTest.name.includes("IRI") || currentTest.name.includes("Interpersonal Reactivity") || currentTest.name.includes("CSI") || currentTest.name.includes("Communication Styles"));
       })() && (
         <div className="st-layout st-layout-no-sidebar">
@@ -539,7 +638,7 @@ export default function ConversationalProfile() {
                   return (
                     <tr
                       key={r.id}
-                      className={`st-row ${isVersionRow ? "st-row-version" : "st-row-main"} ${isOpen ? "open" : ""} ${isVersionRow && (isSelected || isVersionSelected) ? "selected" : ""} ${r.vFirst ? "st-vfirst" : ""} ${r.vLast ? "st-vlast" : ""}`}
+                      className={`st-row ${isVersionRow ? "st-row-version" : "st-row-main"} ${isOpen ? "open" : ""} ${isVersionRow && (isSelected || isVersionSelected) ? "selected" : ""} ${!isMainRow && r.vFirst ? "st-vfirst" : ""} ${!isMainRow && r.vLast ? "st-vlast" : ""}`}
                       onClick={() => {
                         if (isMainRow) {
                           if (r.hasVersions) {
@@ -549,7 +648,7 @@ export default function ConversationalProfile() {
                           selectRow(r);
                         }
                       }}
-                      onKeyDown={(e) => {
+                      onKeyDown={(e: React.KeyboardEvent) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           if (isMainRow) {
@@ -567,7 +666,7 @@ export default function ConversationalProfile() {
                         isMainRow
                           ? r.hasVersions
                             ? `${expandedModels.has(r.id) ? "Collapse" : "Expand"} versions for ${r.model}`
-                            : r.model
+                            : String(r.model)
                           : `Show chart for ${r.model} ${r.displayVersion ?? r.versionLabel ?? ""}`
                       }
                     >
@@ -602,9 +701,11 @@ export default function ConversationalProfile() {
                           ? r.displayVersion ?? r.versionLabel ?? "—"
                           : r.versionLabel ?? "—"}
                       </td>
-                      {currentTraits.map(trait => (
-                        <td key={trait}>{r[trait] ?? "—"}</td>
-                      ))}
+                      {currentTraits.map(trait => {
+                        const value = r[trait];
+                        const displayValue = typeof value === 'number' || typeof value === 'string' ? value : "—";
+                        return <td key={trait}>{displayValue}</td>;
+                      })}
                     </tr>
                   );
                 })}
@@ -655,8 +756,7 @@ export default function ConversationalProfile() {
                       <PolarAngleAxis
                         dataKey="trait"
                         tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => {
-                          // Wrap long labels if needed
+                        tickFormatter={(value: string) => {
                           if (value.length > 15) {
                             const words = value.split(' ');
                             if (words.length > 1) {
@@ -732,13 +832,13 @@ export default function ConversationalProfile() {
                 </button>
                 <div className="st-hmenu-sep" />
                 {modelFamilies.map((mf) => (
-                  <label key={mf} className={`st-hmenu-item st-hmenu-checkbox ${modelFamilyFilter.includes(mf) ? "active" : ""}`} role="menuitem">
+                  <label key={mf} className={`st-hmenu-item st-hmenu-checkbox ${modelFamilyFilter.includes(String(mf)) ? "active" : ""}`} role="menuitem">
                     <input
                       type="checkbox"
-                      checked={modelFamilyFilter.includes(mf)}
-                      onChange={(e) => {
+                      checked={modelFamilyFilter.includes(String(mf))}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => {
                         if (e.target.checked) {
-                          setModelFamilyFilter([...modelFamilyFilter, mf]);
+                          setModelFamilyFilter([...modelFamilyFilter, String(mf)]);
                         } else {
                           setModelFamilyFilter(modelFamilyFilter.filter((f) => f !== mf));
                         }
@@ -754,11 +854,9 @@ export default function ConversationalProfile() {
       )}
 
       {activeTab === "models" && (() => {
-        // Find the current test to determine if it has data
         const currentTest = availableTests.find(
           (test) => test.name.toLowerCase().replace(/\s+/g, '-') === activeTest || test.name === activeTest
         );
-        // Show "coming soon" for tests without data structure implemented
         return currentTest && !(currentTest.name.includes("HEXACO") || currentTest.name.includes("IRI") || currentTest.name.includes("Interpersonal Reactivity") || currentTest.name.includes("CSI") || currentTest.name.includes("Communication Styles"));
       })() && (
         <div className="st-layout st-layout-no-sidebar" style={{ padding: "40px", textAlign: "center", color: "var(--muted)" }}>

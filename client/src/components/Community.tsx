@@ -1,23 +1,51 @@
 import "../styles/Community.css";
-import React from "react";
+import { useState, useMemo, useRef, useEffect, MouseEvent, KeyboardEvent } from "react";
 import { updates, suggestions } from "../data/models";
 
-const EMOJIS = ["🎉", "❤️", "👍"];
+const EMOJIS = ["🎉", "❤️", "👍"] as const;
 
-const normalizeTag = (t) => {
+interface Update {
+  date: string;
+  title: string;
+  note?: string;
+  image?: string;
+  tag: string;
+}
+
+interface UpdateWithIndex extends Update {
+  _idx: number;
+}
+
+interface Suggestion {
+  title: string;
+  desc?: string;
+  status: string;
+  vote?: number;
+}
+
+interface SuggestionWithIndex extends Suggestion {
+  _idx: number;
+}
+
+interface GroupedUpdate {
+  date: string;
+  items: UpdateWithIndex[];
+}
+
+const normalizeTag = (t: string | undefined): string => {
   const s = String(t || "").trim().toLowerCase();
   if (s === "new features" || s === "new-feature" || s === "new") return "New features";
   if (s === "bug fixes" || s === "bug-fixes" || s === "fixes" || s === "bug") return "Bug fixes";
   return "Updates";
 };
 
-const tagClass = (t) =>
+const tagClass = (t: string): string =>
   t === "New features" ? "is-new" : t === "Bug fixes" ? "is-bug" : "is-update";
 
-const ts = (d) =>
+const ts = (d: string): number =>
   new Date(String(d).replace(/(\d+)(st|nd|rd|th)/i, "$1").replace(/\bSept\b/i, "Sep")).getTime();
 
-const statusLabel = (s) => {
+const statusLabel = (s: string): string => {
   const v = String(s || "").toLowerCase();
   if (v === "in-progress" || v === "in progress") return "In Progress";
   if (v === "planned") return "Planned";
@@ -25,7 +53,7 @@ const statusLabel = (s) => {
   return s || "";
 };
 
-const statusClass = (s) => {
+const statusClass = (s: string): string => {
   const v = String(s || "").toLowerCase();
   if (v === "in-progress" || v === "in progress") return "is-progress";
   if (v === "planned") return "is-planned";
@@ -34,41 +62,41 @@ const statusClass = (s) => {
 };
 
 export default function Community() {
-  const [activeTab, setActiveTab] = React.useState("What's New");
+  const [activeTab, setActiveTab] = useState<string>("What's New");
 
-  const withTag = React.useMemo(
-    () => updates.map((u, i) => ({ ...u, tag: normalizeTag(u.tag), _idx: i })),
+  const withTag = useMemo<UpdateWithIndex[]>(
+    () => (updates as Update[]).map((u, i) => ({ ...u, tag: normalizeTag(u.tag), _idx: i })),
     []
   );
 
-  const TAGS = React.useMemo(
+  const TAGS = useMemo<string[]>(
     () => ["All", ...Array.from(new Set(withTag.map((u) => u.tag)))],
     [withTag]
   );
 
-  const [activeTag, setActiveTag] = React.useState("All");
+  const [activeTag, setActiveTag] = useState<string>("All");
 
-  const filtered = React.useMemo(
+  const filtered = useMemo<UpdateWithIndex[]>(
     () => withTag.filter((u) => activeTag === "All" || u.tag === activeTag),
     [withTag, activeTag]
   );
 
-  const grouped = React.useMemo(() => {
-    const map = new Map();
+  const grouped = useMemo<GroupedUpdate[]>(() => {
+    const map = new Map<string, UpdateWithIndex[]>();
     filtered.forEach((u) => {
       if (!map.has(u.date)) map.set(u.date, []);
-      map.get(u.date).push(u);
+      map.get(u.date)!.push(u);
     });
     return Array.from(map.entries())
       .map(([date, items]) => ({ date, items }))
       .sort((a, b) => ts(b.date) - ts(a.date));
   }, [filtered]);
 
-  const [selected, setSelected] = React.useState(
+  const [selected, setSelected] = useState<boolean[][]>(
     () => withTag.map(() => EMOJIS.map(() => false))
   );
 
-  const toggleReact = (origIdx, emojiIdx) => {
+  const toggleReact = (origIdx: number, emojiIdx: number): void => {
     setSelected((prev) =>
       prev.map((arr, i) =>
         i === origIdx ? arr.map((v, j) => (j === emojiIdx ? !v : v)) : arr
@@ -76,17 +104,20 @@ export default function Community() {
     );
   };
 
-  const sList = React.useMemo(() => suggestions.map((s, i) => ({ ...s, _idx: i })), []);
-  const [votes, setVotes] = React.useState(() => sList.map((s) => s.vote ?? 0));
-  const [upvoted, setUpvoted] = React.useState(() => sList.map(() => false));
+  const sList = useMemo<SuggestionWithIndex[]>(
+    () => (suggestions as Suggestion[]).map((s, i) => ({ ...s, _idx: i })),
+    []
+  );
+  const [votes, setVotes] = useState<number[]>(() => sList.map((s) => s.vote ?? 0));
+  const [upvoted, setUpvoted] = useState<boolean[]>(() => sList.map(() => false));
 
-  const toggleUpvote = (i) => {
+  const toggleUpvote = (i: number): void => {
     const wasOn = upvoted[i];
     setUpvoted((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
     setVotes((prev) => prev.map((v, idx) => (idx === i ? v + (wasOn ? -1 : 1) : v)));
   };
 
-  const sortedSuggestions = React.useMemo(() => {
+  const sortedSuggestions = useMemo<SuggestionWithIndex[]>(() => {
     return [...sList].sort((a, b) => {
       const dv = (votes[b._idx] ?? 0) - (votes[a._idx] ?? 0);
       return dv !== 0 ? dv : a.title.localeCompare(b.title);

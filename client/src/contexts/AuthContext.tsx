@@ -1,10 +1,41 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import type { User, LoginResponse, ApiResponse } from '../types/api';
 
-const AuthContext = createContext({});
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<AuthResult>;
+  register: (userData: RegisterData) => Promise<AuthResult>;
+  logout: () => Promise<void>;
+  refreshToken: () => Promise<string>;
+  authenticatedFetch: (url: string, options?: RequestInit) => Promise<Response>;
+  checkAuthStatus: () => Promise<void>;
+}
+
+interface RegisterData {
+  email: string;
+  username: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+interface AuthResult {
+  success: boolean;
+  error?: string;
+  data?: LoginResponse;
+}
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
@@ -12,17 +43,17 @@ export const useAuth = () => {
   return context;
 };
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   // Check if user is already logged in on mount
   useEffect(() => {
     checkAuthStatus();
   }, []);
 
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = async (): Promise<void> => {
     try {
       const token = localStorage.getItem('accessToken');
       if (!token) {
@@ -38,8 +69,8 @@ export const AuthProvider = ({ children }) => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
+        const data: ApiResponse<{ user: User }> = await response.json();
+        if (data.success && data.data) {
           setUser(data.data.user);
           setIsAuthenticated(true);
         } else {
@@ -61,7 +92,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (email: string, password: string): Promise<AuthResult> => {
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
@@ -71,14 +102,14 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const data: ApiResponse<LoginResponse> = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
         localStorage.setItem('accessToken', data.data.accessToken);
         localStorage.setItem('refreshToken', data.data.refreshToken);
         setUser(data.data.user);
         setIsAuthenticated(true);
-        return { success: true };
+        return { success: true, data: data.data };
       } else {
         return { success: false, error: data.error };
       }
@@ -88,7 +119,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (userData) => {
+  const register = async (userData: RegisterData): Promise<AuthResult> => {
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
@@ -98,9 +129,9 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(userData),
       });
 
-      const data = await response.json();
+      const data: ApiResponse<LoginResponse> = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
         localStorage.setItem('accessToken', data.data.accessToken);
         localStorage.setItem('refreshToken', data.data.refreshToken);
         setUser(data.data.user);
@@ -115,19 +146,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
+  const logout = async (): Promise<void> => {
     try {
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshTokenValue = localStorage.getItem('refreshToken');
       const accessToken = localStorage.getItem('accessToken');
 
-      if (refreshToken && accessToken) {
+      if (refreshTokenValue && accessToken) {
         await fetch(`${API_URL}/auth/logout`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ refreshToken }),
+          body: JSON.stringify({ refreshToken: refreshTokenValue }),
         });
       }
     } catch (error) {
@@ -141,7 +172,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const refreshToken = async () => {
+  const refreshToken = async (): Promise<string> => {
     try {
       const refresh = localStorage.getItem('refreshToken');
       if (!refresh) {
@@ -156,14 +187,14 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify({ refreshToken: refresh }),
       });
 
-      const data = await response.json();
+      const data: ApiResponse<{ accessToken: string; refreshToken: string }> = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
         localStorage.setItem('accessToken', data.data.accessToken);
         localStorage.setItem('refreshToken', data.data.refreshToken);
         return data.data.accessToken;
       } else {
-        throw new Error(data.error);
+        throw new Error(data.error || 'Token refresh failed');
       }
     } catch (error) {
       console.error('Token refresh failed:', error);
@@ -176,14 +207,14 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Enhanced fetch function with automatic token refresh
-  const authenticatedFetch = async (url, options = {}) => {
+  const authenticatedFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
     let token = localStorage.getItem('accessToken');
 
     if (!token) {
       throw new Error('No access token available');
     }
 
-    const makeRequest = (authToken) => {
+    const makeRequest = (authToken: string): Promise<Response> => {
       return fetch(url, {
         ...options,
         headers: {
@@ -209,7 +240,7 @@ export const AuthProvider = ({ children }) => {
     return response;
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
     isAuthenticated,
     loading,

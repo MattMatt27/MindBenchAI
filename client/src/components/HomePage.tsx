@@ -1,14 +1,25 @@
 import {useNavigate} from "react-router-dom";
 import "../styles/HomePage.css";
 
-const stats = [
+interface Stat {
+  value: string;
+  label: string;
+}
+
+interface Feature {
+  title: string;
+  description: string;
+  bullets: string[];
+}
+
+const stats: Stat[] = [
   { value: "10+", label: "Models Tracked" },
   { value: "5", label: "Benchmarks" },
   { value: "3", label: "Categories" },
   { value: "100%", label: "Transparent" },
 ];
 
-const features = [
+const features: Feature[] = [
   {
     title: "Comprehensive Data",
     description:
@@ -84,17 +95,17 @@ export default function HomePage() {
           Benchmark Leading <span>Language Models</span>
         </h1>
         <p>
-          A comprehensive framework for evaluating and comparing AI models and tools in mental health applications. 
+          A comprehensive framework for evaluating and comparing AI models and tools in mental health applications.
           Discover technical capabilities, performance metrics, and communication dynamics across the AI landscape.
         </p>
         <div className="hero-actions">
-          <button 
+          <button
             className="primary-button"
             onClick = {() => navigate("/home")}
           >
             View Benchmarks
           </button>
-          <button 
+          <button
             className="secondary-button"
             onClick = {() => navigate("/resources")}
           >

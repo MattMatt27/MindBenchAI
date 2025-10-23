@@ -4,9 +4,10 @@ import "../styles/NavBar.css";
 
 export default function NavBar() {
   const { user, isAuthenticated, logout, loading } = useAuth();
-  const itemClass = ({ isActive }) => `navbar-item${isActive ? " active" : ""}`;
+  const itemClass = ({ isActive }: { isActive: boolean }): string =>
+    `navbar-item${isActive ? " active" : ""}`;
 
-  const handleLogout = async () => {
+  const handleLogout = async (): Promise<void> => {
     await logout();
   };
 
