@@ -5,7 +5,6 @@ export default function Resources() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
 
-  // Benchmark studies data from seed
   const benchmarkStudies = [
     {
       id: '1',

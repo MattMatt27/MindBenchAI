@@ -10,7 +10,7 @@ const resourceBenchmarks = [
     description: 'Developed with 100 mental health professionals to evaluate and stress-test LLMs in realistic help-seeking scenarios. Focuses on single-turn counseling interactions and evaluates models across dimensions including factuality, comprehension, reasoning, possible harm, and bias. The adversarial component tests for systematic failure patterns in mental health QA.',
     benchmarkType: 'MIXED',
     format: 'CounselBench-EVAL: 2,000 expert evaluations of LLM responses and human therapist responses to real patient questions from CounselChat. CounselBench-ADV: 120 expert-authored adversarial questions designed to trigger specific model failure modes. Evaluation along 6 clinically grounded dimensions with written rationales and span-level annotations.',
-    imageUrl: null, // TODO: Add when available
+    imageUrl: 'https://opengraph.githubassets.com/1/llm-eval-mental-health/CounselBench',
     imageStoragePath: null,
     links: {
       github: 'https://github.com/llm-eval-mental-health/CounselBench',

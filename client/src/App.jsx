@@ -13,7 +13,7 @@ import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import VerifyEmail from "./components/VerifyEmail";
 import HomePage from "./components/HomePage"
-import Resource from "./components/Resource"
+
 import "./styles/main.css";
 
 export default function App() {
@@ -34,7 +34,6 @@ export default function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/resource" element={<Resource />}/>
         </Routes>
       </BrowserRouter>
     </AuthProvider>
