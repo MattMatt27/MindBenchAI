@@ -1,6 +1,5 @@
-// src/components/StandardizeTest.tsx
-import "../styles/StandardizeTest.css";
-import React, { useState, useEffect, useMemo, useRef, MouseEvent, KeyboardEvent, ChangeEvent } from "react";
+import "../styles/ConversationalProfile.css";
+import React, { useState, useEffect, useMemo, useRef, KeyboardEvent, ChangeEvent } from "react";
 import { createPortal } from "react-dom";
 import type { ApiResponse, ConversationalTest } from "../types/api";
 import {
@@ -17,10 +16,6 @@ const HEXACO_TRAITS = ["H", "E", "X", "A", "C", "O"] as const;
 const IRI_TRAITS = ["PT", "FS", "EC", "PD"] as const;
 const CSI_TRAITS = ["EXP", "PRE", "VAG", "QUE", "EMO", "IMP"] as const;
 
-type HEXACOTrait = typeof HEXACO_TRAITS[number];
-type IRITrait = typeof IRI_TRAITS[number];
-type CSITrait = typeof CSI_TRAITS[number];
-type Trait = HEXACOTrait | IRITrait | CSITrait;
 
 const TRAIT_LABELS: Record<string, string> = {
   // HEXACO
@@ -82,19 +77,40 @@ interface NormalizedProfile {
   version: string;
   isLatest: boolean;
   releaseDate: string | null;
-  [key: string]: string | number | boolean | null;
 }
 
-interface MainRow extends NormalizedProfile {
+// Allow dynamic trait properties on NormalizedProfile
+type NormalizedProfileWithTraits = NormalizedProfile & {
+  [key: string]: string | number | boolean | null | undefined;
+};
+
+interface MainRow {
+  id: string;
+  modelVersionId: string;
+  modelId: string | null;
+  modelFamily: string;
+  model: string;
+  version: string;
+  isLatest: boolean;
+  releaseDate: string | null;
   isMainRow: true;
   versionLabel: string;
   displayVersion: string;
   actualVersion: string;
   hasVersions: boolean;
-  versions: NormalizedProfile[];
+  versions: NormalizedProfileWithTraits[];
+  [key: string]: string | number | boolean | null | NormalizedProfileWithTraits[] | undefined;
 }
 
-interface VersionRow extends NormalizedProfile {
+interface VersionRow {
+  id: string;
+  modelVersionId: string;
+  modelId: string | null;
+  modelFamily: string;
+  model: string;
+  version: string;
+  isLatest: boolean;
+  releaseDate: string | null;
   isMainRow: false;
   parentId: string;
   versionLabel: string;
@@ -102,6 +118,7 @@ interface VersionRow extends NormalizedProfile {
   actualVersion: string;
   vFirst: boolean;
   vLast: boolean;
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 type TableRow = MainRow | VersionRow;
@@ -127,7 +144,7 @@ export default function ConversationalProfile() {
   const [mfMenuPos, setMfMenuPos] = useState<MenuPosition>({ left: 0, top: 0 });
   const mfBtnRef = useRef<HTMLButtonElement | null>(null);
   const mfMenuRef = useRef<HTMLDivElement | null>(null);
-  const [profiles, setProfiles] = useState<NormalizedProfile[]>([]);
+  const [profiles, setProfiles] = useState<NormalizedProfileWithTraits[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [availableTests, setAvailableTests] = useState<ConversationalTest[]>([]);
@@ -203,8 +220,8 @@ export default function ConversationalProfile() {
         }
         const payload: ApiResponse<ProfileResponse[]> = await res.json();
 
-        const normalized: NormalizedProfile[] = (payload.data ?? []).map((item) => {
-          const base: NormalizedProfile = {
+        const normalized: NormalizedProfileWithTraits[] = (payload.data ?? []).map((item) => {
+          const base: NormalizedProfileWithTraits = {
             id: item.id,
             modelVersionId: item.model_version_id ?? item.id,
             modelId: item.model_id ?? null,
@@ -320,7 +337,7 @@ export default function ConversationalProfile() {
     if (modelFamilyFilter.length > 0) {
       filtered = filtered.filter((r) => modelFamilyFilter.includes(String(r.modelFamily)));
     }
-    const modelMap: Record<string, { latest: NormalizedProfile | null; versions: NormalizedProfile[] }> = {};
+    const modelMap: Record<string, { latest: NormalizedProfileWithTraits | null; versions: NormalizedProfileWithTraits[] }> = {};
     filtered.forEach((v) => {
       const family = v.modelFamily ?? "Unknown";
       const model = v.model ?? "Unknown model";
@@ -684,9 +701,11 @@ export default function ConversationalProfile() {
                           ? r.displayVersion ?? r.versionLabel ?? "—"
                           : r.versionLabel ?? "—"}
                       </td>
-                      {currentTraits.map(trait => (
-                        <td key={trait}>{r[trait] ?? "—"}</td>
-                      ))}
+                      {currentTraits.map(trait => {
+                        const value = r[trait];
+                        const displayValue = typeof value === 'number' || typeof value === 'string' ? value : "—";
+                        return <td key={trait}>{displayValue}</td>;
+                      })}
                     </tr>
                   );
                 })}
