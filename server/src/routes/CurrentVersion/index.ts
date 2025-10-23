@@ -6,6 +6,10 @@ import {
   getAvailableTests as getAvailableConversationalTests,
   getIRIProfiles,
 } from '../../controllers/CurrentVersion/User/ConversationalProfile.controller';
+import {
+  getResourceBenchmarks,
+  getResourceBenchmarkById,
+} from '../../controllers/CurrentVersion/User/Resource.controller';
 
 const router: Router = express.Router();
 
@@ -16,5 +20,9 @@ router.get('/conversational-profiles/tests', optionalAuth, getAvailableConversat
 router.get('/conversational-profiles/:testName', optionalAuth, getConversationalProfiles);
 // Backward compatibility route for IRI
 router.get('/iri/profiles', optionalAuth, getIRIProfiles);
+
+// Resource Benchmark routes
+router.get('/resources/benchmarks', optionalAuth, getResourceBenchmarks);
+router.get('/resources/benchmarks/:id', optionalAuth, getResourceBenchmarkById);
 
 export default router;
