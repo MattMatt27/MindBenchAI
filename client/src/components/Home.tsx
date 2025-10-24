@@ -43,7 +43,7 @@ export default function Home() {
               className="section-button"
               onClick = {() => navigate("/conversational_profile")}
             >
-              Standardize test
+              Conversation Profile
             </button>
           </div>
         </div>
