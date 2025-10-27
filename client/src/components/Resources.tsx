@@ -1,123 +1,139 @@
-import { useState, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent, useMemo } from "react";
+import { Github, FileText, Globe } from "lucide-react";
 import "../styles/Resources.css";
+import { API_ENDPOINTS } from "../config/api";
 
+// Backend API response types
+interface ResourceTag {
+  id: string;
+  name: string;
+  slug: string;
+  category: string | null;
+  color: string | null;
+  icon: string | null;
+}
+
+interface ResourceBenchmarkAPI {
+  id: string;
+  name: string;
+  description: string | null;
+  benchmark_type: string;
+  format: string | null;
+  image_url: string | null;
+  image_storage_path: string | null;
+  links: {
+    github?: string;
+    paper?: string;
+    website?: string;
+    huggingface?: string;
+    paperswithcode?: string;
+    pubmed?: string;
+  } | null;
+  first_released: string | null;
+  organization: string | null;
+  language: string | null;
+  question_count: number | null;
+  is_active: boolean;
+  is_featured: boolean;
+  metadata: any;
+  tags: ResourceTag[];
+  created_at: string;
+  updated_at: string | null;
+}
+
+// Frontend display type
 interface BenchmarkStudy {
   id: string;
   name: string;
   fullName: string;
   year: string;
-  authors: string;
   organization: string;
   summary: string;
-  link: string;
   category: string;
+  links?: {
+    paper?: string;
+    github?: string;
+    pubmed?: string;
+    website?: string;
+    huggingface?: string;
+    paperswithcode?: string;
+  };
 }
+
+// Helper function to map backend data to frontend display format
+const mapBenchmarkToStudy = (benchmark: ResourceBenchmarkAPI): BenchmarkStudy => {
+  // Extract year from first_released
+  const year = benchmark.first_released
+    ? new Date(benchmark.first_released).getFullYear().toString()
+    : 'N/A';
+
+  // Get primary category from tags (prefer "Mental Health", "Psychology", "Medical")
+  const primaryCategory = benchmark.tags.find(
+    tag => ['Mental Health', 'Psychology', 'Medical', 'Clinical Psychology', 'Psychiatry'].includes(tag.name)
+  )?.name || 'Other';
+
+  // Map category names
+  let displayCategory = primaryCategory;
+  if (primaryCategory === 'Clinical Psychology' || primaryCategory === 'Psychiatry') {
+    displayCategory = 'Psychology';
+  }
+
+  return {
+    id: benchmark.id,
+    name: benchmark.name,
+    fullName: benchmark.format || benchmark.name, // Use format as fullName fallback
+    year,
+    organization: benchmark.organization || 'Research Community',
+    summary: benchmark.description || '',
+    category: displayCategory,
+    links: benchmark.links || undefined,
+  };
+};
 
 export default function Resources() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [benchmarkStudies, setBenchmarkStudies] = useState<BenchmarkStudy[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const benchmarkStudies: BenchmarkStudy[] = [
-    {
-      id: '1',
-      name: 'CounselBench',
-      fullName: 'Mental Health Counseling Evaluation Benchmark',
-      year: '2025',
-      authors: 'LLM Eval Mental Health Research Group',
-      organization: 'LLM Eval Mental Health Research Group',
-      summary: 'Developed with 100 mental health professionals to evaluate and stress-test LLMs in realistic help-seeking scenarios. Focuses on single-turn counseling interactions and evaluates models across dimensions including factuality, comprehension, reasoning, possible harm, and bias.',
-      link: 'https://arxiv.org/abs/2506.08584',
-      category: 'Mental Health',
-    },
-    {
-      id: '2',
-      name: 'DAIC-WOZ',
-      fullName: 'Distress Analysis Interview Corpus - Wizard of Oz',
-      year: '2014',
-      authors: 'USC Institute for Creative Technologies',
-      organization: 'USC Institute for Creative Technologies',
-      summary: 'One of the most widely used datasets for depression detection research. Consists of clinical interviews conducted by a human-controlled virtual agent designed to assess indicators of depression, anxiety, and PTSD. Multi-modal data including audio, video, and text.',
-      link: 'https://dcapswoz.ict.usc.edu/',
-      category: 'Mental Health',
-    },
-    {
-      id: '3',
-      name: 'MentalChat16K',
-      fullName: 'Mental Health Counseling Conversation Dataset',
-      year: '2025',
-      authors: 'Penn Shen Lab',
-      organization: 'Penn Shen Lab',
-      summary: 'Benchmark dataset covering depression, anxiety, grief, and other conditions. 16,113 question-answer pairs consisting of synthetic conversations and real anonymized interview transcripts from PISCES clinical trial.',
-      link: 'https://arxiv.org/abs/2503.13509',
-      category: 'Mental Health',
-    },
-    {
-      id: '4',
-      name: 'SMHD',
-      fullName: 'Self-reported Mental Health Diagnoses',
-      year: '2017',
-      authors: 'Georgetown University IR Lab',
-      organization: 'Georgetown University IR Lab',
-      summary: 'Large-scale dataset of Reddit posts from users who self-reported mental health diagnoses. Covers 9 mental health conditions including Depression, Anxiety, Bipolar Disorder, ADHD, PTSD, OCD, Autism, Schizophrenia, and Eating Disorders.',
-      link: 'https://ir.cs.georgetown.edu/resources/smhd.html',
-      category: 'Mental Health',
-    },
-    {
-      id: '5',
-      name: 'PsychoBench',
-      fullName: 'Counseling Competence Evaluation',
-      year: '2025',
-      authors: 'Various researchers',
-      organization: 'Research Community',
-      summary: 'Evaluates LLMs\' capability to perform psychological counseling tasks using exam-style questions that assess factual and applied psychological knowledge. Based on U.S. NCE questions covering various counseling domains.',
-      link: 'https://arxiv.org/abs/2510.01611',
-      category: 'Psychology',
-    },
-    {
-      id: '6',
-      name: 'MHQA',
-      fullName: 'Mental Health Question Answering',
-      year: '2025',
-      authors: 'Research team',
-      organization: 'Research Community',
-      summary: 'Diverse, knowledge-intensive mental health QA challenge generated from PubMed abstracts. Covers topics including Anxiety, Depression, Trauma, and OCD. More targeted and comprehensive than general medical QA datasets.',
-      link: 'https://arxiv.org/abs/2502.15418',
-      category: 'Mental Health',
-    },
-    {
-      id: '7',
-      name: 'MedQA',
-      fullName: 'Medical Question Answering Dataset',
-      year: '2020',
-      authors: 'Medical research community',
-      organization: 'Research Community',
-      summary: 'General medical benchmark covering all medical specialties including psychiatry. 12,723 questions from USMLE exams. Approximately 5-10% relate to mental health/psychiatry topics.',
-      link: 'https://github.com/jind11/MedQA',
-      category: 'Medical',
-    },
-    {
-      id: '8',
-      name: 'CounselChat',
-      fullName: 'Online Counseling Q&A Dataset',
-      year: 'N/A',
-      authors: 'CounselChat',
-      organization: 'CounselChat',
-      summary: 'Questions from clients paired with responses from licensed therapists on online counseling platform. Approximately 3,600 question-answer pairs covering wide range of mental health topics.',
-      link: 'https://counselchat.com',
-      category: 'Mental Health',
-    },
-    {
-      id: '9',
-      name: 'MMLU',
-      fullName: 'Massive Multitask Language Understanding (Clinical & Psychology)',
-      year: '2020',
-      authors: 'UC Berkeley / University of Chicago',
-      organization: 'UC Berkeley / University of Chicago',
-      summary: 'General benchmark with mental health content across medical and psychology subsets. Professional Psychology subset directly addresses psychological knowledge. Approximately 10-15% of medical questions relate to mental health.',
-      link: 'https://paperswithcode.com/dataset/mmlu',
-      category: 'Psychology',
-    },
-  ];
+  // Fetch benchmarks from API
+  useEffect(() => {
+    const fetchBenchmarks = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch(API_ENDPOINTS.benchmarks);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch benchmarks: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.data)) {
+          const mappedStudies = data.data.map(mapBenchmarkToStudy);
+          setBenchmarkStudies(mappedStudies);
+        } else {
+          throw new Error('Invalid response format from API');
+        }
+      } catch (err) {
+        console.error('Error fetching benchmarks:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load benchmarks');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBenchmarks();
+  }, []);
+
+  // Extract unique categories dynamically from fetched data
+  const availableCategories = useMemo(() => {
+    const categories = new Set(benchmarkStudies.map(study => study.category));
+    return Array.from(categories).sort();
+  }, [benchmarkStudies]);
 
   const filteredStudies = benchmarkStudies.filter((study) => {
     const matchesSearch =
@@ -171,65 +187,162 @@ export default function Resources() {
               value={searchQuery}
               onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               className="resources-search-input"
+              aria-label="Search benchmark studies"
             />
           </div>
           <select
             value={categoryFilter}
             onChange={(e: ChangeEvent<HTMLSelectElement>) => setCategoryFilter(e.target.value)}
             className="resources-category-select"
+            aria-label="Filter by category"
           >
             <option value="all">All Categories</option>
-            <option value="Mental Health">Mental Health</option>
-            <option value="Psychology">Psychology</option>
-            <option value="Medical">Medical</option>
+            {availableCategories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
           </select>
         </div>
 
+        {/* Loading State */}
+        {loading && (
+          <div className="resources-loading">
+            <p>Loading benchmarks...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div className="resources-error">
+            <p>Error: {error}</p>
+            <button onClick={() => window.location.reload()} className="resources-retry-button">
+              Retry
+            </button>
+          </div>
+        )}
+
         {/* Results Count */}
-        <div className="resources-results-count">
-          Showing {filteredStudies.length} {filteredStudies.length === 1 ? "study" : "studies"}
-        </div>
+        {!loading && !error && (
+          <div className="resources-results-count">
+            Showing {filteredStudies.length} {filteredStudies.length === 1 ? "study" : "studies"}
+          </div>
+        )}
 
         {/* Studies Grid */}
-        <div className="resources-studies-grid">
+        {!loading && !error && (
+          <div className="resources-studies-grid">
           {filteredStudies.map((study) => (
             <div key={study.id} className="resources-study-card">
               <div className="resources-study-header">
-                <div className="resources-study-header-content">
-                  <div className="resources-study-title-row">
-                    <h3 className="resources-study-name">{study.name}</h3>
-                    <span className={`resources-category-badge ${getCategoryColor(study.category)}`}>
-                      {study.category}
-                    </span>
-                  </div>
-                  <p className="resources-study-fullname">{study.fullName}</p>
-                  <div className="resources-study-meta">
-                    <span>• {study.authors}</span>
-                    <span>• {study.organization}</span>
-                    <span>• {study.year}</span>
-                  </div>
+                <div className="resources-study-title-row">
+                  <h3 className="resources-study-name">{study.name}</h3>
+                  <span className={`resources-category-badge ${getCategoryColor(study.category)}`}>
+                    {study.category}
+                  </span>
                 </div>
-                <a
-                  href={study.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="resources-view-paper-button"
-                >
-                  View Paper →
-                </a>
+                <p className="resources-study-fullname">{study.fullName}</p>
+                <div className="resources-study-meta">
+                  <span>{study.organization}</span>
+                  <span>• {study.year}</span>
+                </div>
               </div>
+
               <div className="resources-study-content">
                 <p className="resources-study-summary">{study.summary}</p>
               </div>
+
+              {/* All Links Section */}
+              {study.links && Object.values(study.links).some(link => link) && (
+                <div className="resources-additional-links">
+                  <div className="resources-links-container">
+                    {study.links.paper && (
+                      <a
+                        href={study.links.paper}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="resources-link"
+                        aria-label="View paper"
+                      >
+                        <FileText className="resources-link-icon" />
+                        <span>Paper</span>
+                      </a>
+                    )}
+                    {study.links.github && (
+                      <a
+                        href={study.links.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="resources-link"
+                        aria-label="View GitHub repository"
+                      >
+                        <Github className="resources-link-icon" />
+                        <span>GitHub</span>
+                      </a>
+                    )}
+                    {study.links.website && (
+                      <a
+                        href={study.links.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="resources-link"
+                        aria-label="Visit website"
+                      >
+                        <Globe className="resources-link-icon" />
+                        <span>Website</span>
+                      </a>
+                    )}
+                    {study.links.huggingface && (
+                      <a
+                        href={study.links.huggingface}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="resources-link"
+                        aria-label="View on HuggingFace"
+                      >
+                        <svg className="resources-link-icon" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                        </svg>
+                        <span>HuggingFace</span>
+                      </a>
+                    )}
+                    {study.links.pubmed && (
+                      <a
+                        href={study.links.pubmed}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="resources-link"
+                        aria-label="View on PubMed"
+                      >
+                        <FileText className="resources-link-icon" />
+                        <span>PubMed</span>
+                      </a>
+                    )}
+                    {study.links.paperswithcode && (
+                      <a
+                        href={study.links.paperswithcode}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="resources-link"
+                        aria-label="View on Papers with Code"
+                      >
+                        <FileText className="resources-link-icon" />
+                        <span>Papers with Code</span>
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
-        </div>
 
-        {/* No Results */}
-        {filteredStudies.length === 0 && (
-          <div className="resources-no-results">
-            <p>No studies found matching your criteria.</p>
-          </div>
+          {/* No Results */}
+          {filteredStudies.length === 0 && (
+            <div className="resources-no-results">
+              <p>No studies found matching your criteria.</p>
+            </div>
+          )}
+        </div>
         )}
 
         {/* Footer CTA */}
