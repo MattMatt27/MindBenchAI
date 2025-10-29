@@ -35,11 +35,12 @@ npm run dev
         so ideally the flow would be landing -> homepage -> 4 options
 - [ ] Unified the table in these 3 pages (techprofile, leaderboard, profiletest). One of the table is expand only on triangle where as other you can click whole row
 - [ ] Redesign the page with some UI improvement
-- [ ] ~~Redo resource page and add api routes for resources~~ 
+- [x] ~~Redo resource page and add api routes for resources~~ 
 - [ ] Develop the reasoning page
 - [ ] Add api routes for leaderboard
 - [ ] Add api routes for reasoning
 - [ ] ~~Redesign community~~ Add api routes for community page
+- [ ] Migrate from css file to tailwindCSS
 
 ## Project Structure
 ```bash
