@@ -47,7 +47,14 @@
 
 .navbar-menu {
   display: flex;
+  align-items: center;
   gap: 0;
+}
+
+.navbar-separator {
+  color: #4b5563;
+  padding: 0 12px;
+  user-select: none;
 }
 
 .navbar-item {
@@ -101,13 +108,32 @@
   color: white;
 }
 
+.navbar-dropdown-trigger-link {
+  padding: 16px 20px;
+  color: #d1d5db;
+  text-decoration: none;
+  transition: all 0.2s;
+  display: block;
+  cursor: pointer;
+}
+
+.navbar-dropdown-trigger-link::after {
+  content: ' ▾';
+  font-size: 0.75em;
+}
+
+.navbar-dropdown:hover .navbar-dropdown-trigger-link {
+  background: #333333;
+  color: white;
+}
+
 .navbar-dropdown-menu {
   display: none;
   position: absolute;
   top: 100%;
   left: 0;
   background: #1a1a1a;
-  min-width: 180px;
+  min-width: 200px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
   border: 1px solid #333333;
   z-index: 1000;
@@ -115,6 +141,23 @@
 
 .navbar-dropdown:hover .navbar-dropdown-menu {
   display: block;
+}
+
+.navbar-dropdown-category {
+  padding: 8px 0;
+}
+
+.navbar-dropdown-category:not(:last-child) {
+  border-bottom: 1px solid #333333;
+}
+
+.navbar-dropdown-category-header {
+  padding: 8px 20px 6px 20px;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .navbar-dropdown-item {
@@ -210,14 +253,12 @@
   color: #d1d5db;
   text-decoration: none;
   padding: 0.5rem 1rem;
-  border-radius: 4px;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
   font-weight: 500;
 }
 
 .login-link:hover {
   color: white;
-  background: #374151;
 }
 
 .register-link {
