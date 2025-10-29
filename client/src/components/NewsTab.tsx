@@ -28,10 +28,21 @@ export function NewsTab() {
     return 'Updates';
   };
 
-  const newsItems: NewsItem[] = updates.map(item => ({
-    ...item,
-    tag: normalizeTag(item.tag)
-  }));
+  const newsItems: NewsItem[] = useMemo(() => {
+    // Parse date and sort by latest first
+    const parseDate = (dateStr: string): Date => {
+      // Convert "Sept 1st, 2025" to a Date object
+      const cleaned = dateStr.replace(/(\d+)(st|nd|rd|th)/, '$1');
+      return new Date(cleaned);
+    };
+
+    return updates
+      .map(item => ({
+        ...item,
+        tag: normalizeTag(item.tag)
+      }))
+      .sort((a, b) => parseDate(b.date).getTime() - parseDate(a.date).getTime());
+  }, []);
 
   const filteredNews = selectedCategory === 'all'
     ? newsItems
@@ -58,14 +69,16 @@ export function NewsTab() {
   const toggleReaction = (index: number, reactionType: string) => {
     setUserReactions(prev => {
       const newReactions = { ...prev };
-      if (!newReactions[index]) {
-        newReactions[index] = new Set();
-      }
-      if (newReactions[index].has(reactionType)) {
-        newReactions[index].delete(reactionType);
+      // Create a new Set instance to ensure React detects the change
+      const currentSet = new Set(newReactions[index] || []);
+
+      if (currentSet.has(reactionType)) {
+        currentSet.delete(reactionType);
       } else {
-        newReactions[index].add(reactionType);
+        currentSet.add(reactionType);
       }
+
+      newReactions[index] = currentSet;
       return newReactions;
     });
   };
