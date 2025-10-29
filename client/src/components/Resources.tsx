@@ -1,5 +1,5 @@
-import { useState, useEffect, ChangeEvent, useMemo } from "react";
-import { Github, FileText, Globe } from "lucide-react";
+import { useState, useEffect, ChangeEvent, useMemo, useCallback } from "react";
+import { Github, FileText, Globe, Link } from "lucide-react";
 import "../styles/Resources.css";
 import { API_ENDPOINTS } from "../config/api";
 
@@ -35,7 +35,7 @@ interface ResourceBenchmarkAPI {
   question_count: number | null;
   is_active: boolean;
   is_featured: boolean;
-  metadata: any;
+  metadata: unknown;
   tags: ResourceTag[];
   created_at: string;
   updated_at: string | null;
@@ -98,36 +98,37 @@ export default function Resources() {
   const [error, setError] = useState<string | null>(null);
 
   // Fetch benchmarks from API
-  useEffect(() => {
-    const fetchBenchmarks = async () => {
-      try {
-        setLoading(true);
-        setError(null);
+  const fetchBenchmarks = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-        const response = await fetch(API_ENDPOINTS.benchmarks);
+      const response = await fetch(API_ENDPOINTS.benchmarks);
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch benchmarks: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success && Array.isArray(data.data)) {
-          const mappedStudies = data.data.map(mapBenchmarkToStudy);
-          setBenchmarkStudies(mappedStudies);
-        } else {
-          throw new Error('Invalid response format from API');
-        }
-      } catch (err) {
-        console.error('Error fetching benchmarks:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load benchmarks');
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch benchmarks: ${response.statusText}`);
       }
-    };
 
-    fetchBenchmarks();
+      const data = await response.json();
+
+      if (data.success && Array.isArray(data.data)) {
+        const mappedStudies = data.data.map(mapBenchmarkToStudy);
+        setBenchmarkStudies(mappedStudies);
+      } else {
+        throw new Error('Invalid response format from API');
+      }
+    } catch (err) {
+      console.error('Error fetching benchmarks:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load benchmarks');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  // Fetch on mount
+  useEffect(() => {
+    fetchBenchmarks();
+  }, [fetchBenchmarks]);
 
   // Extract unique categories dynamically from fetched data
   const availableCategories = useMemo(() => {
@@ -135,17 +136,20 @@ export default function Resources() {
     return Array.from(categories).sort();
   }, [benchmarkStudies]);
 
-  const filteredStudies = benchmarkStudies.filter((study) => {
-    const matchesSearch =
-      searchQuery === "" ||
-      study.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      study.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      study.summary.toLowerCase().includes(searchQuery.toLowerCase());
+  // Memoize filtered studies for performance
+  const filteredStudies = useMemo(() => {
+    return benchmarkStudies.filter((study) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        study.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        study.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        study.summary.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCategory = categoryFilter === "all" || study.category === categoryFilter;
+      const matchesCategory = categoryFilter === "all" || study.category === categoryFilter;
 
-    return matchesSearch && matchesCategory;
-  });
+      return matchesSearch && matchesCategory;
+    });
+  }, [benchmarkStudies, searchQuery, categoryFilter]);
 
   const getCategoryColor = (category: string): string => {
     switch (category) {
@@ -216,7 +220,7 @@ export default function Resources() {
         {error && !loading && (
           <div className="resources-error">
             <p>Error: {error}</p>
-            <button onClick={() => window.location.reload()} className="resources-retry-button">
+            <button onClick={fetchBenchmarks} className="resources-retry-button">
               Retry
             </button>
           </div>
@@ -300,9 +304,7 @@ export default function Resources() {
                         className="resources-link"
                         aria-label="View on HuggingFace"
                       >
-                        <svg className="resources-link-icon" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-                        </svg>
+                        <Link className="resources-link-icon" />
                         <span>HuggingFace</span>
                       </a>
                     )}
