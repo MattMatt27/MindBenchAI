@@ -31,8 +31,7 @@ npm run dev
 
 ## TODO
 - [x] ~~Change techprofile from base model -> modelVersion (updates answer and point to modelVersion in seed value) -> update api routes naming -> bring over the drop down table~~
-- [ ] Finish landing page, add content (make the count dynamic), redo the current "home" page, ~~add "benchmark" to the navBar (drop down with 4 options)~~, ideas: combine two categories under the same button and make it clickable -> benchmark page, potentially shift left or right. On right side, login/sign up turn into welcome, user1 after loggin in
-        so ideally the flow would be landing -> homepage -> 4 options
+- [ ] Finish landing page, add content (make the count dynamic), ~~redo the current "home" page, add "benchmark" to the navBar (drop down with 4 options)~~
 - [ ] Unified the table in these 3 pages (techprofile, leaderboard, profiletest). One of the table is expand only on triangle where as other you can click whole row
 - [ ] Redesign the page with some UI improvement
 - [x] ~~Redo resource page and add api routes for resources~~ 
