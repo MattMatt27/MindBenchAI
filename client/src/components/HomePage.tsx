@@ -101,7 +101,7 @@ export default function HomePage() {
         <div className="hero-actions">
           <button
             className="primary-button"
-            onClick = {() => navigate("/home")}
+            onClick = {() => navigate("/benchmark")}
           >
             View Benchmarks
           </button>
