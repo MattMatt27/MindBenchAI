@@ -38,7 +38,7 @@ npm run dev
 - [ ] Develop the reasoning page
 - [ ] Add api routes for leaderboard
 - [ ] Add api routes for reasoning
-- [ ] ~~Redesign community~~ Add api routes for community page
+- [x] ~~Redesign community Add api routes for community page~~
 - [ ] Migrate from css file to tailwindCSS
 
 ## Project Structure
