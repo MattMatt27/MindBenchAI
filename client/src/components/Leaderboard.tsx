@@ -1,29 +1,29 @@
-import "../styles/Leaderboard.css";
-import { useState, useMemo, useRef, useEffect, MouseEvent, KeyboardEvent } from "react";
+import { useState, useMemo } from "react";
 import type { ChangeEvent } from "react";
 import {
   useReactTable,
   getCoreRowModel,
+  getSortedRowModel,
   getFilteredRowModel,
   flexRender,
   ColumnDef,
   SortingState,
-  ColumnFiltersState,
-  Row,
 } from "@tanstack/react-table";
+import { ChevronDown, ChevronRight, Search, Info } from "lucide-react";
 import {
-  getLatestVersions,
   modelVersions,
   filterVersions,
   systemPrompts,
   messagePrompts,
   modelFamilies
 } from "../data/leaderboardData";
-
-interface InfoBubbleProps {
-  title: string;
-  content: string;
-}
+import { Input } from "./ui/input";
+import { Checkbox } from "./ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Button } from "./ui/button";
+import { Card } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
 interface ModelVersion {
   id: string;
@@ -79,55 +79,9 @@ interface FilterParams {
   modelFamilies?: string[];
 }
 
-function InfoBubble({ title, content }: InfoBubbleProps) {
-  const [open, setOpen] = useState<boolean>(false);
-  const wrapRef = useRef<HTMLSpanElement | null>(null);
-
-  useEffect(() => {
-    function handleDocClick(e: Event): void {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener("click", handleDocClick);
-    return () => document.removeEventListener("click", handleDocClick);
-  }, []);
-
-  return (
-    <span className="lb-info-wrap" ref={wrapRef}>
-      <span
-        className="lb-info"
-        role="button"
-        tabIndex={0}
-        aria-label={`${title} details`}
-        aria-expanded={open}
-        onClick={(e: MouseEvent) => {
-          e.stopPropagation();
-          setOpen((v) => !v);
-        }}
-        onKeyDown={(e: KeyboardEvent) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setOpen((v) => !v);
-          }
-        }}
-      >
-        !
-      </span>
-      {open && (
-        <div role="dialog" aria-label={title} className="lb-popover">
-          <div className="lb-popover-title">{title}</div>
-          <div className="lb-popover-body">{content}</div>
-        </div>
-      )}
-    </span>
-  );
-}
-
 export default function Leaderboard() {
   const [activeTab, setActiveTab] = useState<string>("models");
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState<string>("");
   const [expandedModels, setExpandedModels] = useState<Set<string>>(() => new Set());
   const [selectedVersions, setSelectedVersions] = useState<Set<string>>(() => new Set());
@@ -194,29 +148,13 @@ export default function Leaderboard() {
         SIRI_2: latest.SIRI_2,
         A_pharm: latest.A_pharm,
         A_mamh: latest.A_mamh,
-        hasVersions: data.versions.length >= 1,
+        hasVersions: data.versions.length > 1,
         versions: data.versions
       };
     });
 
-    if (sorting.length > 0) {
-      const { id: sortColumn, desc } = sorting[0];
-      mainRows.sort((a, b) => {
-        const aVal = a[sortColumn as keyof MainRow];
-        const bVal = b[sortColumn as keyof MainRow];
-
-        if (typeof aVal === "number" && typeof bVal === "number") {
-          return desc ? bVal - aVal : aVal - bVal;
-        }
-
-        const aStr = String(aVal || "").toLowerCase();
-        const bStr = String(bVal || "").toLowerCase();
-        return desc ? bStr.localeCompare(aStr) : aStr.localeCompare(bStr);
-      });
-    }
-
     return mainRows;
-  }, [temperatureFilter, topPFilter, systemPromptFilter, messagePromptFilter, modelFamilyFilter, sorting]);
+  }, [temperatureFilter, topPFilter, systemPromptFilter, messagePromptFilter, modelFamilyFilter]);
 
   const data = useMemo<TableRow[]>(() => {
     const rows: TableRow[] = [];
@@ -263,18 +201,16 @@ export default function Leaderboard() {
       {
         id: "expander",
         header: () => "",
-        size: 30,
+        size: 40,
         enableSorting: false,
-        enableColumnFilter: false,
         cell: ({ row }) => {
           if (!row.original.isMainRow) {
             const isSelected = selectedVersions.has(row.original.id);
             return (
-              <div className="lb-checkbox-cell">
-                <input
-                  type="checkbox"
+              <div className="flex items-center justify-center">
+                <Checkbox
                   checked={isSelected}
-                  onChange={() => toggleVersion(row.original.id)}
+                  onCheckedChange={() => toggleVersion(row.original.id)}
                   onClick={(e) => e.stopPropagation()}
                 />
               </div>
@@ -286,16 +222,20 @@ export default function Leaderboard() {
           const isOpen = expandedModels.has(row.original.id);
           return (
             <button
-              className={`lb-expander ${isOpen ? "open" : ""}`}
+              className="p-1 hover:bg-gray-100 rounded transition-colors"
               aria-label={isOpen ? "Collapse row" : "Expand row"}
               aria-expanded={isOpen}
-              onClick={(e: MouseEvent<HTMLButtonElement>) => {
+              onClick={(e) => {
                 e.stopPropagation();
                 toggleRow(row.original.id);
               }}
               type="button"
             >
-              ▸
+              {isOpen ? (
+                <ChevronDown className="w-4 h-4 text-gray-600" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-gray-600" />
+              )}
             </button>
           );
         },
@@ -303,28 +243,34 @@ export default function Leaderboard() {
       {
         accessorKey: "modelFamily",
         header: () => "Model Family",
-        cell: (info) => info.getValue()
+        cell: (info) => <span className="font-medium">{String(info.getValue())}</span>
       },
       {
         accessorKey: "model",
         header: () => "Model",
-        cell: (info) => info.getValue()
+        cell: (info) => String(info.getValue())
       },
       {
         accessorKey: "version",
         header: () => "Version",
-        cell: (info) => info.getValue(),
-        size: 100
+        cell: (info) => String(info.getValue()),
+        size: 120
       },
       {
         accessorKey: "SIRI_2",
         header: () => (
-          <div className="lb-col-header">
+          <div className="flex items-center gap-1">
             SIRI-2
-            <InfoBubble
-              title="SIRI-2"
-              content="RMSE — lower is better. This score reflects error across the SIRI-2 benchmark."
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="hover:bg-gray-200 p-1 rounded">
+                  <Info className="w-3.5 h-3.5 text-gray-500" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>RMSE — lower is better. Error across SIRI-2 benchmark</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         ),
         cell: ({ getValue }) => {
@@ -335,12 +281,18 @@ export default function Leaderboard() {
       {
         accessorKey: "A_pharm",
         header: () => (
-          <div className="lb-col-header">
+          <div className="flex items-center gap-1">
             A-Pharm
-            <InfoBubble
-              title="A-Pharm"
-              content="RMSE — lower is better. Pharmacology subset performance."
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="hover:bg-gray-200 p-1 rounded">
+                  <Info className="w-3.5 h-3.5 text-gray-500" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>RMSE — lower is better. Pharmacology subset performance</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         ),
         cell: ({ getValue }) => {
@@ -351,12 +303,18 @@ export default function Leaderboard() {
       {
         accessorKey: "A_mamh",
         header: () => (
-          <div className="lb-col-header">
+          <div className="flex items-center gap-1">
             A-MaMH
-            <InfoBubble
-              title="A-MaMH"
-              content="RMSE — lower is better. Math & reasoning subset performance."
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button className="hover:bg-gray-200 p-1 rounded">
+                  <Info className="w-3.5 h-3.5 text-gray-500" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>RMSE — lower is better. Math & reasoning subset performance</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
         ),
         cell: ({ getValue }) => {
@@ -371,14 +329,12 @@ export default function Leaderboard() {
   const table = useReactTable<TableRow>({
     data,
     columns,
-    state: { sorting, columnFilters, globalFilter },
+    state: { sorting, globalFilter },
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    enableSorting: true,
-    manualSorting: true,
     globalFilterFn: (row, _colId, filterValue) => {
       if (!filterValue) return true;
       const q = String(filterValue).toLowerCase();
@@ -395,287 +351,356 @@ export default function Leaderboard() {
   );
 
   return (
-    <div className="lb-container">
-      <div className="g-tabs">
-        <button
-          className={`g-tab-bttn ${activeTab === "models" ? "active" : ""}`}
-          onClick={() => setActiveTab("models")}
-          type="button"
-        >
-          Models
-        </button>
-        <button
-          className={`g-tab-bttn ${activeTab === "versions" ? "active" : ""}`}
-          onClick={() => setActiveTab("versions")}
-          type="button"
-          aria-label={`Open Comparison tab with ${selectedVersions.size} selected`}
-        >
-          Comparison{selectedVersions.size ? ` (${selectedVersions.size})` : ""}
-        </button>
+    <div className="min-h-screen bg-white">
+      {/* Header Section */}
+      <div className="max-w-7xl mx-auto px-6 py-8 pb-0">
+        <div className="mb-8">
+          <h1 className="text-gray-900 text-3xl font-semibold mb-2">Model Leaderboard</h1>
+          <p className="text-gray-600">
+            Compare AI model performance across mental health benchmarks
+          </p>
+        </div>
       </div>
 
-      {activeTab === "models" && (
-        <div className="lb-layout">
-          <aside className="lb-sidebar">
-            <div className="lb-search">
-              <div className="lb-search-island">
-                <input
-                  className="lb-search-input"
-                  value={globalFilter ?? ""}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setGlobalFilter(e.target.value)}
-                  placeholder="Search..."
-                />
-              </div>
-            </div>
+      {/* Custom Tabs Implementation */}
+      <div className="w-full">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="mb-6 inline-flex bg-gray-100 rounded-xl p-1 gap-1">
+            <button
+              onClick={() => setActiveTab('models')}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                activeTab === 'models'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Models
+            </button>
+            <button
+              onClick={() => setActiveTab('comparison')}
+              className={`rounded-lg px-4 py-2 text-sm font-medium transition-all flex items-center gap-2 ${
+                activeTab === 'comparison'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              Comparison
+              {selectedVersions.size > 0 && (
+                <Badge variant="secondary" className="ml-1">
+                  {selectedVersions.size}
+                </Badge>
+              )}
+            </button>
+          </div>
+        </div>
 
-            <div className="lb-filter-section">
-              <div className="lb-filter-group">
-                <label className="lb-filter-heading" htmlFor="modelFamilyFilter">
-                  Model Family
-                </label>
-                <div className="lb-multiselect">
-                  {Object.keys(modelFamilies).map(family => (
-                    <label key={family} className="lb-checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={modelFamilyFilter.includes(family)}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => {
-                          if (e.target.checked) {
-                            setModelFamilyFilter(prev => [...prev, family]);
-                          } else {
-                            setModelFamilyFilter(prev => prev.filter(f => f !== family));
-                          }
-                        }}
-                      />
-                      {family}
-                    </label>
-                  ))}
+        {activeTab === 'models' && (
+          <div className="mt-0">
+          <div className="max-w-7xl mx-auto px-6 pb-8">
+            <div className="flex gap-6">
+              {/* Sidebar Filters */}
+              <Card className="w-64 p-6 h-fit flex-shrink-0" style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.75rem' }}>
+                <div className="space-y-6">
+                {/* Search */}
+                <div>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Input
+                      placeholder="Search..."
+                      value={globalFilter ?? ""}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setGlobalFilter(e.target.value)}
+                      className="pl-10 bg-gray-50 border-gray-200"
+                      style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb' }}
+                    />
+                  </div>
+                </div>
+
+                {/* Model Family */}
+                <div>
+                  <h3 className="font-semibold text-sm mb-3">Model Family</h3>
+                  <div className="space-y-2">
+                    {Object.keys(modelFamilies).map(family => (
+                      <label key={family} className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={modelFamilyFilter.includes(family)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setModelFamilyFilter(prev => [...prev, family]);
+                            } else {
+                              setModelFamilyFilter(prev => prev.filter(f => f !== family));
+                            }
+                          }}
+                        />
+                        <span className="text-sm">{family}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Experiment Parameters */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="font-semibold text-xs uppercase tracking-wide text-gray-600 mb-4">
+                    Experiment Parameters
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-sm font-medium mb-2 block text-gray-700">Temperature</label>
+                      <Select value={temperatureFilter || "all"} onValueChange={(val) => setTemperatureFilter(val === "all" ? "" : val)}>
+                        <SelectTrigger className="bg-gray-50 border-gray-200" style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb' }}>
+                          <SelectValue placeholder="All" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          <SelectItem value="0.3">0.3</SelectItem>
+                          <SelectItem value="0.5">0.5</SelectItem>
+                          <SelectItem value="0.7">0.7</SelectItem>
+                          <SelectItem value="1.0">1.0</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block text-gray-700">Top P</label>
+                      <Select value={topPFilter || "all"} onValueChange={(val) => setTopPFilter(val === "all" ? "" : val)}>
+                        <SelectTrigger className="bg-gray-50 border-gray-200" style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb' }}>
+                          <SelectValue placeholder="All" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          <SelectItem value="0.9">0.9</SelectItem>
+                          <SelectItem value="0.95">0.95</SelectItem>
+                          <SelectItem value="1.0">1.0</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block text-gray-700">System Prompt</label>
+                      <Select value={systemPromptFilter || "all"} onValueChange={(val) => setSystemPromptFilter(val === "all" ? "" : val)}>
+                        <SelectTrigger className="bg-gray-50 border-gray-200" style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb' }}>
+                          <SelectValue placeholder="All" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          {systemPrompts.map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {systemPromptFilter && systemPromptFilter !== "all" && (
+                        <div className="mt-2 p-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-md italic">
+                          {systemPrompts.find(p => p.id === systemPromptFilter)?.content}
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium mb-2 block text-gray-700">Message Prompt</label>
+                      <Select value={messagePromptFilter || "all"} onValueChange={(val) => setMessagePromptFilter(val === "all" ? "" : val)}>
+                        <SelectTrigger className="bg-gray-50 border-gray-200" style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb' }}>
+                          <SelectValue placeholder="All" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          {messagePrompts.map(p => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {messagePromptFilter && messagePromptFilter !== "all" && (
+                        <div className="mt-2 p-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-md italic">
+                          {messagePrompts.find(p => p.id === messagePromptFilter)?.content}
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
+            </Card>
 
-              <h3 className="lb-filter-title">Experiment Parameters</h3>
-
-              <div className="lb-filter-group">
-                <label className="lb-filter-heading" htmlFor="temperatureFilter">
-                  Temperature
-                </label>
-                <select
-                  id="temperatureFilter"
-                  className="lb-select"
-                  value={temperatureFilter}
-                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setTemperatureFilter(e.target.value)}
-                >
-                  <option value="">All</option>
-                  <option value="0.3">0.3</option>
-                  <option value="0.5">0.5</option>
-                  <option value="0.7">0.7</option>
-                  <option value="1.0">1.0</option>
-                </select>
-              </div>
-
-              <div className="lb-filter-group">
-                <label className="lb-filter-heading" htmlFor="topPFilter">
-                  Top P
-                </label>
-                <select
-                  id="topPFilter"
-                  className="lb-select"
-                  value={topPFilter}
-                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setTopPFilter(e.target.value)}
-                >
-                  <option value="">All</option>
-                  <option value="0.9">0.9</option>
-                  <option value="0.95">0.95</option>
-                  <option value="1.0">1.0</option>
-                </select>
-              </div>
-
-              <div className="lb-filter-group">
-                <label className="lb-filter-heading" htmlFor="systemPromptFilter">
-                  System Prompt
-                </label>
-                <select
-                  id="systemPromptFilter"
-                  className="lb-select"
-                  value={systemPromptFilter}
-                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setSystemPromptFilter(e.target.value)}
-                >
-                  <option value="">All</option>
-                  {systemPrompts.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                {systemPromptFilter && (
-                  <div className="lb-prompt-text">
-                    {systemPrompts.find(p => p.id === systemPromptFilter)?.content}
-                  </div>
-                )}
-              </div>
-
-              <div className="lb-filter-group">
-                <label className="lb-filter-heading" htmlFor="messagePromptFilter">
-                  Message Prompt
-                </label>
-                <select
-                  id="messagePromptFilter"
-                  className="lb-select"
-                  value={messagePromptFilter}
-                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setMessagePromptFilter(e.target.value)}
-                >
-                  <option value="">All</option>
-                  {messagePrompts.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-                {messagePromptFilter && (
-                  <div className="lb-prompt-text">
-                    {messagePrompts.find(p => p.id === messagePromptFilter)?.content}
-                  </div>
-                )}
-              </div>
-            </div>
-          </aside>
-
-          <div className="lb-main-content">
-            <div className="lb-table-container">
-              <table className="lb-table">
-                <thead>
-                  {table.getHeaderGroups().map((hg) => (
-                    <tr key={hg.id}>
-                      {hg.headers.map((header) => {
-                        const canSort = header.column.getCanSort();
-                        const sortDir = header.column.getIsSorted();
-                        return (
-                          <th
-                            key={header.id}
-                            className={canSort ? "sortable" : undefined}
-                            onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
-                            style={header.column.id === "expander" ? { width: 40 } : undefined}
-                          >
-                            {flexRender(header.column.columnDef.header, header.getContext())}
-                            {canSort && sortDir && (
-                              <span className="sort-indicator">
-                                {sortDir === "asc" ? "▲" : "▼"}
-                              </span>
-                            )}
-                          </th>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </thead>
-
-                <tbody>
-                  {table.getRowModel().rows.map((row) => {
-                    const isMainRow = row.original.isMainRow;
-                    const isVersionRow = !isMainRow;
-                    const isSelected = isVersionRow && selectedVersions.has(row.original.id);
-
-                    return (
-                      <tr
-                        key={row.id}
-                        className={`
-                          ${isMainRow ? 'lb-main-row' : 'lb-version-row'}
-                          ${isSelected ? 'selected' : ''}
-                        `}
-                        onClick={isVersionRow ? () => toggleVersion(row.original.id) : undefined}
-                      >
-                        {row.getVisibleCells().map((cell) => (
-                          <td key={cell.id}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </td>
-                        ))}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-
-              {table.getRowModel().rows.length === 0 && (
-                <div className="lb-empty">No results match the current filters.</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "versions" && (
-        <div className="lb-layout no-sidebar">
-          <div className="lb-comparison-content">
-            <div className="lb-comparison-header">
-              <h2>Version Comparison</h2>
-              {selectedVersions.size > 0 && (
-                <button className="lb-button" onClick={clearAllSelected} type="button">
-                  Clear all
-                </button>
-              )}
-            </div>
-
-            {comparisonRows.length ? (
-              <div className="lb-table-container">
-                <table className="lb-table">
-                  <thead>
-                    <tr>
-                      <th style={{width: 50}}>Keep</th>
-                      <th>Model Family</th>
-                      <th>Model</th>
-                      <th>Version</th>
-                      <th>
-                        <div className="lb-col-header">
-                          SIRI-2
-                          <InfoBubble
-                            title="SIRI-2"
-                            content="RMSE — lower is better. This score reflects error across the SIRI-2 benchmark."
-                          />
-                        </div>
-                      </th>
-                      <th>
-                        <div className="lb-col-header">
-                          A-Pharm
-                          <InfoBubble
-                            title="A-Pharm"
-                            content="RMSE — lower is better. Pharmacology subset performance."
-                          />
-                        </div>
-                      </th>
-                      <th>
-                        <div className="lb-col-header">
-                          A-MaMH
-                          <InfoBubble
-                            title="A-MaMH"
-                            content="RMSE — lower is better. Math & reasoning subset performance."
-                          />
-                        </div>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {comparisonRows.map((v) => (
-                      <tr key={v.id}>
-                        <td>
-                          <input
-                            type="checkbox"
-                            checked
-                            onChange={() => toggleVersion(v.id)}
-                          />
-                        </td>
-                        <td>{v.modelFamily}</td>
-                        <td>{v.model}</td>
-                        <td>{v.version}</td>
-                        <td>{typeof v.SIRI_2 === "number" ? v.SIRI_2.toFixed(3) : v.SIRI_2}</td>
-                        <td>{typeof v.A_pharm === "number" ? v.A_pharm.toFixed(3) : v.A_pharm}</td>
-                        <td>{typeof v.A_mamh === "number" ? v.A_mamh.toFixed(3) : v.A_mamh}</td>
+              {/* Main Table */}
+              <Card className="flex-1 overflow-hidden" style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.75rem' }}>
+                <div className="overflow-x-auto">
+                <table className="w-full border-collapse" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead className="bg-gray-50 border-b border-gray-200" style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                    {table.getHeaderGroups().map((hg) => (
+                      <tr key={hg.id}>
+                        {hg.headers.map((header) => {
+                          const canSort = header.column.getCanSort();
+                          const sortDir = header.column.getIsSorted();
+                          return (
+                            <th
+                              key={header.id}
+                              className={`px-4 py-3 text-left text-sm font-semibold text-gray-700 ${
+                                canSort ? 'cursor-pointer select-none hover:bg-gray-100' : ''
+                              }`}
+                              onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
+                              style={{
+                                width: header.column.getSize(),
+                                padding: '0.75rem 1rem',
+                                textAlign: 'left',
+                                fontSize: '0.875rem',
+                                fontWeight: 600,
+                                color: '#374151'
+                              }}
+                            >
+                              <div className="flex items-center gap-2">
+                                {flexRender(header.column.columnDef.header, header.getContext())}
+                                {canSort && sortDir && (
+                                  <span className="text-xs">
+                                    {sortDir === "asc" ? "▲" : "▼"}
+                                  </span>
+                                )}
+                              </div>
+                            </th>
+                          );
+                        })}
                       </tr>
                     ))}
+                  </thead>
+
+                  <tbody>
+                    {table.getRowModel().rows.map((row) => {
+                      const isMainRow = row.original.isMainRow;
+                      const isVersionRow = !isMainRow;
+                      const isSelected = isVersionRow && selectedVersions.has(row.original.id);
+
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`border-b border-gray-100 transition-colors ${
+                            isMainRow ? 'bg-white hover:bg-gray-50 font-medium' : 'bg-gray-50 hover:bg-gray-100'
+                          } ${isSelected ? '!bg-blue-50' : ''}`}
+                          style={{
+                            backgroundColor: isSelected ? '#dbeafe' : isMainRow ? 'white' : '#fafafa',
+                            borderBottom: '1px solid #e5e7eb',
+                            cursor: isVersionRow ? 'pointer' : 'default'
+                          }}
+                          onClick={isVersionRow ? () => toggleVersion(row.original.id) : undefined}
+                        >
+                          {row.getVisibleCells().map((cell) => (
+                            <td key={cell.id} className="px-4 py-3 text-sm" style={{ padding: '0.75rem 1rem', fontSize: '0.875rem' }}>
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                            </td>
+                          ))}
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
-              </div>
-            ) : (
-              <div className="lb-empty">No versions selected. Select versions from the Models tab to compare.</div>
-            )}
+
+                {table.getRowModel().rows.length === 0 && (
+                  <div className="p-12 text-center text-gray-500">
+                    No results match the current filters.
+                  </div>
+                )}
+                </div>
+              </Card>
+            </div>
           </div>
-        </div>
-      )}
+          </div>
+        )}
+
+        {activeTab === 'comparison' && (
+          <div className="mt-0">
+          <div className="max-w-7xl mx-auto px-6 pb-8">
+            <Card style={{ backgroundColor: 'white', border: '1px solid #e5e7eb', borderRadius: '0.75rem' }}>
+              {selectedVersions.size === 0 ? (
+                <div className="p-12 text-center">
+                  <p className="text-gray-600 mb-2">No models selected for comparison</p>
+                  <p className="text-gray-500 text-sm">Select models from the Models tab to compare them</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <h2 className="font-semibold text-lg">Version Comparison</h2>
+                    <Button variant="outline" size="sm" onClick={clearAllSelected}>
+                      Clear all
+                    </Button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700" style={{width: 50}}>Keep</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Model Family</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Model</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Version</th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                            <div className="flex items-center gap-1">
+                              SIRI-2
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button className="hover:bg-gray-200 p-1 rounded">
+                                    <Info className="w-3.5 h-3.5 text-gray-500" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>RMSE — lower is better. Error across SIRI-2 benchmark</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                            <div className="flex items-center gap-1">
+                              A-Pharm
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button className="hover:bg-gray-200 p-1 rounded">
+                                    <Info className="w-3.5 h-3.5 text-gray-500" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>RMSE — lower is better. Pharmacology subset performance</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </th>
+                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                            <div className="flex items-center gap-1">
+                              A-MaMH
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button className="hover:bg-gray-200 p-1 rounded">
+                                    <Info className="w-3.5 h-3.5 text-gray-500" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>RMSE — lower is better. Math & reasoning subset performance</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {comparisonRows.map((v) => (
+                          <tr key={v.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <Checkbox
+                                checked
+                                onCheckedChange={() => toggleVersion(v.id)}
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-sm">{v.modelFamily}</td>
+                            <td className="px-4 py-3 text-sm">{v.model}</td>
+                            <td className="px-4 py-3 text-sm">{v.version}</td>
+                            <td className="px-4 py-3 text-sm">{typeof v.SIRI_2 === "number" ? v.SIRI_2.toFixed(3) : v.SIRI_2}</td>
+                            <td className="px-4 py-3 text-sm">{typeof v.A_pharm === "number" ? v.A_pharm.toFixed(3) : v.A_pharm}</td>
+                            <td className="px-4 py-3 text-sm">{typeof v.A_mamh === "number" ? v.A_mamh.toFixed(3) : v.A_mamh}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
