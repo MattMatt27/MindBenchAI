@@ -242,24 +242,30 @@ export default function Leaderboard() {
       },
       {
         accessorKey: "modelFamily",
-        header: () => "Model Family",
-        cell: (info) => <span className="font-medium">{String(info.getValue())}</span>
+        header: () => <div className="text-center">Model Family</div>,
+        cell: ({ row, getValue }) => {
+          if (!row.original.isMainRow) return null;
+          return <span className="font-medium">{String(getValue())}</span>;
+        }
       },
       {
         accessorKey: "model",
-        header: () => "Model",
-        cell: (info) => String(info.getValue())
+        header: () => <div className="text-center">Model</div>,
+        cell: ({ row, getValue }) => {
+          if (!row.original.isMainRow) return null;
+          return String(getValue());
+        }
       },
       {
         accessorKey: "version",
-        header: () => "Version",
+        header: () => <div className="text-center">Version</div>,
         cell: (info) => String(info.getValue()),
         size: 120
       },
       {
         accessorKey: "SIRI_2",
         header: () => (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-center gap-1">
             SIRI-2
             <Tooltip>
               <TooltipTrigger asChild>
@@ -281,7 +287,7 @@ export default function Leaderboard() {
       {
         accessorKey: "A_pharm",
         header: () => (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-center gap-1">
             A-Pharm
             <Tooltip>
               <TooltipTrigger asChild>
@@ -303,7 +309,7 @@ export default function Leaderboard() {
       {
         accessorKey: "A_mamh",
         header: () => (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center justify-center gap-1">
             A-MaMH
             <Tooltip>
               <TooltipTrigger asChild>
@@ -529,30 +535,26 @@ export default function Leaderboard() {
                         {hg.headers.map((header) => {
                           const canSort = header.column.getCanSort();
                           const sortDir = header.column.getIsSorted();
+                          const isFirstColumn = header.id === 'expander';
+                          const alignment = isFirstColumn ? 'text-left' : 'text-center';
+
                           return (
                             <th
                               key={header.id}
-                              className={`px-4 py-3 text-left text-sm font-semibold text-gray-700 ${
+                              className={`px-4 py-3 ${alignment} text-sm font-semibold text-gray-700 ${
                                 canSort ? 'cursor-pointer select-none hover:bg-gray-100' : ''
                               }`}
                               onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                               style={{
-                                width: header.column.getSize(),
-                                padding: '0.75rem 1rem',
-                                textAlign: 'left',
-                                fontSize: '0.875rem',
-                                fontWeight: 600,
-                                color: '#374151'
+                                width: header.column.getSize() !== 150 ? header.column.getSize() : undefined
                               }}
                             >
-                              <div className="flex items-center gap-2">
-                                {flexRender(header.column.columnDef.header, header.getContext())}
-                                {canSort && sortDir && (
-                                  <span className="text-xs">
-                                    {sortDir === "asc" ? "▲" : "▼"}
-                                  </span>
-                                )}
-                              </div>
+                              {flexRender(header.column.columnDef.header, header.getContext())}
+                              {canSort && sortDir && (
+                                <span className="text-xs ml-2">
+                                  {sortDir === "asc" ? "▲" : "▼"}
+                                </span>
+                              )}
                             </th>
                           );
                         })}
@@ -579,11 +581,16 @@ export default function Leaderboard() {
                           }}
                           onClick={isVersionRow ? () => toggleVersion(row.original.id) : undefined}
                         >
-                          {row.getVisibleCells().map((cell) => (
-                            <td key={cell.id} className="px-4 py-3 text-sm" style={{ padding: '0.75rem 1rem', fontSize: '0.875rem' }}>
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </td>
-                          ))}
+                          {row.getVisibleCells().map((cell) => {
+                            const isFirstColumn = cell.column.id === 'expander';
+                            const alignment = isFirstColumn ? 'text-left' : 'text-center';
+
+                            return (
+                              <td key={cell.id} className={`px-4 py-3 text-sm ${alignment}`}>
+                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                              </td>
+                            );
+                          })}
                         </tr>
                       );
                     })}
