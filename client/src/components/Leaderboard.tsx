@@ -371,24 +371,55 @@ export default function Leaderboard() {
       {/* Custom Tabs Implementation */}
       <div className="w-full">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="mb-6 inline-flex bg-gray-100 rounded-xl p-1 gap-1">
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            backgroundColor: '#ececf0',
+            borderRadius: '0.75rem',
+            padding: '3px',
+            marginBottom: '1.5rem',
+            height: '2.25rem'
+          }}>
             <button
               onClick={() => setActiveTab('models')}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-                activeTab === 'models'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                whiteSpace: 'nowrap',
+                borderRadius: '0.75rem',
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                border: '1px solid transparent',
+                background: activeTab === 'models' ? '#fff' : 'transparent',
+                color: activeTab === 'models' ? '#111827' : '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                height: 'calc(100% - 1px)'
+              }}
             >
               Models
             </button>
             <button
               onClick={() => setActiveTab('comparison')}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-all flex items-center gap-2 ${
-                activeTab === 'comparison'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                whiteSpace: 'nowrap',
+                borderRadius: '0.75rem',
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                border: '1px solid transparent',
+                background: activeTab === 'comparison' ? '#fff' : 'transparent',
+                color: activeTab === 'comparison' ? '#111827' : '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                height: 'calc(100% - 1px)',
+                gap: '0.5rem'
+              }}
             >
               Comparison
               {selectedVersions.size > 0 && (

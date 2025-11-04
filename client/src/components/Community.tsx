@@ -10,18 +10,20 @@ export default function Community() {
   const [activeTab, setActiveTab] = useState<TabValue>('news');
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#fff' }}>
-      <div style={{ maxWidth: '72rem', margin: '0 auto', padding: '1.5rem 1rem' }}>
-        <div style={{ marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '1.5rem', fontWeight: 500, color: '#111827', marginBottom: '0.5rem', lineHeight: 1.5 }}>
+    <div className="min-h-screen bg-white">
+      <div className="max-w-7xl mx-auto px-6 py-8 pb-0">
+        <div className="mb-8">
+          <h1 className="text-gray-900 text-3xl font-semibold mb-2">
             Community Hub
           </h1>
-          <p style={{ color: '#6b7280' }}>
+          <p className="text-gray-600">
             Stay updated with the latest news, share suggestions, and meet the team
           </p>
         </div>
+      </div>
 
-        {/* Simple tabs navigation */}
+      {/* Simple tabs navigation */}
+      <div className="max-w-7xl mx-auto px-6">
         <div style={{
           display: 'inline-flex',
           alignItems: 'center',

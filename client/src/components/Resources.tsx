@@ -91,6 +91,7 @@ const mapBenchmarkToStudy = (benchmark: ResourceBenchmarkAPI): BenchmarkStudy =>
 };
 
 export default function Resources() {
+  const [activeTab, setActiveTab] = useState<'studies' | 'articles'>('studies');
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [benchmarkStudies, setBenchmarkStudies] = useState<BenchmarkStudy[]>([]);
@@ -167,19 +168,74 @@ export default function Resources() {
   return (
     <div className="resources-page">
       {/* Header */}
-      <div className="resources-header-section">
-        <div className="resources-container">
-          <div className="resources-header-content">
-            <h1 className="resources-main-title">Benchmark Studies & Resources</h1>
-            <p className="resources-main-subtitle">
-              Explore the original research papers and documentation for various mental health and medical benchmarks.
-              Each study provides detailed methodology, datasets, and evaluation criteria used to assess language model
-              performance in mental health contexts.
-            </p>
-          </div>
+      <div className="max-w-7xl mx-auto px-6 py-8 pb-0">
+        <div className="mb-4">
+          <h1 className="text-gray-900 text-3xl font-semibold mb-2">Benchmark Studies & Resources</h1>
+          <p className="text-gray-600">
+            Explore the original research papers and documentation for various mental health and medical benchmarks
+          </p>
         </div>
       </div>
 
+      {/* Tabs */}
+      <div className="w-full">
+        <div className="max-w-7xl mx-auto px-6">
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            backgroundColor: '#ececf0',
+            borderRadius: '0.75rem',
+            padding: '3px',
+            marginBottom: '0.75rem',
+            height: '2.25rem'
+          }}>
+            <button
+              onClick={() => setActiveTab('studies')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                whiteSpace: 'nowrap',
+                borderRadius: '0.75rem',
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                border: '1px solid transparent',
+                background: activeTab === 'studies' ? '#fff' : 'transparent',
+                color: activeTab === 'studies' ? '#111827' : '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                height: 'calc(100% - 1px)'
+              }}
+            >
+              Benchmark Studies
+            </button>
+            <button
+              onClick={() => setActiveTab('articles')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                whiteSpace: 'nowrap',
+                borderRadius: '0.75rem',
+                padding: '0.25rem 0.5rem',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                border: '1px solid transparent',
+                background: activeTab === 'articles' ? '#fff' : 'transparent',
+                color: activeTab === 'articles' ? '#111827' : '#374151',
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+                height: 'calc(100% - 1px)'
+              }}
+            >
+              AI/ML Articles
+            </button>
+          </div>
+        </div>
+
+        {activeTab === 'studies' && (
+          <div>
       {/* Content */}
       <div className="resources-container resources-content">
         {/* Filters */}
@@ -346,8 +402,24 @@ export default function Resources() {
           )}
         </div>
         )}
+      </div>
+          </div>
+        )}
 
-        {/* Footer CTA */}
+        {activeTab === 'articles' && (
+          <div>
+            <div className="resources-container resources-content">
+              <div className="text-center py-12">
+                <p className="text-gray-600 mb-2">Articles coming soon</p>
+                <p className="text-gray-500 text-sm">We're curating a collection of articles about mental health AI benchmarks</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer CTA */}
+      <div className="max-w-7xl mx-auto px-6">
         <div className="resources-footer-cta">
           <h3 className="resources-cta-title">Ready to Compare Models?</h3>
           <p className="resources-cta-description">
