@@ -1,5 +1,5 @@
 import { useState, useEffect, ChangeEvent, useMemo, useCallback } from "react";
-import { Github, FileText, Globe, Link } from "lucide-react";
+import { Github, FileText, Globe, Link, ExternalLink } from "lucide-react";
 import "../styles/Resources.css";
 import { API_ENDPOINTS } from "../config/api";
 
@@ -41,6 +41,28 @@ interface ResourceBenchmarkAPI {
   updated_at: string | null;
 }
 
+interface ResourceArticleAPI {
+  id: string;
+  title: string;
+  author: string | null;
+  publication_date: string | null;
+  publisher: string | null;
+  url: string;
+  summary: string | null;
+  image_url: string | null;
+  image_storage_path: string | null;
+  article_type: string | null;
+  language: string | null;
+  read_time_minutes: number | null;
+  is_published: boolean;
+  is_featured: boolean;
+  published_at: string | null;
+  metadata: unknown;
+  tags: ResourceTag[];
+  created_at: string;
+  updated_at: string | null;
+}
+
 // Frontend display type
 interface BenchmarkStudy {
   id: string;
@@ -58,6 +80,18 @@ interface BenchmarkStudy {
     huggingface?: string;
     paperswithcode?: string;
   };
+}
+
+interface Article {
+  id: string;
+  title: string;
+  author: string;
+  year: string;
+  publisher: string;
+  summary: string;
+  articleType: string;
+  readTime: number;
+  url: string;
 }
 
 // Helper function to map backend data to frontend display format
@@ -90,11 +124,31 @@ const mapBenchmarkToStudy = (benchmark: ResourceBenchmarkAPI): BenchmarkStudy =>
   };
 };
 
+// Helper function to map article data to frontend display format
+const mapArticleToDisplay = (article: ResourceArticleAPI): Article => {
+  const year = article.publication_date
+    ? new Date(article.publication_date).getFullYear().toString()
+    : 'N/A';
+
+  return {
+    id: article.id,
+    title: article.title,
+    author: article.author || 'Unknown',
+    year,
+    publisher: article.publisher || 'Unknown Publisher',
+    summary: article.summary || '',
+    articleType: article.article_type || 'general',
+    readTime: article.read_time_minutes || 5,
+    url: article.url,
+  };
+};
+
 export default function Resources() {
   const [activeTab, setActiveTab] = useState<'studies' | 'articles'>('studies');
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [benchmarkStudies, setBenchmarkStudies] = useState<BenchmarkStudy[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -126,10 +180,42 @@ export default function Resources() {
     }
   }, []);
 
-  // Fetch on mount
+  // Fetch articles from API
+  const fetchArticles = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(API_ENDPOINTS.articles);
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch articles: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success && Array.isArray(data.data)) {
+        const mappedArticles = data.data.map(mapArticleToDisplay);
+        setArticles(mappedArticles);
+      } else {
+        throw new Error('Invalid response format from API');
+      }
+    } catch (err) {
+      console.error('Error fetching articles:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load articles');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch on mount based on active tab
   useEffect(() => {
-    fetchBenchmarks();
-  }, [fetchBenchmarks]);
+    if (activeTab === 'studies') {
+      fetchBenchmarks();
+    } else {
+      fetchArticles();
+    }
+  }, [activeTab, fetchBenchmarks, fetchArticles]);
 
   // Extract unique categories dynamically from fetched data
   const availableCategories = useMemo(() => {
@@ -152,6 +238,28 @@ export default function Resources() {
     });
   }, [benchmarkStudies, searchQuery, categoryFilter]);
 
+  // Memoize filtered articles for performance
+  const filteredArticles = useMemo(() => {
+    return articles.filter((article) => {
+      const matchesSearch =
+        searchQuery === "" ||
+        article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        article.publisher.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesCategory = categoryFilter === "all" || article.articleType === categoryFilter;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [articles, searchQuery, categoryFilter]);
+
+  // Extract unique article types dynamically from fetched data
+  const availableArticleTypes = useMemo(() => {
+    const types = new Set(articles.map(article => article.articleType));
+    return Array.from(types).sort();
+  }, [articles]);
+
   const getCategoryColor = (category: string): string => {
     switch (category) {
       case "Mental Health":
@@ -163,6 +271,25 @@ export default function Resources() {
       default:
         return "";
     }
+  };
+
+  const getArticleTypeColor = (type: string): string => {
+    switch (type) {
+      case "research_summary":
+        return "category-mental-health";
+      case "news":
+        return "category-medical";
+      case "opinion":
+        return "category-psychology";
+      case "interview":
+        return "category-interview";
+      default:
+        return "";
+    }
+  };
+
+  const formatArticleType = (type: string): string => {
+    return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   return (
@@ -409,10 +536,107 @@ export default function Resources() {
         {activeTab === 'articles' && (
           <div>
             <div className="resources-container resources-content">
-              <div className="text-center py-12">
-                <p className="text-gray-600 mb-2">Articles coming soon</p>
-                <p className="text-gray-500 text-sm">We're curating a collection of articles about mental health AI benchmarks</p>
+              {/* Filters */}
+              <div className="resources-filters">
+                <div className="resources-search-wrapper">
+                  <input
+                    type="text"
+                    placeholder="Search articles..."
+                    value={searchQuery}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
+                    className="resources-search-input"
+                    aria-label="Search articles"
+                  />
+                </div>
+                <select
+                  value={categoryFilter}
+                  onChange={(e: ChangeEvent<HTMLSelectElement>) => setCategoryFilter(e.target.value)}
+                  className="resources-category-select"
+                  aria-label="Filter by article type"
+                >
+                  <option value="all">All Types</option>
+                  {availableArticleTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {formatArticleType(type)}
+                    </option>
+                  ))}
+                </select>
               </div>
+
+              {/* Loading State */}
+              {loading && (
+                <div className="resources-loading">
+                  <p>Loading articles...</p>
+                </div>
+              )}
+
+              {/* Error State */}
+              {error && !loading && (
+                <div className="resources-error">
+                  <p>Error: {error}</p>
+                  <button onClick={fetchArticles} className="resources-retry-button">
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Results Count */}
+              {!loading && !error && (
+                <div className="resources-results-count">
+                  Showing {filteredArticles.length} {filteredArticles.length === 1 ? "article" : "articles"}
+                </div>
+              )}
+
+              {/* Articles Grid */}
+              {!loading && !error && (
+                <div className="resources-studies-grid">
+                  {filteredArticles.map((article) => (
+                    <a
+                      key={article.id}
+                      href={article.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="resources-study-card resources-article-card"
+                      style={{ textDecoration: 'none', color: 'inherit' }}
+                    >
+                      <div className="resources-study-header">
+                        <div className="resources-study-title-row">
+                          <h3 className="resources-study-name">{article.title}</h3>
+                          <span className={`resources-category-badge ${getArticleTypeColor(article.articleType)}`}>
+                            {formatArticleType(article.articleType)}
+                          </span>
+                        </div>
+                        <div className="resources-study-meta">
+                          <span>{article.author}</span>
+                          <span>• {article.publisher}</span>
+                          <span>• {article.year}</span>
+                          <span>• {article.readTime} min read</span>
+                        </div>
+                      </div>
+
+                      <div className="resources-study-content">
+                        <p className="resources-study-summary">{article.summary}</p>
+                      </div>
+
+                      <div className="resources-additional-links">
+                        <div className="resources-links-container">
+                          <div className="resources-link">
+                            <ExternalLink className="resources-link-icon" />
+                            <span>Read Article</span>
+                          </div>
+                        </div>
+                      </div>
+                    </a>
+                  ))}
+
+                  {/* No Results */}
+                  {filteredArticles.length === 0 && (
+                    <div className="resources-no-results">
+                      <p>No articles found matching your criteria.</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

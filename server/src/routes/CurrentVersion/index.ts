@@ -9,6 +9,8 @@ import {
 import {
   getResourceBenchmarks,
   getResourceBenchmarkById,
+  getResourceArticles,
+  getResourceArticleById,
 } from '../../controllers/CurrentVersion/User/Resource.controller';
 import {
   getUpdates,
@@ -29,6 +31,10 @@ router.get('/iri/profiles', optionalAuth, getIRIProfiles);
 // Resource Benchmark routes
 router.get('/resources/benchmarks', optionalAuth, getResourceBenchmarks);
 router.get('/resources/benchmarks/:id', optionalAuth, getResourceBenchmarkById);
+
+// Resource Article routes
+router.get('/resources/articles', optionalAuth, getResourceArticles);
+router.get('/resources/articles/:id', optionalAuth, getResourceArticleById);
 
 // Community routes
 router.get('/community/updates', optionalAuth, getUpdates);

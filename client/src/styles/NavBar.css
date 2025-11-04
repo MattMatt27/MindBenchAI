@@ -42,7 +42,7 @@
 }
 
 .navbar-brand:hover {
-  background: #333333;
+  color: #9ca3af;
 }
 
 .navbar-menu {
@@ -59,7 +59,7 @@
 
 .navbar-item {
   padding: 16px 20px;
-  color: #d1d5db;
+  color: #9ca3af;
   text-decoration: none;
   transition: all 0.2s;
   border-bottom: 3px solid transparent;
@@ -73,7 +73,6 @@
 }
 
 .navbar-item:hover {
-  background: #333333;
   color: white;
 }
 
@@ -91,7 +90,7 @@
 
 .navbar-dropdown-trigger {
   padding: 16px 20px;
-  color: #d1d5db;
+  color: #9ca3af;
   cursor: pointer;
   transition: all 0.2s;
   display: block;
@@ -104,13 +103,12 @@
 }
 
 .navbar-dropdown:hover .navbar-dropdown-trigger {
-  background: #333333;
   color: white;
 }
 
 .navbar-dropdown-trigger-link {
   padding: 16px 20px;
-  color: #d1d5db;
+  color: #9ca3af;
   text-decoration: none;
   transition: all 0.2s;
   display: block;
@@ -123,7 +121,6 @@
 }
 
 .navbar-dropdown:hover .navbar-dropdown-trigger-link {
-  background: #333333;
   color: white;
 }
 
