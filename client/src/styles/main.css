@@ -1,14 +1,4 @@
-:root{
-  --bg:#e5e7eb;
-  --panel:#ffffff;
-  --panel-2:#f3f4f6;
-  --text:#111827;
-  --muted:#6b7280;
-  --border:#e5e7eb;
-  --border-strong:#d1d5db;
-  --ring:#2563eb33;
-  --accent:#2563eb;
-}
+/* Legacy tab styles for existing components that don't use Tailwind */
 
 .g-tabs {
   display: flex;
@@ -25,17 +15,17 @@
   border-bottom: 3px solid transparent;
   font-size:15px;
   font-weight:500;
-  color:var(--muted);
+  color: #6b7280;
   transition: all .2s;
   margin-bottom: -2px;
 }
 
 .g-tab-bttn:hover {
-  color:var(--text);
-  background:
-  var(--panel-2);}
+  color: #111827;
+  background: #f3f4f6;
+}
 
 .g-tab-bttn.active{
-  color:var(--text);
+  color: #111827;
   border-bottom-color:#3b82f6;
 }
