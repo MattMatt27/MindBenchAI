@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Badge } from './ui/badge';
 import { Card } from './ui/card';
 import { ChevronUp } from 'lucide-react';
-import { suggestions } from '../data/models';
+import { API_ENDPOINTS } from '../config/api';
 
 type SuggestionStatus = 'planned' | 'in-progress' | 'open vote' | 'open-vote';
 
@@ -13,18 +13,66 @@ interface Suggestion {
   vote?: number;
 }
 
+// API response interface
+interface SuggestionAPI {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string | null;
+  status: string;
+  priority: number | null;
+  vote_count: number;
+  is_visible: boolean;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  implemented_at: string | null;
+  closed_at: string | null;
+  closed_reason: string | null;
+  related_issue_url: string | null;
+  created_at: string;
+  user_votes: number;
+}
+
 export function SuggestionsTab() {
   const [userVotes, setUserVotes] = useState<Set<number>>(new Set());
+  const [suggestions, setSuggestions] = useState<SuggestionAPI[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch suggestions from API
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(API_ENDPOINTS.communitySuggestions);
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch suggestions');
+        }
+
+        const result = await response.json();
+        setSuggestions(result.data || []);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching suggestions:', err);
+        setError('Failed to load suggestions. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSuggestions();
+  }, []);
 
   const suggestionsList = useMemo(() =>
     suggestions.map((s, idx) => ({ ...s, _idx: idx })),
-    []
+    [suggestions]
   );
 
   const sortedSuggestions = useMemo(() => {
     return [...suggestionsList].sort((a, b) => {
-      const aVotes = (a.vote || 0) + (userVotes.has(a._idx) ? 1 : 0);
-      const bVotes = (b.vote || 0) + (userVotes.has(b._idx) ? 1 : 0);
+      const aVotes = (a.vote_count || 0) + (userVotes.has(a._idx) ? 1 : 0);
+      const bVotes = (b.vote_count || 0) + (userVotes.has(b._idx) ? 1 : 0);
       return bVotes - aVotes;
     });
   }, [suggestionsList, userVotes]);
@@ -80,11 +128,27 @@ export function SuggestionsTab() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-gray-600">Loading suggestions...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <p className="text-red-600">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {sortedSuggestions.map((suggestion) => {
         const voted = hasVoted(suggestion._idx);
-        const currentVotes = (suggestion.vote || 0) + (voted ? 1 : 0);
+        const currentVotes = (suggestion.vote_count || 0) + (voted ? 1 : 0);
 
         return (
           <Card key={suggestion._idx} className="p-6 hover:shadow-md transition-shadow">
@@ -106,7 +170,7 @@ export function SuggestionsTab() {
                   <h3 className="text-gray-900">{suggestion.title}</h3>
                   {getStatusBadge(suggestion.status)}
                 </div>
-                {suggestion.desc && <p className="text-gray-600">{suggestion.desc}</p>}
+                {suggestion.description && <p className="text-gray-600">{suggestion.description}</p>}
               </div>
             </div>
           </Card>

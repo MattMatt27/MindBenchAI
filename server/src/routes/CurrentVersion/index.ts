@@ -10,6 +10,11 @@ import {
   getResourceBenchmarks,
   getResourceBenchmarkById,
 } from '../../controllers/CurrentVersion/User/Resource.controller';
+import {
+  getUpdates,
+  getSuggestions,
+  getTeamMembers,
+} from '../../controllers/CurrentVersion/User/Community.controller';
 
 const router: Router = express.Router();
 
@@ -24,5 +29,10 @@ router.get('/iri/profiles', optionalAuth, getIRIProfiles);
 // Resource Benchmark routes
 router.get('/resources/benchmarks', optionalAuth, getResourceBenchmarks);
 router.get('/resources/benchmarks/:id', optionalAuth, getResourceBenchmarkById);
+
+// Community routes
+router.get('/community/updates', optionalAuth, getUpdates);
+router.get('/community/suggestions', optionalAuth, getSuggestions);
+router.get('/community/team-members', optionalAuth, getTeamMembers);
 
 export default router;

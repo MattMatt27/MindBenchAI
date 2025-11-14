@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import NavBar from "./components/NavBar";
-import Home from "./components/Home";
+import Benchmark from "./components/Benchmark";
 import TechnicalProfile from "./components/TechnicalProfile";
 import Resources from "./components/Resources"
 import Community from "./components/Community";
@@ -21,7 +21,7 @@ export default function App() {
       <BrowserRouter>
         <NavBar />
         <Routes>
-          <Route path="/home" element={<Home />} />
+          <Route path="/benchmark" element={<Benchmark />} />
           <Route path="/" element={<HomePage />} />
           <Route path="/technical_profile" element={<TechnicalProfile />} />
           <Route path="/leaderboard" element={<Leaderboard />} />

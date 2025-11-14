@@ -26,7 +26,7 @@ export default function NavBar() {
           <div className="navbar-menu">
             {/* Benchmark Dropdown */}
             <div className="navbar-dropdown">
-              <Link to="/home" className="navbar-dropdown-trigger-link">
+              <Link to="/benchmark" className="navbar-dropdown-trigger-link">
                 Benchmark
               </Link>
               <div className="navbar-dropdown-menu">

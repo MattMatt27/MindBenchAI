@@ -18,4 +18,9 @@ export const API_ENDPOINTS = {
   conversationalProfiles: (testName: string) => `${API_URL}/current/conversational-profiles/${testName}`,
   iriProfiles: `${API_URL}/current/iri/profiles`,
   benchmarks: `${API_URL}/current/resources/benchmarks`,
+
+  // Community endpoints
+  communityUpdates: `${API_URL}/current/community/updates`,
+  communitySuggestions: `${API_URL}/current/community/suggestions`,
+  communityTeamMembers: `${API_URL}/current/community/team-members`,
 } as const;
