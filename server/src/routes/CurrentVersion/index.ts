@@ -17,6 +17,12 @@ import {
   getSuggestions,
   getTeamMembers,
 } from '../../controllers/CurrentVersion/User/Community.controller';
+import {
+  getLeaderboardData,
+  getSystemPrompts,
+  getMessagePrompts,
+  getModelFamilies,
+} from '../../controllers/CurrentVersion/User/Benchmark.controller';
 
 const router: Router = express.Router();
 
@@ -40,5 +46,11 @@ router.get('/resources/articles/:id', optionalAuth, getResourceArticleById);
 router.get('/community/updates', optionalAuth, getUpdates);
 router.get('/community/suggestions', optionalAuth, getSuggestions);
 router.get('/community/team-members', optionalAuth, getTeamMembers);
+
+// Benchmark/Leaderboard routes
+router.get('/leaderboard', optionalAuth, getLeaderboardData);
+router.get('/leaderboard/system-prompts', optionalAuth, getSystemPrompts);
+router.get('/leaderboard/message-prompts', optionalAuth, getMessagePrompts);
+router.get('/leaderboard/model-families', optionalAuth, getModelFamilies);
 
 export default router;

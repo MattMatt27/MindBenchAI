@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import type { ChangeEvent } from "react";
 import {
   useReactTable,
@@ -10,13 +10,6 @@ import {
   SortingState,
 } from "@tanstack/react-table";
 import { ChevronDown, ChevronRight, Search, Info } from "lucide-react";
-import {
-  modelVersions,
-  filterVersions,
-  systemPrompts,
-  messagePrompts,
-  modelFamilies
-} from "../data/leaderboardData";
 import { Input } from "./ui/input";
 import { Checkbox } from "./ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
@@ -24,6 +17,8 @@ import { Button } from "./ui/button";
 import { Card } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5001/api';
 
 interface ModelVersion {
   id: string;
@@ -79,6 +74,12 @@ interface FilterParams {
   modelFamilies?: string[];
 }
 
+interface Prompt {
+  id: string;
+  name: string;
+  content: string;
+}
+
 export default function Leaderboard() {
   const [activeTab, setActiveTab] = useState<string>("models");
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -92,6 +93,14 @@ export default function Leaderboard() {
   const [messagePromptFilter, setMessagePromptFilter] = useState<string>("");
   const [modelFamilyFilter, setModelFamilyFilter] = useState<string[]>([]);
 
+  // API data state
+  const [modelVersions, setModelVersions] = useState<ModelVersion[]>([]);
+  const [systemPrompts, setSystemPrompts] = useState<Prompt[]>([]);
+  const [messagePrompts, setMessagePrompts] = useState<Prompt[]>([]);
+  const [modelFamilies, setModelFamilies] = useState<Record<string, string[]>>({});
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
   const toggleVersion = (versionId: string): void => {
     setSelectedVersions((prev) => {
       const next = new Set(prev);
@@ -101,6 +110,63 @@ export default function Leaderboard() {
   };
 
   const clearAllSelected = (): void => setSelectedVersions(new Set());
+
+  // Fetch data from API
+  useEffect(() => {
+    async function fetchLeaderboardData(): Promise<void> {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [
+          leaderboardRes,
+          systemPromptsRes,
+          messagePromptsRes,
+          modelFamiliesRes
+        ] = await Promise.all([
+          fetch(`${API_BASE}/current/leaderboard`),
+          fetch(`${API_BASE}/current/leaderboard/system-prompts`),
+          fetch(`${API_BASE}/current/leaderboard/message-prompts`),
+          fetch(`${API_BASE}/current/leaderboard/model-families`),
+        ]);
+
+        if (!leaderboardRes.ok || !systemPromptsRes.ok || !messagePromptsRes.ok || !modelFamiliesRes.ok) {
+          throw new Error('Failed to fetch leaderboard data');
+        }
+
+        const [leaderboardData, systemPromptsData, messagePromptsData, modelFamiliesData] = await Promise.all([
+          leaderboardRes.json(),
+          systemPromptsRes.json(),
+          messagePromptsRes.json(),
+          modelFamiliesRes.json(),
+        ]);
+
+        setModelVersions(leaderboardData.data || []);
+        setSystemPrompts(systemPromptsData.data || []);
+        setMessagePrompts(messagePromptsData.data || []);
+        setModelFamilies(modelFamiliesData.data || {});
+      } catch (err) {
+        console.error('Error fetching leaderboard data:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load leaderboard data');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLeaderboardData();
+  }, []);
+
+  // Helper function to filter versions (replaces imported filterVersions)
+  const filterVersions = (versions: ModelVersion[], filters: FilterParams): ModelVersion[] => {
+    return versions.filter(v => {
+      if (filters.temperature !== undefined && v.temperature !== filters.temperature) return false;
+      if (filters.top_p !== undefined && v.top_p !== filters.top_p) return false;
+      if (filters.system_prompt_id && v.system_prompt_id !== filters.system_prompt_id) return false;
+      if (filters.message_prompt_id && v.message_prompt_id !== filters.message_prompt_id) return false;
+      if (filters.modelFamilies && !filters.modelFamilies.includes(v.modelFamily)) return false;
+      return true;
+    });
+  };
 
   const sortedMainRows = useMemo<MainRow[]>(() => {
     const filters: FilterParams = {
@@ -154,7 +220,7 @@ export default function Leaderboard() {
     });
 
     return mainRows;
-  }, [temperatureFilter, topPFilter, systemPromptFilter, messagePromptFilter, modelFamilyFilter]);
+  }, [modelVersions, temperatureFilter, topPFilter, systemPromptFilter, messagePromptFilter, modelFamilyFilter]);
 
   const data = useMemo<TableRow[]>(() => {
     const rows: TableRow[] = [];
@@ -352,9 +418,35 @@ export default function Leaderboard() {
   });
 
   const comparisonRows = useMemo<ModelVersion[]>(
-    () => (modelVersions as ModelVersion[]).filter((v) => selectedVersions.has(v.id)),
-    [selectedVersions]
+    () => modelVersions.filter((v) => selectedVersions.has(v.id)),
+    [selectedVersions, modelVersions]
   );
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading leaderboard data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="text-red-600 text-4xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Failed to Load Leaderboard</h2>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -661,12 +753,12 @@ export default function Leaderboard() {
                     <table className="w-full border-collapse">
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700" style={{width: 50}}>Keep</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Model Family</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Model</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Version</th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                            <div className="flex items-center gap-1">
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Keep</th>
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Model Family</th>
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Model</th>
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Version</th>
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                            <div className="flex items-center justify-center gap-1">
                               SIRI-2
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -680,8 +772,8 @@ export default function Leaderboard() {
                               </Tooltip>
                             </div>
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                            <div className="flex items-center gap-1">
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                            <div className="flex items-center justify-center gap-1">
                               A-Pharm
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -695,8 +787,8 @@ export default function Leaderboard() {
                               </Tooltip>
                             </div>
                           </th>
-                          <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                            <div className="flex items-center gap-1">
+                          <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                            <div className="flex items-center justify-center gap-1">
                               A-MaMH
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -715,18 +807,18 @@ export default function Leaderboard() {
                       <tbody>
                         {comparisonRows.map((v) => (
                           <tr key={v.id} className="border-b border-gray-100 hover:bg-gray-50">
-                            <td className="px-4 py-3">
+                            <td className="px-4 py-3 text-sm text-center">
                               <Checkbox
                                 checked
                                 onCheckedChange={() => toggleVersion(v.id)}
                               />
                             </td>
-                            <td className="px-4 py-3 text-sm">{v.modelFamily}</td>
-                            <td className="px-4 py-3 text-sm">{v.model}</td>
-                            <td className="px-4 py-3 text-sm">{v.version}</td>
-                            <td className="px-4 py-3 text-sm">{typeof v.SIRI_2 === "number" ? v.SIRI_2.toFixed(3) : v.SIRI_2}</td>
-                            <td className="px-4 py-3 text-sm">{typeof v.A_pharm === "number" ? v.A_pharm.toFixed(3) : v.A_pharm}</td>
-                            <td className="px-4 py-3 text-sm">{typeof v.A_mamh === "number" ? v.A_mamh.toFixed(3) : v.A_mamh}</td>
+                            <td className="px-4 py-3 text-sm text-center">{v.modelFamily}</td>
+                            <td className="px-4 py-3 text-sm text-center">{v.model}</td>
+                            <td className="px-4 py-3 text-sm text-center">{v.version}</td>
+                            <td className="px-4 py-3 text-sm text-center">{typeof v.SIRI_2 === "number" ? v.SIRI_2.toFixed(3) : v.SIRI_2}</td>
+                            <td className="px-4 py-3 text-sm text-center">{typeof v.A_pharm === "number" ? v.A_pharm.toFixed(3) : v.A_pharm}</td>
+                            <td className="px-4 py-3 text-sm text-center">{typeof v.A_mamh === "number" ? v.A_mamh.toFixed(3) : v.A_mamh}</td>
                           </tr>
                         ))}
                       </tbody>

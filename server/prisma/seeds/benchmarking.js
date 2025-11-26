@@ -150,6 +150,69 @@ module.exports = async function seedBenchmarking(prisma, { researcherUser }) {
 
   console.log('Created sample benchmark questions for all scales');
 
+  // Seed BenchmarkPrompts (system and message prompts)
+  const defaultSystemPrompt = await prisma.benchmarkPrompt.create({
+    data: {
+      name: 'Default System Prompt',
+      promptType: 'system',
+      content: 'You are a helpful assistant.',
+      createdBy: researcherUser.id,
+    },
+  });
+
+  const clinicalSystemPrompt = await prisma.benchmarkPrompt.create({
+    data: {
+      name: 'Clinical System Prompt',
+      promptType: 'system',
+      content: 'You are a mental health support assistant.',
+      createdBy: researcherUser.id,
+    },
+  });
+
+  const empatheticSystemPrompt = await prisma.benchmarkPrompt.create({
+    data: {
+      name: 'Empathetic System Prompt',
+      promptType: 'system',
+      content: 'You are a compassionate listener.',
+      createdBy: researcherUser.id,
+    },
+  });
+
+  const standardMessagePrompt = await prisma.benchmarkPrompt.create({
+    data: {
+      name: 'Standard Format',
+      promptType: 'message',
+      content: 'Direct question format',
+      createdBy: researcherUser.id,
+    },
+  });
+
+  const contextualMessagePrompt = await prisma.benchmarkPrompt.create({
+    data: {
+      name: 'Contextual Format',
+      promptType: 'message',
+      content: 'Question with context',
+      createdBy: researcherUser.id,
+    },
+  });
+
+  console.log('Created benchmark prompts:',
+    defaultSystemPrompt.name,
+    clinicalSystemPrompt.name,
+    empatheticSystemPrompt.name,
+    standardMessagePrompt.name,
+    contextualMessagePrompt.name
+  );
+
+  // Create prompt ID mapping for lookup
+  const promptMap = {
+    'default': defaultSystemPrompt.id,
+    'clinical': clinicalSystemPrompt.id,
+    'empathetic': empatheticSystemPrompt.id,
+    'standard': standardMessagePrompt.id,
+    'contextual': contextualMessagePrompt.id,
+  };
+
   return {
     siriScale,
     aPharmScale,
@@ -157,5 +220,6 @@ module.exports = async function seedBenchmarking(prisma, { researcherUser }) {
     aPharmQuestion,
     aMamhQuestion,
     siriQuestion,
+    promptMap,
   };
 };
