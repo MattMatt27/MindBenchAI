@@ -191,3 +191,175 @@ export const getResourceBenchmarkById = async (
     next(error);
   }
 };
+
+/**
+ * GET /api/current/resources/articles
+ * Fetch resource articles with optional filtering
+ * Query params:
+ *  - articleType: research_summary | news | opinion | interview | other
+ *  - isFeatured: true | false
+ *  - isPublished: true | false (default: true)
+ *  - publisher: string
+ */
+export const getResourceArticles = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const articleType = req.query.articleType as string | undefined;
+    const isFeatured = req.query.isFeatured === 'true';
+    const isPublished = req.query.isPublished !== 'false'; // Default to true
+    const publisher = req.query.publisher as string | undefined;
+
+    const whereClause: any = {
+      isPublished,
+    };
+
+    // Filter by article type if provided
+    if (articleType) {
+      whereClause.articleType = articleType;
+    }
+
+    // Filter by featured status if explicitly requested
+    if (req.query.isFeatured !== undefined) {
+      whereClause.isFeatured = isFeatured;
+    }
+
+    // Filter by publisher if provided
+    if (publisher) {
+      whereClause.publisher = {
+        contains: publisher,
+        mode: 'insensitive',
+      };
+    }
+
+    const articles = await prisma.resourceArticle.findMany({
+      where: whereClause,
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+      orderBy: [
+        { isFeatured: 'desc' },
+        { publicationDate: 'desc' },
+        { title: 'asc' },
+      ],
+    });
+
+    // Transform to client-friendly format
+    const transformedArticles = articles.map((article) => ({
+      id: article.id,
+      title: article.title,
+      author: article.author,
+      publication_date: article.publicationDate
+        ? article.publicationDate.toISOString()
+        : null,
+      publisher: article.publisher,
+      url: article.url,
+      summary: article.summary,
+      image_url: article.imageUrl,
+      image_storage_path: article.imageStoragePath,
+      article_type: article.articleType,
+      language: article.language,
+      read_time_minutes: article.readTimeMinutes,
+      is_published: article.isPublished,
+      is_featured: article.isFeatured,
+      published_at: article.publishedAt ? article.publishedAt.toISOString() : null,
+      metadata: article.metadata,
+      tags: article.tags.map((tagLink) => ({
+        id: tagLink.tag.id,
+        name: tagLink.tag.name,
+        slug: tagLink.tag.slug,
+        category: tagLink.tag.category,
+        color: tagLink.tag.color,
+        icon: tagLink.tag.icon,
+      })),
+      created_at: article.createdAt.toISOString(),
+      updated_at: article.updatedAt ? article.updatedAt.toISOString() : null,
+    }));
+
+    res.json({
+      success: true,
+      data: transformedArticles,
+      count: transformedArticles.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * GET /api/current/resources/articles/:id
+ * Fetch a single resource article by ID
+ */
+export const getResourceArticleById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+
+    const article = await prisma.resourceArticle.findUnique({
+      where: { id },
+      include: {
+        tags: {
+          include: {
+            tag: true,
+          },
+        },
+      },
+    });
+
+    if (!article) {
+      res.status(404).json({
+        success: false,
+        error: 'Article not found',
+      });
+      return;
+    }
+
+    // Transform to client-friendly format
+    const transformedArticle = {
+      id: article.id,
+      title: article.title,
+      author: article.author,
+      publication_date: article.publicationDate
+        ? article.publicationDate.toISOString()
+        : null,
+      publisher: article.publisher,
+      url: article.url,
+      summary: article.summary,
+      image_url: article.imageUrl,
+      image_storage_path: article.imageStoragePath,
+      article_type: article.articleType,
+      language: article.language,
+      read_time_minutes: article.readTimeMinutes,
+      is_published: article.isPublished,
+      is_featured: article.isFeatured,
+      published_at: article.publishedAt ? article.publishedAt.toISOString() : null,
+      metadata: article.metadata,
+      tags: article.tags.map((tagLink) => ({
+        id: tagLink.tag.id,
+        name: tagLink.tag.name,
+        slug: tagLink.tag.slug,
+        category: tagLink.tag.category,
+        color: tagLink.tag.color,
+        icon: tagLink.tag.icon,
+      })),
+      created_at: article.createdAt.toISOString(),
+      updated_at: article.updatedAt ? article.updatedAt.toISOString() : null,
+    };
+
+    res.json({
+      success: true,
+      data: transformedArticle,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

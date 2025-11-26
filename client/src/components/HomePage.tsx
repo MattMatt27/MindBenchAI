@@ -1,5 +1,6 @@
 import {useNavigate} from "react-router-dom";
 import "../styles/HomePage.css";
+import logo from "../assets/MindBenchAI.png";
 
 interface Stat {
   value: string;
@@ -91,6 +92,10 @@ export default function HomePage() {
   return (
     <div className="dashboard-home-page">
       <section className="hero">
+        <div className="hero-brand-container">
+          <img src={logo} alt="MindBench AI Logo" className="hero-logo" />
+          <div className="hero-brand">MindBench AI</div>
+        </div>
         <h1>
           Benchmark Leading <span>Language Models</span>
         </h1>
@@ -150,7 +155,12 @@ export default function HomePage() {
         <p>
           Start comparing language models and find the perfect fit for your needs.
         </p>
-        <button className="primary-button">View All Benchmarks</button>
+        <button
+          className="primary-button"
+          onClick={() => navigate("/benchmark")}
+        >
+          View All Benchmarks
+        </button>
       </section>
     </div>
   );

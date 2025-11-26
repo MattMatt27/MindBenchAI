@@ -8,12 +8,13 @@ const seedCSIConversationalProfile = require('./seeds/csiConversationalProfile')
 const seedUsers = require('./seeds/users');
 const seedResources = require('./seeds/resources');
 const seedCommunity = require('./seeds/community');
-// const seedBenchmarking = require('./seeds/benchmarking');
-// const seedExperiments = require('./seeds/experiments');
-// const seedHyperparameters = require('./seeds/hyperparameters');
-// const seedResults = require('./seeds/results');
-// const seedSystem = require('./seeds/system');
-// const seedRatings = require('./seeds/ratings');
+const seedBenchmarking = require('./seeds/benchmarking');
+const seedBenchmarkScoreAggregates = require('./seeds/benchmarkScoreAggregates');
+const seedExperiments = require('./seeds/experiments');
+const seedHyperparameters = require('./seeds/hyperparameters');
+const seedResults = require('./seeds/results');
+const seedSystem = require('./seeds/system');
+const seedRatings = require('./seeds/ratings');
 
 const prisma = new PrismaClient();
 
@@ -53,10 +54,15 @@ async function main() {
     regularUser: users.regularUser,
   });
 
-  // const benchmarking = await seedBenchmarking(prisma, {
-  //   researcherUser: users.researcherUser,
-  // });
+  const benchmarking = await seedBenchmarking(prisma, {
+    researcherUser: users.researcherUser,
+  });
 
+  await seedBenchmarkScoreAggregates(prisma, {
+    benchmarking,
+  });
+
+  // Temporarily commented out due to model version lookup issues
   // const experimentContexts = await seedExperiments(prisma, {
   //   researcherUser: users.researcherUser,
   //   professionalUser: users.professionalUser,
@@ -86,7 +92,7 @@ async function main() {
   //   benchmarking,
   // });
 
-  console.log('Database seed completed successfully (core models + tech profiles + resources + community).');
+  console.log('Database seed completed successfully!');
 }
 
 main()

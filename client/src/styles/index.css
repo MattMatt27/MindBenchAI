@@ -46,8 +46,8 @@
   --accent-foreground: #030213;
   --destructive: #d4183d;
   --destructive-foreground: #fff;
-  --border: #0000001a;
-  --input: transparent;
+  --border: #e5e7eb;
+  --input: #f3f3f5;
   --input-background: #f3f3f5;
   --switch-background: #cbced4;
   --font-weight-medium: 500;
@@ -174,5 +174,15 @@ html {
       font-weight: var(--font-weight-normal);
       line-height: 1.5;
     }
+  }
+
+  /* Override browser autofill styles to ensure consistent input backgrounds */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px var(--input-background) inset !important;
+    -webkit-text-fill-color: var(--foreground) !important;
+    transition: background-color 5000s ease-in-out 0s;
   }
 }
