@@ -28,24 +28,70 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
             background: var(--bg);
             color: var(--text);
-            padding: 40px 20px;
-            position: relative;
+        }
+
+        .logo-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px 0;
+            opacity: 0.85;
+            width: 100%;
+        }
+
+        .logo-bar img {
+            height: 45px;
+            width: auto;
+        }
+
+        .mobile-only {
+            display: none;
+        }
+
+        .desktop-only {
+            display: flex;
+        }
+
+        .main-content {
+            display: flex;
+            flex: 1;
+            min-height: 100vh;
+        }
+
+        .page-wrapper {
+            display: flex;
+            width: 100%;
+            animation: fadeIn 0.6s ease-in-out;
+        }
+
+        .container .main-logo {
+            margin-top: 0;
         }
 
         .container {
             text-align: center;
-            max-width: 800px;
-            animation: fadeIn 0.6s ease-in-out;
+            flex: 1;
+            min-width: 0;
+            padding: 0 60px 40px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
         }
 
         .main-logo {
-            width: 120px;
+            width: 90px;
             height: auto;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         h1 {
@@ -66,7 +112,7 @@
         .coming-soon {
             display: inline-block;
             font-size: 16px;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             text-transform: uppercase;
             letter-spacing: 3px;
             font-weight: 300;
@@ -87,10 +133,9 @@
         }
 
         .description {
-            font-size: 18px;
+            font-size: 16px;
             line-height: 1.8;
             color: var(--muted);
-            margin-bottom: 2rem;
             max-width: 650px;
             margin-left: auto;
             margin-right: auto;
@@ -100,8 +145,10 @@
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 24px;
-            margin-top: 3rem;
+            margin-top: 2rem;
             text-align: left;
+            width: 100%;
+            max-width: 700px;
         }
 
         .feature-card {
@@ -125,16 +172,161 @@
             line-height: 1.5;
         }
 
-        .logo-container {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            opacity: 0.8;
+        .survey-panel {
+            padding: 28px 24px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
         }
 
-        .logo-container img {
-            height: 50px;
-            width: auto;
+        .survey-panel-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .survey-panel-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .survey-panel-desc {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .survey-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 14px 24px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .survey-btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .survey-btn-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .survey-btn:hover .survey-btn-arrow {
+            transform: translateX(3px);
+        }
+
+        .survey-meta {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .survey-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .sidebar {
+            width: 380px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            background: #d0d8e3;
+            padding: 40px 40px;
+        }
+
+        .survey-panel-wrapper,
+        .paper-card-wrapper {
+            display: contents;
+        }
+
+        .paper-card {
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .paper-card-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--muted);
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .paper-card-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--text);
+            line-height: 1.4;
+            margin-bottom: 16px;
+        }
+
+        .paper-card-journal {
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 16px;
+            font-style: italic;
+        }
+
+        .paper-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 20px;
+            background: transparent;
+            color: var(--text);
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid var(--border-strong);
+            transition: all 0.2s ease;
+        }
+
+        .paper-btn:hover {
+            background: var(--panel);
+            border-color: var(--text);
+        }
+
+        .paper-btn-arrow {
+            transition: transform 0.2s ease;
+            font-size: 12px;
+        }
+
+        .paper-btn:hover .paper-btn-arrow {
+            transform: translateX(2px);
         }
 
         @keyframes fadeIn {
@@ -148,9 +340,81 @@
             }
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 900px) {
+            .page-wrapper {
+                flex-direction: column;
+                gap: 0;
+            }
+
+            .sidebar {
+                width: 100%;
+                padding: 20px;
+                background: transparent;
+                order: 0;
+                display: contents;
+            }
+
+            .survey-panel-wrapper {
+                display: block;
+                order: -1;
+                background: #d0d8e3;
+                padding: 20px 20px 30px;
+                margin-top: 0;
+                width: 100%;
+            }
+
+            .survey-panel {
+                max-width: 400px;
+                margin: 0 auto;
+            }
+
+            .paper-card-wrapper {
+                display: block;
+                order: 2;
+                background: #d0d8e3;
+                padding: 30px 20px;
+                width: 100%;
+            }
+
+            .paper-card {
+                max-width: 400px;
+                margin: 0 auto;
+            }
+
+            .mobile-only {
+                display: flex;
+            }
+
+            .desktop-only {
+                display: none;
+            }
+
+            .logo-bar.mobile-only {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                padding: 15px 20px;
+                background: var(--bg);
+                z-index: 100;
+            }
+
+            .logo-bar img {
+                height: 38px;
+            }
+
+            .survey-panel-wrapper {
+                margin-top: 70px;
+            }
+
             .container {
-                padding: 40px 20px;
+                padding: 15px 20px 30px;
+                order: 0;
+            }
+
+            .main-content {
+                min-height: auto;
+                flex-direction: column;
             }
 
             h1 {
@@ -160,52 +424,120 @@
             .features {
                 grid-template-columns: 1fr;
             }
+        }
 
-            .logo-container {
-                position: absolute;
-                top: 20px;
-                left: 20px;
+        @media (max-width: 480px) {
+            .survey-panel {
+                padding: 20px 18px;
+            }
+
+            .survey-panel-title {
+                font-size: 18px;
+            }
+
+            .container {
+                padding: 15px 15px 30px;
+            }
+
+            .description {
+                font-size: 16px;
+            }
+
+            .logo-bar {
+                padding: 12px 15px;
+            }
+
+            .logo-bar img {
+                height: 30px;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img src="/mindbench_logo.png" alt="MindBench.ai Logo" class="main-logo">
-        <h1>MindBench.ai</h1>
-        <p class="subtitle">LLM Assessment Platform for Mental Health Expertise</p>
+<script>
+    window.onbeforeunload = function() {
+        window.scrollTo(0, 0);
+    };
+    if (history.scrollRestoration) {
+        history.scrollRestoration = 'manual';
+    }
+</script>
+    <div class="logo-bar mobile-only">
+        <img src="/BIDMC_logo.png" alt="BIDMC HMS Logo">
+        <img src="/NAMI_logo.png" alt="NAMI Logo">
+    </div>
+    <main class="main-content">
+    <div class="page-wrapper">
+        <div class="container">
+            <div class="logo-bar desktop-only">
+                <img src="/BIDMC_logo.png" alt="BIDMC HMS Logo">
+                <img src="/NAMI_logo.png" alt="NAMI Logo">
+            </div>
+            <div class="container-inner">
+                <img src="/mindbench_logo.png" alt="MindBench.ai Logo" class="main-logo">
+            <h1>MindBench.ai</h1>
+            <p class="subtitle">Assessing LLMs in a Mental Health Context</p>
 
-        <div class="coming-soon">Coming Soon</div>
+            <div class="coming-soon">Coming Soon</div>
 
-        <p class="description">
-            MindBench AI is an actionable platform designed to provide easily accessible and interpretable information
-            about LLMs and LLM-based tools in mental health contexts. Developed in partnership with NAMI and building on
-            a decade of experience from MINDapps.org, we offer transparent, real-time evaluation data to help patients,
-            clinicians, developers, and regulators make informed decisions about AI use in mental healthcare.
-        </p>
+            <p class="description">
+                MindBench AI is an actionable platform designed to provide easily accessible and interpretable information
+                about LLMs and LLM-based tools in mental health contexts. Developed in partnership with NAMI, we will offer 
+                transparent, real-time evaluation data to help patients,
+                clinicians, developers, and regulators make informed decisions about AI use in mental healthcare.
+            </p>
 
-        <div class="features">
-            <div class="feature-card">
-                <div class="feature-title">Profile Evaluation</div>
-                <div class="feature-desc">
-                    Systematic assessment of technical properties, privacy policies, data retention practices,
-                    conversation memory management, and security certifications that impact user safety and trust
-                    in mental health applications.
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-title">Profile Evaluation</div>
+                    <div class="feature-desc">
+                        Systematic assessment of technical properties, privacy policies, data retention practices,
+                        conversation memory management, and security certifications that impact user safety and trust
+                        in mental health applications.
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-title">Performance Benchmarking</div>
+                    <div class="feature-desc">
+                        Standardized evaluation of LLM clinical reasoning skills, therapeutic response generation,
+                        and mental health task performance using domain-specific benchmarks and expert-rated assessments.
+                    </div>
                 </div>
             </div>
-            <div class="feature-card">
-                <div class="feature-title">Performance Benchmarking</div>
-                <div class="feature-desc">
-                    Standardized evaluation of LLM clinical reasoning skills, therapeutic response generation,
-                    and mental health task performance using domain-specific benchmarks and expert-rated assessments.
-                </div>
             </div>
         </div>
-    </div>
 
-    <div class="logo-container">
-        <img src="https://www.bidmc.org/-/media/images/beth-israel-org/logos/new-logos/bidmc_hms_stacked-lockup.svg"
-             alt="BIDMC HMS Logo">
+        <aside class="sidebar">
+            <div class="survey-panel-wrapper">
+                <div class="survey-panel">
+                    <div class="survey-panel-label">Share Your Voice</div>
+                    <h2 class="survey-panel-title">What is your perspective on AI use for mental health?</h2>
+                    <p class="survey-panel-desc">
+                        Your responses will help shape how we evaluate AI tools. We want to know what matters most to users like you.
+                    </p>
+                    <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=oGWYO2bwRki_TRE_S-8HVSdU_h8zyJJFnJ6ukl5iT3VUQ1RTSTVCUEdRMTJWNUFGNzE1MkkxWkc4Uy4u" class="survey-btn" target="_blank" rel="noopener noreferrer">
+                        Take the Survey
+                        <span class="survey-btn-arrow">&rarr;</span>
+                    </a>
+                    <div class="survey-meta">
+                        <span>~5 min</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="paper-card-wrapper">
+                <div class="paper-card">
+                    <div class="paper-card-label">Our Research</div>
+                    <div class="paper-card-title">MindBench.ai: An Actionable Platform to Evaluate the Profile and Performance of Large Language Models in a Mental Healthcare Context</div>
+                    <div class="paper-card-journal">NPP - Digital Psychiatry and Neuroscience</div>
+                    <a href="https://www.nature.com/articles/s44277-025-00049-6" class="paper-btn" target="_blank" rel="noopener noreferrer">
+                        Read the Paper
+                        <span class="paper-btn-arrow">&rarr;</span>
+                    </a>
+                </div>
+            </div>
+        </aside>
     </div>
+    </main>
 </body>
 </html>
